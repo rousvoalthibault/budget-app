@@ -1,164 +1,117 @@
 "use client";
 
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState } from "react";
+import Image from "next/image";
 
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-
-
-const formSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email address"),
-  role: z.string().min(1, "Please select a role"),
-  message: z
-    .string()
-    .min(10, "Message must be at least 10 characters")
-    .max(500, "Message must be less than 500 characters"),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+const phrases = [
+  "Making it beautiful",
+  "Connecting the pieces",
+  "Crafting your vision",
+  "Adding the magic",
+  "Almost there",
+];
 
 export default function Home() {
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: "",
-      email: "",
-      role: "",
-      message: "",
-    },
-  });
+  const [phraseIndex, setPhraseIndex] = useState(0);
 
-  function onSubmit(data: FormValues) {
-    console.log("Form submitted:", data);
-    alert(`Form submitted!\n\n${JSON.stringify(data, null, 2)}`);
-  }
+  // Rotate phrases every 3 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPhraseIndex((prev) => (prev + 1) % phrases.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 p-4 font-sans dark:bg-zinc-950">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-2xl">Codewords Example Form</CardTitle>
-          <CardDescription>
-            A demo form using shadcn/ui, React Hook Form, and Zod validation.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="John Doe" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#020008]">
+      {/* Sunset Horizon gradient */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          opacity: 0.25,
+          background: `radial-gradient(
+            ellipse 200% 100% at 50% 100%,
+            #020101 0%,
+            #0a0402 10%,
+            #200a04 18%,
+            #501808 24%,
+            #a03010 30%,
+            #e05020 34%,
+            #ff8040 38%,
+            #ffb070 42%,
+            #ffd0a0 46%,
+            #e0a0c0 50%,
+            #b060a0 54%,
+            #8a3090 58%,
+            #6b2080 62%,
+            #4a1a6b 68%,
+            #2d1054 75%,
+            #1a0a3d 84%,
+            #0a0020 92%,
+            #020008 100%
+          )`,
+        }}
+      />
 
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="email"
-                        placeholder="john@example.com"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+      {/* Main content */}
+      <div className="relative z-10 flex flex-col items-center gap-4 px-4 text-center">
+        {/* Asterisk with glow effect */}
+        <div className="relative flex items-center justify-center">
+          {/* Glowing background SVG */}
+          <motion.div
+            className="absolute blur-md"
+            animate={{
+              opacity: [0.2, 0.6, 0.2],
+              scale: [1, 1.1, 1],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          >
+            <Image
+              src="/codewords-asterisk.svg"
+              alt=""
+              width={40}
+              height={40}
+              aria-hidden="true"
+            />
+          </motion.div>
 
-              <FormField
-                control={form.control}
-                name="role"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Role</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select a role" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="developer">Developer</SelectItem>
-                        <SelectItem value="designer">Designer</SelectItem>
-                        <SelectItem value="manager">Manager</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          {/* Main Asterisk SVG */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 0.8, scale: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <Image
+              src="/codewords-asterisk.svg"
+              alt="Loading"
+              width={40}
+              height={40}
+              priority
+            />
+          </motion.div>
+        </div>
 
-              <FormField
-                control={form.control}
-                name="message"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Message</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Tell us about your project..."
-                        className="min-h-[100px] resize-none"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Between 10 and 500 characters.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <Button type="submit" className="w-full">
-                Submit
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+        {/* Rotating phrases */}
+        <div className="relative h-6 w-72">
+          <AnimatePresence mode="wait">
+            <motion.p
+              key={phraseIndex}
+              className="absolute inset-0 flex items-center justify-center font-mono text-sm text-white/80"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.3 }}
+            >
+              {phrases[phraseIndex]}
+            </motion.p>
+          </AnimatePresence>
+        </div>
+      </div>
     </div>
   );
 }
