@@ -29,7 +29,7 @@ async function checkSubscription(): Promise<boolean> {
 export async function MadeWithBadge() {
   const hasActiveSubscription = await checkSubscription();
 
-  if (!hasActiveSubscription) {
+  if (hasActiveSubscription) {
     return null;
   }
 
