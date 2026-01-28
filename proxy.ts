@@ -8,21 +8,11 @@ const allowedOrigins = [
 ];
 
 export function proxy(request: NextRequest) {
-  // #region agent log
-  fetch('http://127.0.0.1:7243/ingest/909838ec-bb9e-44e3-9098-1ca1670902f8',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'proxy.ts:entry',message:'Proxy function called',data:{method:request.method,url:request.url,pathname:request.nextUrl.pathname},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H2-H3'})}).catch(()=>{});
-  // #endregion
 
   const origin = request.headers.get("origin");
 
-  // #region agent log
-  fetch('http://127.0.0.1:7243/ingest/909838ec-bb9e-44e3-9098-1ca1670902f8',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'proxy.ts:origin-check',message:'Origin header value',data:{origin,allowedOrigins},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1-H4'})}).catch(()=>{});
-  // #endregion
 
   const isAllowedOrigin = origin && allowedOrigins.includes(origin);
-
-  // #region agent log
-  fetch('http://127.0.0.1:7243/ingest/909838ec-bb9e-44e3-9098-1ca1670902f8',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'proxy.ts:allowed-check',message:'isAllowedOrigin result',data:{isAllowedOrigin,origin},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1'})}).catch(()=>{});
-  // #endregion
 
   // Handle preflight OPTIONS request
   if (request.method === "OPTIONS") {
