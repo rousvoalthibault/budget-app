@@ -18,7 +18,7 @@ const isAllowedOrigin = (origin: string | null): boolean => {
   return false;
 };
 
-const SKIP_PATHS = ["/_next", "/favicon.ico", "/health", "/api/health"];
+const SKIP_PATHS = ["/_next", "/favicon.ico", "/health", "/api/health", "/api/cw-auth"];
 
 const CODEWORDS_APP_URL =
   process.env.CODEWORDS_APP_URL || "https://codewords.agemo.ai";
