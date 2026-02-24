@@ -70,38 +70,41 @@ export function proxy(request: NextRequest) {
 
   const previewAuth = process.env.CODEWORDS_PREVIEW_AUTH;
 
-  // No preview auth configured → public access (production deployments)
+  // No preview auth configured → sandbox token check or public access
   if (!previewAuth) {
-    // Still check cw_token for sandbox dev access (backward compat)
     const accessToken = process.env.CODEWORDS_ACCESS_TOKEN;
-    if (accessToken) {
-      const queryToken = searchParams.get("cw_token");
-      if (queryToken === accessToken) {
-        const cleanUrl = request.nextUrl.clone();
-        cleanUrl.searchParams.delete("cw_token");
-        const response = NextResponse.redirect(cleanUrl);
-        response.cookies.set("cw_access", accessToken, {
-          httpOnly: true,
-          secure: true,
-          sameSite: "none",
-          path: "/",
-          maxAge: 60 * 60 * 24,
-        });
-        return addSecurityHeaders(response, request);
-      }
 
-      const cookieToken = request.cookies.get("cw_access")?.value;
-      if (cookieToken === accessToken) {
-        return addSecurityHeaders(NextResponse.next(), request);
-      }
-
-      // No token configured or no valid token — allow for production
-      if (!queryToken && !cookieToken) {
-        return addSecurityHeaders(NextResponse.next(), request);
-      }
+    // No access token configured → fully public (production deployments)
+    if (!accessToken) {
+      return addSecurityHeaders(NextResponse.next(), request);
     }
 
-    return addSecurityHeaders(NextResponse.next(), request);
+    // Access token IS configured (sandbox) → require valid token
+    const queryToken = searchParams.get("cw_token");
+    if (queryToken === accessToken) {
+      const cleanUrl = request.nextUrl.clone();
+      cleanUrl.searchParams.delete("cw_token");
+      const response = NextResponse.redirect(cleanUrl);
+      response.cookies.set("cw_access", accessToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "none",
+        path: "/",
+        maxAge: 60 * 60 * 24,
+      });
+      return addSecurityHeaders(response, request);
+    }
+
+    const cookieToken = request.cookies.get("cw_access")?.value;
+    if (cookieToken === accessToken) {
+      return addSecurityHeaders(NextResponse.next(), request);
+    }
+
+    // No valid token → block access
+    return addSecurityHeaders(
+      new NextResponse("Unauthorized", { status: 401 }),
+      request
+    );
   }
 
   // === Preview auth flow ===
