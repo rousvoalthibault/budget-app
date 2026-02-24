@@ -144,18 +144,6 @@ export function proxy(request: NextRequest) {
     const projectId = request.nextUrl.hostname.split(".")[0];
 
     if (runtimeUri) {
-      const verifyUrl = `${runtimeUri}/run/ui_builder/auth/verify-preview`;
-      const response = NextResponse.redirect(
-        (() => {
-          const cleanUrl = request.nextUrl.clone();
-          cleanUrl.searchParams.delete("cw_otk");
-          return cleanUrl;
-        })()
-      );
-
-      // Set cookie optimistically — the verify call happens in middleware
-      // which can't do async fetch. We'll validate via an API route instead.
-      // For now, redirect to an internal verify endpoint.
       const verifyRedirect = new URL("/api/cw-auth", request.nextUrl.origin);
       verifyRedirect.searchParams.set("otk", otk);
       verifyRedirect.searchParams.set("project_id", projectId);
@@ -175,12 +163,19 @@ export function proxy(request: NextRequest) {
   const accept = request.headers.get("accept") || "";
   const isIframe = request.headers.get("sec-fetch-dest") === "iframe";
 
-  if (isIframe || !accept.includes("text/html")) {
+  if (isIframe) {
     return addSecurityHeaders(
       new NextResponse(AUTH_HANDSHAKE_HTML, {
         status: 200,
         headers: { "Content-Type": "text/html" },
       }),
+      request
+    );
+  }
+
+  if (!accept.includes("text/html")) {
+    return addSecurityHeaders(
+      new NextResponse("Unauthorized", { status: 401 }),
       request
     );
   }

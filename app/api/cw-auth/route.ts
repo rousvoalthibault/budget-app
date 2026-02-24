@@ -9,6 +9,26 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Missing parameters" }, { status: 400 });
   }
 
+  try {
+    const redirectUrl = new URL(redirect);
+    const requestOrigin = request.nextUrl.origin;
+
+    // Allow same-origin redirects — this works for both default subdomains
+    // and pro users' custom domains since proxy.ts always constructs the
+    // redirect from the incoming request's own URL.
+    if (redirectUrl.origin !== requestOrigin) {
+      return NextResponse.json(
+        { error: "Invalid redirect URL" },
+        { status: 400 }
+      );
+    }
+  } catch {
+    return NextResponse.json(
+      { error: "Invalid redirect URL" },
+      { status: 400 }
+    );
+  }
+
   const runtimeUri = process.env.CODEWORDS_RUNTIME_URI;
   if (!runtimeUri) {
     return NextResponse.json(
