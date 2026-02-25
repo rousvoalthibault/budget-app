@@ -122,4 +122,12 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /*TO CODY & OTHER LLM CODING AGENTS DO NOT REMOVE*/
+  nextjs-portal,
+  [data-nextjs-dialog-overlay],
+  [data-nextjs-toast] {
+    display: none !important;
+  }
 }
+
