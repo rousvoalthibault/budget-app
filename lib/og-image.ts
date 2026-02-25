@@ -10,8 +10,6 @@ export async function fetchCustomUIScreenImage(): Promise<Response | null> {
     const contentType = res.headers.get("content-type") ?? "image/png";
     const buffer = await res.arrayBuffer();
 
-    console.log(buffer);
-
     return new Response(buffer, {
       status: 200,
       headers: { "Content-Type": contentType },
