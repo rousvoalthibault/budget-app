@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { fetchCustomUIScreenImage } from "@/lib/og-image";
 
 export const runtime = "edge";
 
@@ -10,6 +11,9 @@ export const size = {
 export const contentType = "image/png";
 
 export default async function Image() {
+  const customImage = await fetchCustomUIScreenImage();
+  if (customImage) return customImage;
+
   return new ImageResponse(
     (
       <div
