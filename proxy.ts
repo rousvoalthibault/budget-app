@@ -8,13 +8,15 @@ const ALLOWED_ORIGINS = [
 ];
 
 const FRAME_ANCESTORS =
-  "'self' *.agemo.ai *.codewords.run *.ngrok.app localhost:3001";
+  "'self' *.agemo.ai *.codewords.run *.codewords.click *.ngrok.app *.ngrok.dev localhost:3001";
 
 const isAllowedOrigin = (origin: string | null): boolean => {
   if (!origin) return false;
   if (ALLOWED_ORIGINS.includes(origin)) return true;
   if (origin.endsWith(".ngrok.app")) return true;
+  if (origin.endsWith(".ngrok.dev")) return true;
   if (origin.endsWith(".codewords.run")) return true;
+  if (origin.endsWith(".codewords.click")) return true;
   return false;
 };
 
@@ -30,7 +32,7 @@ const AUTH_HANDSHAKE_HTML = `<!DOCTYPE html>
 <p>Authenticating...</p>
 <script>
 (function() {
-  var projectId = location.hostname.split('.')[0];
+  var projectId = '${process.env.CODEWORDS_PROJECT_ID || ""}' || location.hostname.split('.')[0];
   window.parent.postMessage({ type: 'cw-auth-request', projectId: projectId }, '*');
   window.addEventListener('message', function(e) {
     if (e.data && e.data.type === 'cw-auth-token' && e.data.otk) {
@@ -144,7 +146,7 @@ export function proxy(request: NextRequest) {
   if (otk) {
     // Validate OTK via ui-builder through runtime
     const runtimeUri = process.env.CODEWORDS_RUNTIME_URI;
-    const projectId = request.nextUrl.hostname.split(".")[0];
+    const projectId = process.env.CODEWORDS_PROJECT_ID || request.nextUrl.hostname.split(".")[0];
 
     if (runtimeUri) {
       const verifyRedirect = new URL("/api/cw-auth", request.nextUrl.origin);
@@ -184,7 +186,7 @@ export function proxy(request: NextRequest) {
   }
 
   // Browser direct access → redirect to CodeWords login
-  const projectId = request.nextUrl.hostname.split(".")[0];
+  const projectId = process.env.CODEWORDS_PROJECT_ID || request.nextUrl.hostname.split(".")[0];
   const grantUrl = new URL(
     "/api/auth/preview-grant",
     CODEWORDS_APP_URL
