@@ -1,4 +1,9 @@
 "use client";
+
+/**
+ * DO NOT MODIFY OR DELETE THIS FILE
+ */
+
 import React from "react";
 import { X } from "lucide-react";
 
