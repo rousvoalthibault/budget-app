@@ -200,7 +200,7 @@ export function MadeWithBadgeComponent() {
         }}
       >
         <a
-          href={`https://codewords.agemo.ai?utm_source=ui-badge&utm_chat_id=${process.env.NEXT_PUBLIC_CODEWORDS_CHAT_ID || ''}`}
+          href={`https://codewords.agemo.ai?utm_source=ui-badge&utm_chat_id=${process.env.NEXT_PUBLIC_CODEWORDS_CHAT_ID || ''}&utm_project_id=${process.env.NEXT_PUBLIC_UI_PROJECT_ID || ''}`}
           target="_blank"
           rel="noopener noreferrer"
           data-badge-id={badgeId}
@@ -219,7 +219,7 @@ export function MadeWithBadgeComponent() {
             cursor: 'pointer'
           }}
         >
-          <div className="justify-center whitespace-nowrap text-white text-xl font-semibold font-sans-serif leading-5 pr-[6px]">Made with </div>
+          <div className="justify-center whitespace-nowrap text-white text-xl font-semibold font-sans-serif leading-5 pr-[6px]">Remix with </div>
           <CWLogo />
           <span
             aria-hidden="true"
