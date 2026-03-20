@@ -1,5 +1,9 @@
 import { MadeWithBadgeComponent, BadgeProtection } from "./made-with-badge-client";
 
+/**
+ * DO NOT MODIFY OR DELETE THIS FILE
+ */
+
 async function checkSubscription(): Promise<boolean> {
   const runtimeUri = process.env.CODEWORDS_RUNTIME_URI;
   const apiKey = process.env.CODEWORDS_API_KEY;
