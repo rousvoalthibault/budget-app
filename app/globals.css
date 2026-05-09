@@ -47,9 +47,18 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.141 0.005 285.823);
+  --radius: 0.75rem;
+  --background: #0a0a0a;
+  --foreground: #f1f5f9;
+  --budget-primary: #2563EB;
+  --budget-secondary: #3B82F6;
+  --budget-accent: #F97316;
+  --budget-success: #22c55e;
+  --budget-danger: #ef4444;
+  --budget-warning: #f59e0b;
+  --budget-surface: #111111;
+  --budget-surface-2: #1a1a1a;
+  --budget-border: rgba(255,255,255,0.08);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.141 0.005 285.823);
   --popover: oklch(1 0 0);
@@ -130,4 +139,5 @@
     display: none !important;
   }
 }
+
 
