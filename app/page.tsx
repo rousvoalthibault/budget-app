@@ -378,7 +378,7 @@ function DashboardTab({ month: m, netBalance, totalExpenses, validatedCount, onI
             ["courses", "Courses"], ["restaurants", "Restaurants"], ["services", "Services"],
             ["revolut", "Revolut"], ["amex", "Amex"], ["cera", "CERA"],
           ].map(([key, label]) => {
-            const val = (m.budget_allocation as Record<string, number>)[key] ?? 0;
+            const val = (m.budget_allocation as unknown as Record<string, number>)[key] ?? 0;
             return (
               <div key={key} style={{ background: S.surface2, borderRadius: 10, padding: "10px 12px", border: `1px solid ${S.border}` }}>
                 <p style={{ color: S.muted, fontSize: 10, fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.06em", margin: "0 0 4px" }}>{label}</p>
@@ -776,4 +776,5 @@ function EconomiesTab({ months, currentIdx, onSavingsChange }: {
     </div>
   );
 }
+
 
