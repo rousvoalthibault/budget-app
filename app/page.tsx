@@ -10,7 +10,7 @@ import {
   CreditCard, ShoppingBag, ShoppingCart, Car, Train, Zap, Gift,
   Plane, Briefcase, Bot, Activity, PiggyBank, BarChart2, Bitcoin,
   UtensilsCrossed, ArrowLeft, ArrowRight, AlertTriangle, Check,
-  RefreshCw, Pencil, Wallet, Plus, Trash2, X,
+  RefreshCw, Pencil, Wallet, Plus, Trash2, X, Calendar,
 } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -43,7 +43,7 @@ const S = {
   primary: "#2563EB", accent: "#F97316",
   success: "#22c55e", danger: "#ef4444", warning: "#f59e0b",
   text: "#f1f5f9", muted: "#64748b",
-  font: "Quicksand,sans-serif", heading: "Syne,sans-serif",
+  font: "Outfit,sans-serif", heading: "Outfit,sans-serif",
 };
 
 const ICONS: Record<string, React.ElementType> = {
@@ -57,28 +57,22 @@ const BUDGET_LABELS: Record<string, string> = {
   revolut: "Revolut", amex: "Amex", cera: "CERA",
 };
 
-const CATEGORY_ICONS: Record<string, string[]> = {
-  fixed: ["Home", "Shield", "Zap", "Wifi", "Tv", "Smartphone", "Bot", "CreditCard"],
-  variable: ["ShoppingCart", "ShoppingBag", "Car", "Train", "Gift", "Plane", "Activity", "UtensilsCrossed", "CreditCard", "Briefcase"],
-  investment: ["TrendingUp", "PiggyBank", "BarChart2", "Bitcoin", "Shield"],
-};
-
 function fmt(n: number) {
   return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
+}
+
+function getDateFR() {
+  return new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 }
 
 // ── Shared ────────────────────────────────────────────────────────────────────
 function Card({ children, style, className }: { children: React.ReactNode; style?: React.CSSProperties; className?: string }) {
   return <div className={className} style={{ background: S.surface, border: `1px solid ${S.border}`, borderRadius: 16, padding: 20, ...style }}>{children}</div>;
 }
-
 function SLabel({ children }: { children: React.ReactNode }) {
-  return <p style={{ color: S.muted, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" as const, margin: "0 0 12px", fontFamily: S.font }}>{children}</p>;
+  return <p style={{ color: S.muted, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" as const, margin: "0 0 12px", fontFamily: S.font }}>{children}</p>;
 }
-
-function EditableAmt({ value, onChange, color, size = "md" }: {
-  value: number; onChange: (n: number) => void; color?: string; size?: "sm" | "md" | "lg";
-}) {
+function EditableAmt({ value, onChange, color, size = "md" }: { value: number; onChange: (n: number) => void; color?: string; size?: "sm" | "md" | "lg"; }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
   const ref = useRef<HTMLInputElement>(null);
@@ -104,7 +98,7 @@ export default function BudgetApp() {
   const [saving, setSaving] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string; ok?: boolean } | null>(null);
 
-  function showToast(msg: string, ok = true) { setToast({ msg, ok }); setTimeout(() => setToast(null), 2800); }
+  function showToast(msg: string, ok = true) { setToast({ msg, ok }); setTimeout(() => setToast(null), 3000); }
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -113,12 +107,25 @@ export default function BudgetApp() {
       const md = await mr.json(); const fd = await fr.json();
       const mths: Month[] = md.months || [];
       setMonths(mths); setForecast(fd);
-      setIdx(Math.min(new Date().getMonth(), mths.length - 1));
+      setIdx(i => Math.min(i, mths.length - 1));
     } catch { showToast("Erreur de chargement", false); }
     finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => {
+    const init = async () => {
+      setLoading(true);
+      try {
+        const [mr, fr] = await Promise.all([fetch("/api/budget/months"), fetch("/api/budget/forecast")]);
+        const md = await mr.json(); const fd = await fr.json();
+        const mths: Month[] = md.months || [];
+        setMonths(mths); setForecast(fd);
+        setIdx(Math.min(new Date().getMonth(), mths.length - 1));
+      } catch { showToast("Erreur de chargement", false); }
+      finally { setLoading(false); }
+    };
+    init();
+  }, []);
 
   async function patchExpense(mk: string, label: string, updates: Partial<Expense>) {
     setSaving(label);
@@ -135,15 +142,18 @@ export default function BudgetApp() {
     finally { setSaving(null); }
   }
 
-  async function addExpense(mk: string, label: string, amount: number, category: string, icon: string) {
+  async function addExpense(mk: string, label: string, amount: number, category: string) {
     setSaving("adding");
     try {
-      const r = await fetch(`/api/budget/month/${mk}/expense`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ label, amount, category, icon }) });
+      const r = await fetch(`/api/budget/month/${mk}/expense`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ label, amount, category, propagate: true }),
+      });
       const d = await r.json();
       if (d.success) {
-        setMonths(prev => prev.map(m => m.month_key !== mk ? m : { ...m, expenses: d.data.expenses }));
-        showToast(`${label} ajoutee`);
-        fetch("/api/budget/forecast").then(r => r.json()).then(setForecast);
+        showToast(`${label} ajoutee${d.propagated_to > 1 ? ` (${d.propagated_to} mois)` : ""}`);
+        await loadData();
       }
     } catch { showToast("Erreur", false); }
     finally { setSaving(null); }
@@ -154,11 +164,7 @@ export default function BudgetApp() {
     try {
       const r = await fetch(`/api/budget/month/${mk}/expense/${encodeURIComponent(label)}`, { method: "DELETE" });
       const d = await r.json();
-      if (d.success) {
-        setMonths(prev => prev.map(m => m.month_key !== mk ? m : { ...m, expenses: m.expenses.filter(e => e.label !== label) }));
-        showToast(`${label} supprimee`);
-        fetch("/api/budget/forecast").then(r => r.json()).then(setForecast);
-      }
+      if (d.success) { setMonths(prev => prev.map(m => m.month_key !== mk ? m : { ...m, expenses: m.expenses.filter(e => e.label !== label) })); showToast(`${label} supprimee`); fetch("/api/budget/forecast").then(r => r.json()).then(setForecast); }
     } catch { showToast("Erreur", false); }
     finally { setSaving(null); }
   }
@@ -219,7 +225,7 @@ export default function BudgetApp() {
   if (loading) return (
     <div style={{ background: S.bg, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16, fontFamily: S.font }}>
       <div style={{ width: 48, height: 48, border: `3px solid ${S.primary}`, borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-      <p style={{ color: S.muted }}>Chargement du budget...</p>
+      <p style={{ color: S.muted }}>Chargement...</p>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
@@ -241,6 +247,7 @@ export default function BudgetApp() {
         .val-btn:hover{opacity:0.85!important}
         .val-btn{transition:all 0.2s}
         input:focus{outline:none!important}
+        select{cursor:pointer}
         button{cursor:pointer}
       `}</style>
 
@@ -251,10 +258,14 @@ export default function BudgetApp() {
         </div>
       )}
 
+      {/* ── Header ─────────────────────────────────────────────────── */}
       <header style={{ background: S.surface, borderBottom: `1px solid ${S.border}`, padding: "12px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 50 }}>
         <div>
-          <h1 style={{ fontFamily: S.heading, fontSize: 26, fontWeight: 800, margin: 0, lineHeight: 1, letterSpacing: "-0.5px" }}>Budget 2026</h1>
-          <p style={{ color: S.muted, fontSize: 11, margin: "2px 0 0" }}>Thibault &amp; Celine</p>
+          <h1 style={{ fontFamily: S.heading, fontSize: 26, fontWeight: 800, margin: 0, lineHeight: 1, letterSpacing: "-0.3px" }}>Budget Personnel</h1>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3 }}>
+            <Calendar size={11} color={S.muted} />
+            <p style={{ color: S.muted, fontSize: 11, margin: 0 }}>{getDateFR()}</p>
+          </div>
         </div>
         {m && (
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -269,7 +280,8 @@ export default function BudgetApp() {
         <button onClick={loadData} title="Actualiser" style={{ background: "transparent", border: `1px solid ${S.border}`, color: S.muted, width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center" }}><RefreshCw size={13} /></button>
       </header>
 
-      <nav style={{ background: S.surface, borderBottom: `1px solid ${S.border}`, padding: "0 20px", display: "flex", position: "sticky", top: 61, zIndex: 49, overflowX: "auto" }}>
+      {/* ── Tabs ───────────────────────────────────────────────────── */}
+      <nav style={{ background: S.surface, borderBottom: `1px solid ${S.border}`, padding: "0 20px", display: "flex", position: "sticky", top: 65, zIndex: 49, overflowX: "auto" }}>
         {TABS.map(t => (
           <button key={t.id} className="tab-btn" onClick={() => setTab(t.id)} style={{ background: "none", border: "none", padding: "13px 16px", color: tab === t.id ? S.accent : S.muted, fontFamily: S.font, fontWeight: 600, fontSize: 14, borderBottom: tab === t.id ? `2px solid ${S.accent}` : "2px solid transparent", whiteSpace: "nowrap", transition: "color 0.15s" }}>
             {t.label}
@@ -277,6 +289,7 @@ export default function BudgetApp() {
         ))}
       </nav>
 
+      {/* ── Content ────────────────────────────────────────────────── */}
       <main key={tab} style={{ padding: "24px", maxWidth: 1200, margin: "0 auto", animation: "fadeUp 0.25s ease" }}>
         {tab === "dashboard" && m && (
           <DashboardTab month={m} netBalance={netBal} totalExpenses={totalExp} validatedBudget={validatedBudget} validatedCount={validatedCnt} totalCount={totalItems}
@@ -284,14 +297,14 @@ export default function BudgetApp() {
             onValidate={(l, v) => patchExpense(m.month_key, l, { validated: v })} saving={saving} />
         )}
         {tab === "depenses" && m && (
-          <DepensesTab month={m}
+          <DepensesTab month={m} monthKey={m.month_key}
             onValidate={(l, v) => patchExpense(m.month_key, l, { validated: v })}
             onAmountChange={(l, a) => patchExpense(m.month_key, l, { amount: a })}
             onIncomeChange={(f, v) => patchIncome(m.month_key, f, v)}
             onBudgetChange={(upd) => patchBudgetAlloc(m.month_key, upd)}
-            onAddExpense={(label, amount, category, icon) => addExpense(m.month_key, label, amount, category, icon)}
+            onAddExpense={(label, amount, category) => addExpense(m.month_key, label, amount, category)}
             onDeleteExpense={(label) => deleteExpense(m.month_key, label)}
-            saving={saving} />
+            saving={saving} isAdding={saving === "adding"} />
         )}
         {tab === "projection" && forecast && <ProjectionTab forecast={forecast} />}
         {tab === "economies" && months.length > 0 && (
@@ -364,7 +377,7 @@ function DashboardTab({ month: m, netBalance, totalExpenses, validatedBudget, va
 
       {pending.length > 0 && (
         <Card>
-          <SLabel>Depenses a valider ({pending.length})</SLabel>
+          <SLabel>A valider ce mois ({pending.length})</SLabel>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {pending.slice(0, 8).map(e => {
               const Ico = (e.icon && ICONS[e.icon]) ? ICONS[e.icon] : CreditCard;
@@ -386,29 +399,24 @@ function DashboardTab({ month: m, netBalance, totalExpenses, validatedBudget, va
 }
 
 // ── Depenses ──────────────────────────────────────────────────────────────────
-function DepensesTab({ month: m, onValidate, onAmountChange, onIncomeChange, onBudgetChange, onAddExpense, onDeleteExpense, saving }: {
-  month: Month;
-  onValidate: (label: string, v: boolean) => void;
-  onAmountChange: (label: string, amount: number) => void;
+function DepensesTab({ month: m, monthKey, onValidate, onAmountChange, onIncomeChange, onBudgetChange, onAddExpense, onDeleteExpense, saving, isAdding }: {
+  month: Month; monthKey: string;
+  onValidate: (l: string, v: boolean) => void;
+  onAmountChange: (l: string, a: number) => void;
   onIncomeChange: (f: "income_salary" | "income_other", v: number) => void;
-  onBudgetChange: (updates: { amounts?: Record<string, number>; validated?: Record<string, boolean> }) => void;
-  onAddExpense: (label: string, amount: number, category: string, icon: string) => void;
+  onBudgetChange: (upd: { amounts?: Record<string, number>; validated?: Record<string, boolean> }) => void;
+  onAddExpense: (label: string, amount: number, category: string) => void;
   onDeleteExpense: (label: string) => void;
-  saving: string | null;
+  saving: string | null; isAdding: boolean;
 }) {
   const [addingTo, setAddingTo] = useState<"fixed" | "variable" | "investment" | null>(null);
   const [newLabel, setNewLabel] = useState("");
   const [newAmount, setNewAmount] = useState("");
-  const [newIcon, setNewIcon] = useState("CreditCard");
+  const labelRef = useRef<HTMLInputElement>(null);
 
-  function submitAdd() {
-    const amt = parseFloat(newAmount);
-    if (!newLabel.trim() || isNaN(amt)) return;
-    onAddExpense(newLabel.trim(), amt, addingTo!, newIcon);
-    setAddingTo(null); setNewLabel(""); setNewAmount(""); setNewIcon("CreditCard");
-  }
-
+  function openAdd(cat: "fixed" | "variable" | "investment") { setAddingTo(cat); setNewLabel(""); setNewAmount(""); setTimeout(() => labelRef.current?.focus(), 50); }
   function cancelAdd() { setAddingTo(null); setNewLabel(""); setNewAmount(""); }
+  function submitAdd() { const a = parseFloat(newAmount); if (!newLabel.trim() || isNaN(a) || a < 0) return; onAddExpense(newLabel.trim(), a, addingTo!); setAddingTo(null); setNewLabel(""); setNewAmount(""); }
 
   const fixed = m.expenses.filter(e => e.category === "fixed");
   const invest = m.expenses.filter(e => e.category === "investment");
@@ -424,29 +432,26 @@ function DepensesTab({ month: m, onValidate, onAmountChange, onIncomeChange, onB
         <Ico size={14} color={e.validated ? color : S.muted} />
         <span style={{ flex: 1, fontSize: 13, color: e.validated ? S.text : S.muted, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{e.label}</span>
         <EditableAmt value={e.amount} onChange={v => onAmountChange(e.label, v)} color={color} size="sm" />
-        <button className="val-btn" onClick={() => onValidate(e.label, !e.validated)} disabled={isSav}
-          style={{ width: 28, height: 28, borderRadius: 7, border: `1.5px solid ${e.validated ? color : S.muted}`, background: e.validated ? color : "transparent", color: e.validated ? "#fff" : S.muted, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, opacity: isSav ? 0.5 : 1 }}
-          title={e.validated ? "Devalider" : "Valider"}>
+        <button className="val-btn" onClick={() => onValidate(e.label, !e.validated)} disabled={isSav} style={{ width: 28, height: 28, borderRadius: 7, border: `1.5px solid ${e.validated ? color : S.muted}`, background: e.validated ? color : "transparent", color: e.validated ? "#fff" : S.muted, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, opacity: isSav ? 0.5 : 1 }} title={e.validated ? "Devalider" : "Valider"}>
           {isSav ? <div style={{ width: 10, height: 10, border: "1.5px solid currentColor", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} /> : <Check size={12} />}
         </button>
-        <button className="del-btn" onClick={() => onDeleteExpense(e.label)} title="Supprimer"
-          style={{ width: 24, height: 24, borderRadius: 6, border: "none", background: `${S.danger}20`, color: S.danger, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <button className="del-btn" onClick={() => onDeleteExpense(e.label)} title="Supprimer" style={{ width: 24, height: 24, borderRadius: 6, border: "none", background: `${S.danger}20`, color: S.danger, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
           <Trash2 size={11} />
         </button>
       </div>
     );
   }
 
-  function AddForm({ category, color }: { category: "fixed" | "variable" | "investment"; color: string }) {
-    const icons = CATEGORY_ICONS[category] || ["CreditCard"];
+  function AddRow({ category, color }: { category: "fixed" | "variable" | "investment"; color: string }) {
+    if (addingTo !== category) return null;
     return (
-      <div style={{ display: "flex", gap: 8, padding: "8px 12px", background: `${color}08`, borderRadius: 10, border: `1px dashed ${color}50`, alignItems: "center", flexWrap: "wrap" as const }}>
-        <input value={newLabel} onChange={e => setNewLabel(e.target.value)} placeholder="Nom de la depense" onKeyDown={e => e.key === "Enter" && submitAdd()} autoFocus style={{ flex: 1, minWidth: 120, background: S.surface2, border: `1px solid ${color}40`, borderRadius: 7, padding: "5px 10px", color: S.text, fontSize: 13, fontFamily: S.font }} />
-        <input value={newAmount} onChange={e => setNewAmount(e.target.value)} placeholder="Montant" type="number" min="0" step="0.01" onKeyDown={e => e.key === "Enter" && submitAdd()} style={{ width: 80, background: S.surface2, border: `1px solid ${color}40`, borderRadius: 7, padding: "5px 10px", color: S.text, fontSize: 13, fontFamily: S.font }} />
-        <select value={newIcon} onChange={e => setNewIcon(e.target.value)} style={{ background: S.surface2, border: `1px solid ${color}40`, borderRadius: 7, padding: "5px 8px", color: S.text, fontSize: 12, fontFamily: S.font }}>
-          {icons.map(ico => <option key={ico} value={ico}>{ico}</option>)}
-        </select>
-        <button onClick={submitAdd} style={{ background: color, color: "#fff", border: "none", borderRadius: 7, padding: "5px 14px", fontSize: 12, fontWeight: 700, fontFamily: S.font, display: "flex", alignItems: "center", gap: 4 }}><Check size={12} /> Ajouter</button>
+      <div style={{ display: "flex", gap: 8, padding: "8px 12px", background: `${color}08`, borderRadius: 10, border: `1px dashed ${color}50`, alignItems: "center" }}>
+        <input ref={labelRef} value={newLabel} onChange={e => setNewLabel(e.target.value)} placeholder="Nom de la depense" onKeyDown={e => { if (e.key === "Enter") submitAdd(); if (e.key === "Escape") cancelAdd(); }} style={{ flex: 1, minWidth: 100, background: S.surface2, border: `1px solid ${color}40`, borderRadius: 7, padding: "5px 10px", color: S.text, fontSize: 13, fontFamily: S.font }} />
+        <input value={newAmount} onChange={e => setNewAmount(e.target.value)} placeholder="0 €" type="number" min="0" step="0.01" onKeyDown={e => { if (e.key === "Enter") submitAdd(); if (e.key === "Escape") cancelAdd(); }} style={{ width: 80, background: S.surface2, border: `1px solid ${color}40`, borderRadius: 7, padding: "5px 10px", color: S.text, fontSize: 13, fontFamily: S.font }} />
+        <button onClick={submitAdd} disabled={isAdding} style={{ background: color, color: "#fff", border: "none", borderRadius: 7, padding: "5px 14px", fontSize: 12, fontWeight: 700, fontFamily: S.font, display: "flex", alignItems: "center", gap: 4, opacity: isAdding ? 0.6 : 1 }}>
+          {isAdding ? <div style={{ width: 10, height: 10, border: "1.5px solid #fff", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} /> : <Check size={12} />}
+          Ajouter
+        </button>
         <button onClick={cancelAdd} style={{ background: "transparent", color: S.muted, border: `1px solid ${S.border}`, borderRadius: 7, padding: "5px 10px", fontSize: 12, fontFamily: S.font, display: "flex", alignItems: "center" }}><X size={12} /></button>
       </div>
     );
@@ -458,14 +463,16 @@ function DepensesTab({ month: m, onValidate, onAmountChange, onIncomeChange, onB
       <Card>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
           <SLabel>{title}</SLabel>
-          <button onClick={() => { setAddingTo(catKey); setNewIcon(CATEGORY_ICONS[catKey][0]); }} style={{ background: `${color}20`, color, border: `1px solid ${color}40`, borderRadius: 8, width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center" }} title="Ajouter une depense"><Plus size={14} /></button>
+          <button onClick={() => addingTo === catKey ? cancelAdd() : openAdd(catKey)} style={{ background: addingTo === catKey ? `${color}30` : `${color}20`, color, border: `1px solid ${color}40`, borderRadius: 8, width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center" }} title="Ajouter une depense">
+            {addingTo === catKey ? <X size={14} /> : <Plus size={14} />}
+          </button>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           {items.map(e => <ExpRow key={e.label} e={e} color={color} />)}
-          {addingTo === catKey && <AddForm category={catKey} color={color} />}
+          <AddRow category={catKey} color={color} />
         </div>
         <div style={{ borderTop: `1px solid ${S.border}`, marginTop: 10, paddingTop: 10, display: "flex", justifyContent: "space-between" }}>
-          <span style={{ color: S.muted, fontSize: 12 }}>Total</span>
+          <span style={{ color: S.muted, fontSize: 12 }}>Total ({items.length} lignes)</span>
           <span style={{ fontFamily: S.heading, fontSize: 20, color, fontWeight: 700 }}>{fmt(total)}</span>
         </div>
       </Card>
@@ -491,21 +498,23 @@ function DepensesTab({ month: m, onValidate, onAmountChange, onIncomeChange, onB
       <Card>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
           <SLabel>Depenses variables</SLabel>
-          <button onClick={() => { setAddingTo("variable"); setNewIcon(CATEGORY_ICONS.variable[0]); }} style={{ background: `${S.warning}20`, color: S.warning, border: `1px solid ${S.warning}40`, borderRadius: 8, width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center" }} title="Ajouter"><Plus size={14} /></button>
+          <button onClick={() => addingTo === "variable" ? cancelAdd() : openAdd("variable")} style={{ background: addingTo === "variable" ? `${S.warning}30` : `${S.warning}20`, color: S.warning, border: `1px solid ${S.warning}40`, borderRadius: 8, width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center" }} title="Ajouter">
+            {addingTo === "variable" ? <X size={14} /> : <Plus size={14} />}
+          </button>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 8 }}>
           {variable.map(e => <ExpRow key={e.label} e={e} color={S.warning} />)}
         </div>
-        {addingTo === "variable" && <div style={{ marginTop: 8 }}><AddForm category="variable" color={S.warning} /></div>}
+        {addingTo === "variable" && <div style={{ marginTop: 8 }}><AddRow category="variable" color={S.warning} /></div>}
         <div style={{ borderTop: `1px solid ${S.border}`, marginTop: 12, paddingTop: 10, display: "flex", justifyContent: "space-between" }}>
-          <span style={{ color: S.muted, fontSize: 12 }}>Total variables</span>
+          <span style={{ color: S.muted, fontSize: 12 }}>Total ({variable.length} lignes)</span>
           <span style={{ fontFamily: S.heading, fontSize: 20, color: S.warning, fontWeight: 700 }}>{fmt(variable.reduce((s, e) => s + e.amount, 0))}</span>
         </div>
       </Card>
 
       <Card style={{ borderColor: `${S.primary}25` }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-          <SLabel>Budgets enveloppes — valider = comptes dans depenses</SLabel>
+          <SLabel>Budgets enveloppes — valider = compte dans les depenses</SLabel>
           {validatedBudgetTotal > 0 && <span style={{ fontFamily: S.heading, fontSize: 16, color: S.primary, fontWeight: 700 }}>+{fmt(validatedBudgetTotal)} integres</span>}
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 8 }}>
@@ -533,8 +542,8 @@ const ChartTip = ({ active, payload, label }: { active?: boolean; payload?: Arra
   if (!active || !payload?.length) return null;
   return (
     <div style={{ background: "#1c1c1c", border: `1px solid ${S.border}`, borderRadius: 10, padding: "10px 14px", fontFamily: S.font }}>
-      <p style={{ fontFamily: S.heading, fontSize: 18, color: S.accent, margin: "0 0 8px" }}>{label}</p>
-      {payload.filter(p => p.value !== null && p.value !== undefined).map(p => <p key={p.name} style={{ color: p.color, fontSize: 13, margin: "2px 0" }}>{p.name}: {fmt(p.value)}</p>)}
+      <p style={{ fontFamily: S.heading, fontSize: 18, color: S.accent, margin: "0 0 8px", fontWeight: 700 }}>{label}</p>
+      {payload.filter(p => p.value != null).map(p => <p key={p.name} style={{ color: p.color, fontSize: 13, margin: "2px 0" }}>{p.name}: {fmt(p.value)}</p>)}
     </div>
   );
 };
@@ -553,21 +562,17 @@ function ProjectionTab({ forecast: f }: { forecast: Forecast }) {
         </Card>
       </div>
 
-      {(f.alerts?.length ?? 0) > 0 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {f.alerts.map(a => (
-            <div key={a.month_key} style={{ background: a.alert_type === "danger" ? `${S.danger}12` : `${S.warning}12`, border: `1px solid ${a.alert_type === "danger" ? S.danger : S.warning}50`, borderRadius: 12, padding: "12px 18px", display: "flex", alignItems: "center", gap: 12 }}>
-              <AlertTriangle size={18} color={a.alert_type === "danger" ? S.danger : S.warning} />
-              <span style={{ fontFamily: S.heading, fontSize: 18, color: S.accent, flexShrink: 0 }}>{a.month_name}</span>
-              <span style={{ fontSize: 13, color: S.text, flex: 1 }}>{a.message}</span>
-              <span style={{ fontFamily: S.heading, fontSize: 18, color: a.alert_type === "danger" ? S.danger : S.warning, fontWeight: 700, flexShrink: 0 }}>{fmt(a.projected_balance)}</span>
-            </div>
-          ))}
+      {(f.alerts?.length ?? 0) > 0 && f.alerts.map(a => (
+        <div key={a.month_key} style={{ background: a.alert_type === "danger" ? `${S.danger}12` : `${S.warning}12`, border: `1px solid ${a.alert_type === "danger" ? S.danger : S.warning}50`, borderRadius: 12, padding: "12px 18px", display: "flex", alignItems: "center", gap: 12 }}>
+          <AlertTriangle size={18} color={a.alert_type === "danger" ? S.danger : S.warning} />
+          <span style={{ fontFamily: S.heading, fontSize: 18, color: S.accent, flexShrink: 0, fontWeight: 700 }}>{a.month_name}</span>
+          <span style={{ fontSize: 13, color: S.text, flex: 1 }}>{a.message}</span>
+          <span style={{ fontFamily: S.heading, fontSize: 18, color: a.alert_type === "danger" ? S.danger : S.warning, fontWeight: 700, flexShrink: 0 }}>{fmt(a.projected_balance)}</span>
         </div>
-      )}
+      ))}
 
       <Card>
-        <SLabel>Revenu vs Depenses vs Solde — 12 mois</SLabel>
+        <SLabel>Projection 12 mois — Revenu vs Depenses vs Solde</SLabel>
         <ResponsiveContainer width="100%" height={300}>
           <ComposedChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
             <CartesianGrid stroke="rgba(255,255,255,0.04)" strokeDasharray="3 3" />
@@ -588,7 +593,7 @@ function ProjectionTab({ forecast: f }: { forecast: Forecast }) {
       </Card>
 
       <Card>
-        <SLabel>Detail mensuel</SLabel>
+        <SLabel>Detail 12 mois</SLabel>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: S.font, fontSize: 13 }}>
             <thead><tr>{["Mois", "Revenu", "Depenses", "Economies", "Solde", "Statut"].map(h => <th key={h} style={{ padding: "8px 14px", textAlign: "left", color: S.muted, fontWeight: 600, fontSize: 11, borderBottom: `1px solid ${S.border}` }}>{h}</th>)}</tr></thead>
@@ -597,7 +602,7 @@ function ProjectionTab({ forecast: f }: { forecast: Forecast }) {
                 const ac = mo.alert_type === "danger" ? S.danger : mo.alert_type === "warning" ? S.warning : S.success;
                 return (
                   <tr key={mo.month_key} className="row-h" style={{ borderBottom: `1px solid ${S.border}` }}>
-                    <td style={{ padding: "9px 14px", fontFamily: S.heading, fontSize: 17, color: S.text }}>{mo.month_name}</td>
+                    <td style={{ padding: "9px 14px", fontFamily: S.heading, fontSize: 17, color: S.text, fontWeight: 600 }}>{mo.month_name}</td>
                     <td style={{ padding: "9px 14px", color: S.success, fontWeight: 600 }}>{fmt(mo.income)}</td>
                     <td style={{ padding: "9px 14px", color: S.danger, fontWeight: 600 }}>{fmt(mo.expenses)}</td>
                     <td style={{ padding: "9px 14px", color: S.accent }}>{fmt(mo.savings_target)}</td>
@@ -637,22 +642,16 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     { key: "swissborg", label: "Swissborg", color: "#34d399" },
   ];
 
-  const portVals = portfolio.map(p => ({ ...p, invested: (sav[p.key] as number) ?? 0, value: (m.portfolio_values?.[p.key] as number) ?? 0 })).sort((a, b) => b.invested - a.invested);
+  const portVals = portfolio.map(p => ({ ...p, invested: (sav[p.key] as number) ?? 0, value: (m.portfolio_values?.[p.key as string] as number) ?? 0 })).sort((a, b) => b.invested - a.invested);
   const totalInvested = portVals.reduce((s, p) => s + p.invested, 0);
   const totalValue = portVals.reduce((s, p) => s + p.value, 0);
   const totalPlusValue = totalValue - totalInvested;
 
-  // Chart: investissements effectues + valeur + plus-value par mois
   const portfolioChart = months.map(mo => {
     const inv = portfolio.reduce((s, p) => s + ((mo.savings[p.key] as number) ?? 0), 0);
     const pv = mo.portfolio_values || {};
     const val = portfolio.reduce((s, p) => s + ((pv[p.key as string] as number) ?? 0), 0);
-    return {
-      name: mo.month_name.slice(0, 3),
-      "Investis": inv,
-      "Valeur": val > 0 ? val : undefined,
-      "Plus-value": val > 0 ? val - inv : undefined,
-    };
+    return { name: mo.month_name.slice(0, 3), "Investis": inv, "Valeur": val > 0 ? val : undefined, "Plus-value": val > 0 ? val - inv : undefined };
   });
 
   const savingsChart = months.map(mo => ({ name: mo.month_name.slice(0, 3), "Objectif": mo.savings.target_monthly, "Realise": mo.savings.actual_monthly }));
@@ -678,11 +677,10 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
           <div style={{ background: `linear-gradient(90deg, ${S.success}, ${S.accent})`, height: "100%", width: `${pct}%`, borderRadius: 999, transition: "width 0.7s ease" }} />
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: S.muted }}>
-          <span>{fmt(sav.cumulative_actual)} epargnes</span><span>Objectif annuel: {fmt(sav.cumulative_target)}</span>
+          <span>{fmt(sav.cumulative_actual)} epargnes</span><span>Objectif: {fmt(sav.cumulative_target)}</span>
         </div>
       </Card>
 
-      {/* Monthly target */}
       <Card>
         <SLabel>Objectif mensuel &amp; realise</SLabel>
         <div style={{ display: "flex", gap: 32, flexWrap: "wrap" as const, alignItems: "center" }}>
@@ -691,52 +689,31 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
         </div>
       </Card>
 
-      {/* Investissements effectues vs Valeur portefeuille — comparison table */}
+      {/* Portfolio comparison table */}
       <Card>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap" as const, gap: 8 }}>
           <SLabel>Investissements effectues &amp; Valeur du portefeuille</SLabel>
-          <div style={{ display: "flex", gap: 16, flexWrap: "wrap" as const }}>
-            <div style={{ textAlign: "center" }}>
-              <p style={{ color: S.muted, fontSize: 11, margin: "0 0 2px" }}>Total investi</p>
-              <p style={{ fontFamily: S.heading, fontSize: 18, fontWeight: 700, color: S.primary, margin: 0 }}>{fmt(totalInvested)}</p>
-            </div>
-            <div style={{ textAlign: "center" }}>
-              <p style={{ color: S.muted, fontSize: 11, margin: "0 0 2px" }}>Valeur actuelle</p>
-              <p style={{ fontFamily: S.heading, fontSize: 18, fontWeight: 700, color: totalValue > 0 ? S.success : S.muted, margin: 0 }}>{totalValue > 0 ? fmt(totalValue) : "—"}</p>
-            </div>
-            {totalValue > 0 && (
-              <div style={{ textAlign: "center" }}>
-                <p style={{ color: S.muted, fontSize: 11, margin: "0 0 2px" }}>Plus-value</p>
-                <p style={{ fontFamily: S.heading, fontSize: 18, fontWeight: 700, color: totalPlusValue >= 0 ? S.success : S.danger, margin: 0 }}>{totalPlusValue >= 0 ? "+" : ""}{fmt(totalPlusValue)}</p>
-              </div>
-            )}
+          <div style={{ display: "flex", gap: 16 }}>
+            <div style={{ textAlign: "center" }}><p style={{ color: S.muted, fontSize: 11, margin: "0 0 2px" }}>Total investi</p><p style={{ fontFamily: S.heading, fontSize: 18, fontWeight: 700, color: S.primary, margin: 0 }}>{fmt(totalInvested)}</p></div>
+            <div style={{ textAlign: "center" }}><p style={{ color: S.muted, fontSize: 11, margin: "0 0 2px" }}>Valeur actuelle</p><p style={{ fontFamily: S.heading, fontSize: 18, fontWeight: 700, color: totalValue > 0 ? S.success : S.muted, margin: 0 }}>{totalValue > 0 ? fmt(totalValue) : "—"}</p></div>
+            {totalValue > 0 && <div style={{ textAlign: "center" }}><p style={{ color: S.muted, fontSize: 11, margin: "0 0 2px" }}>Plus-value</p><p style={{ fontFamily: S.heading, fontSize: 18, fontWeight: 700, color: totalPlusValue >= 0 ? S.success : S.danger, margin: 0 }}>{totalPlusValue >= 0 ? "+" : ""}{fmt(totalPlusValue)}</p></div>}
           </div>
         </div>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {/* Header row */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 120px 120px 90px", gap: 8, padding: "0 4px" }}>
-            <span style={{ color: S.muted, fontSize: 11, fontWeight: 600 }}>Ligne</span>
-            <span style={{ color: S.muted, fontSize: 11, fontWeight: 600, textAlign: "right" }}>Investi</span>
-            <span style={{ color: S.muted, fontSize: 11, fontWeight: 600, textAlign: "right" }}>Valeur actuelle</span>
-            <span style={{ color: S.muted, fontSize: 11, fontWeight: 600, textAlign: "right" }}>+/-</span>
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 120px 120px 90px", gap: 8, padding: "0 4px", marginBottom: 4 }}>
+            {["Ligne", "Investi", "Valeur actuelle", "+/-"].map(h => <span key={h} style={{ color: S.muted, fontSize: 11, fontWeight: 600, textAlign: h === "Ligne" ? "left" : "right" }}>{h}</span>)}
           </div>
           {portVals.map(p => {
-            const pv = p.value;
-            const diff = pv - p.invested;
-            const hasPv = pv > 0;
+            const diff = p.value - p.invested;
+            const hasPv = p.value > 0;
             return (
               <div key={p.key as string} style={{ display: "grid", gridTemplateColumns: "1fr 120px 120px 90px", gap: 8, alignItems: "center", padding: "8px 12px", background: S.surface2, borderRadius: 10 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <div style={{ width: 8, height: 8, borderRadius: "50%", background: p.color, flexShrink: 0 }} />
                   <span style={{ fontSize: 13, color: p.invested > 0 ? S.text : S.muted }}>{p.label}</span>
                 </div>
-                <div style={{ textAlign: "right" }}>
-                  <EditableAmt value={p.invested} onChange={v => onSavingsChange(m.month_key, { [p.key]: v } as unknown as Partial<Savings>)} color={p.color} size="sm" />
-                </div>
-                <div style={{ textAlign: "right" }}>
-                  <EditableAmt value={pv} onChange={v => onPortfolioValuesChange(m.month_key, { [p.key as string]: v })} color={hasPv ? S.success : S.muted} size="sm" />
-                </div>
+                <div style={{ textAlign: "right" }}><EditableAmt value={p.invested} onChange={v => onSavingsChange(m.month_key, { [p.key]: v } as unknown as Partial<Savings>)} color={p.color} size="sm" /></div>
+                <div style={{ textAlign: "right" }}><EditableAmt value={p.value} onChange={v => onPortfolioValuesChange(m.month_key, { [p.key as string]: v })} color={hasPv ? S.success : S.muted} size="sm" /></div>
                 <div style={{ textAlign: "right", fontFamily: S.heading, fontSize: 14, fontWeight: 700, color: hasPv ? (diff >= 0 ? S.success : S.danger) : S.muted }}>
                   {hasPv ? `${diff >= 0 ? "+" : ""}${fmt(diff)}` : "—"}
                 </div>
@@ -748,7 +725,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
 
       {/* Portfolio chart */}
       <Card>
-        <SLabel>Evolution du portefeuille par mois</SLabel>
+        <SLabel>Evolution du portefeuille — investissements vs valeur</SLabel>
         <ResponsiveContainer width="100%" height={280}>
           <ComposedChart data={portfolioChart} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
             <CartesianGrid stroke="rgba(255,255,255,0.04)" strokeDasharray="3 3" />
@@ -762,16 +739,16 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
           </ComposedChart>
         </ResponsiveContainer>
         <div style={{ display: "flex", gap: 20, marginTop: 12, justifyContent: "center" }}>
-          {[{ c: `${S.primary}70`, l: "Investissements effectues" }, { c: `${S.success}70`, l: "Valeur du portefeuille" }, { c: S.accent, l: "Plus-value" }].map(({ c, l }) => (
+          {[{ c: `${S.primary}70`, l: "Investissements effectues" }, { c: `${S.success}70`, l: "Valeur portefeuille" }, { c: S.accent, l: "Plus-value" }].map(({ c, l }) => (
             <div key={l} style={{ display: "flex", alignItems: "center", gap: 6 }}><div style={{ width: 12, height: 12, background: c, borderRadius: 3 }} /><span style={{ color: S.muted, fontSize: 12 }}>{l}</span></div>
           ))}
         </div>
-        <p style={{ color: S.muted, fontSize: 11, textAlign: "center", margin: "8px 0 0" }}>Entrez la valeur actuelle du portefeuille dans le tableau ci-dessus pour voir la courbe</p>
+        <p style={{ color: S.muted, fontSize: 11, textAlign: "center", margin: "8px 0 0" }}>Entrez la valeur actuelle dans le tableau ci-dessus pour voir evoluer la courbe</p>
       </Card>
 
       {/* Savings chart */}
       <Card>
-        <SLabel>Economies mensuelles</SLabel>
+        <SLabel>Economies mensuelles — objectif vs realise</SLabel>
         <ResponsiveContainer width="100%" height={200}>
           <ComposedChart data={savingsChart}>
             <CartesianGrid stroke="rgba(255,255,255,0.04)" />
@@ -796,7 +773,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
                 const isCur = mo.month_key === m.month_key;
                 return (
                   <tr key={mo.month_key} className="row-h" style={{ borderBottom: `1px solid ${S.border}`, background: isCur ? `${S.accent}08` : "transparent" }}>
-                    <td style={{ padding: "9px 14px", fontFamily: S.heading, fontSize: 17, color: isCur ? S.accent : S.text }}>{mo.month_name}{isCur ? " *" : ""}</td>
+                    <td style={{ padding: "9px 14px", fontFamily: S.heading, fontSize: 17, color: isCur ? S.accent : S.text, fontWeight: 600 }}>{mo.month_name}{isCur ? " *" : ""}</td>
                     <td style={{ padding: "9px 14px", color: S.muted }}>{fmt(mo.savings.target_monthly)}</td>
                     <td style={{ padding: "9px 14px", color: S.success, fontWeight: 600 }}>{fmt(mo.savings.actual_monthly)}</td>
                     <td style={{ padding: "9px 14px", color: S.muted }}>{fmt(mo.savings.cumulative_target)}</td>
