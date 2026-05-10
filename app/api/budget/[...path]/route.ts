@@ -11,7 +11,7 @@ async function proxy(request: Request, ctx: Ctx): Promise<Response> {
     "Content-Type": "application/json",
   };
   const opts: RequestInit = { method: request.method, headers };
-  if (!["GET", "HEAD"].includes(request.method)) {
+  if (!["GET", "HEAD", "DELETE"].includes(request.method)) {
     const body = await request.text();
     if (body) opts.body = body;
   }
@@ -24,8 +24,9 @@ async function proxy(request: Request, ctx: Ctx): Promise<Response> {
   }
 }
 
-export const GET   = (req: Request, ctx: Ctx) => proxy(req, ctx);
-export const POST  = (req: Request, ctx: Ctx) => proxy(req, ctx);
-export const PATCH = (req: Request, ctx: Ctx) => proxy(req, ctx);
-export const PUT   = (req: Request, ctx: Ctx) => proxy(req, ctx);
+export const GET    = (req: Request, ctx: Ctx) => proxy(req, ctx);
+export const POST   = (req: Request, ctx: Ctx) => proxy(req, ctx);
+export const PATCH  = (req: Request, ctx: Ctx) => proxy(req, ctx);
+export const PUT    = (req: Request, ctx: Ctx) => proxy(req, ctx);
+export const DELETE = (req: Request, ctx: Ctx) => proxy(req, ctx);
 
