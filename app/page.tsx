@@ -19,9 +19,11 @@ interface BudgetAlloc { courses: number; restaurants: number; services: number; 
 interface Savings {
   target_monthly: number; actual_monthly: number;
   cumulative_target: number; cumulative_actual: number;
-  epargne_revolut: number; pea: number; traderepublic: number;
-  bitstack: number; swissborg: number; assurance_vie_conservateur: number;
-  per: number; livret_a: number;
+  pea: number; traderepublic: number; degiro: number; bitstack: number; swissborg: number;
+  swisslife: number; assurance_vie_conservateur: number; uptimi: number; esalia: number; bdl_investment: number;
+  etrade: number; shareworks: number;
+  livret_a: number; epargne_revolut: number; ldd: number; lel: number;
+  per: number; perco: number; irishlife: number; montres_objets_luxe: number; tontine: number;
 }
 interface Month {
   month_key: string; month_name: string; year: number;
@@ -38,11 +40,11 @@ interface Forecast { months: ForecastMonth[]; alerts: Alert[]; total_income: num
 
 // ── Design ────────────────────────────────────────────────────────────────────
 const S = {
-  bg: "#0a0a0a", surface: "#111111", surface2: "#181818",
-  border: "rgba(255,255,255,0.08)", borderLight: "rgba(255,255,255,0.14)",
+  bg: "#f8fafc", surface: "#ffffff", surface2: "#f1f5f9",
+  border: "rgba(0,0,0,0.07)", borderLight: "rgba(0,0,0,0.12)",
   primary: "#2563EB", accent: "#F97316",
-  success: "#22c55e", danger: "#ef4444", warning: "#f59e0b",
-  text: "#f1f5f9", muted: "#64748b",
+  success: "#16a34a", danger: "#dc2626", warning: "#d97706",
+  text: "#0f172a", muted: "#64748b",
   font: "Outfit,sans-serif", heading: "Outfit,sans-serif",
 };
 
@@ -620,6 +622,14 @@ function ProjectionTab({ forecast: f }: { forecast: Forecast }) {
 }
 
 // ── Economies ─────────────────────────────────────────────────────────────────
+const PORTFOLIO_CATEGORIES: { label: string; color: string; items: { key: keyof Savings; label: string }[] }[] = [
+  { label: "Actions / Cryptos", color: "#16a34a", items: [{ key: "pea", label: "PEA" }, { key: "traderepublic", label: "TradeRepublic" }, { key: "degiro", label: "Degiro" }, { key: "bitstack", label: "Bitstack" }, { key: "swissborg", label: "Swissborg" }] },
+  { label: "Assurances Vie", color: "#818cf8", items: [{ key: "swisslife", label: "Swisslife" }, { key: "assurance_vie_conservateur", label: "La Conservateur" }, { key: "uptimi", label: "Uptimi" }, { key: "esalia", label: "Esalia" }, { key: "bdl_investment", label: "BDL Investment" }] },
+  { label: "RSU", color: "#F97316", items: [{ key: "etrade", label: "Etrade" }, { key: "shareworks", label: "Shareworks" }] },
+  { label: "Livrets", color: "#0891b2", items: [{ key: "livret_a", label: "Livret A" }, { key: "epargne_revolut", label: "Epargne Revolut" }, { key: "ldd", label: "LDD" }, { key: "lel", label: "LEL" }] },
+  { label: "Retraite & Autres", color: "#d97706", items: [{ key: "per", label: "PER" }, { key: "perco", label: "PERCO" }, { key: "irishlife", label: "Irishlife" }, { key: "montres_objets_luxe", label: "Montres / Objets luxe" }, { key: "tontine", label: "Tontine" }] },
+];
+
 function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesChange }: {
   months: Month[]; currentIdx: number;
   onSavingsChange: (mk: string, u: Partial<Savings>) => void;
@@ -629,93 +639,103 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
   if (!m) return null;
   const sav = m.savings;
   const pct = sav.cumulative_target > 0 ? Math.min(100, Math.round((sav.cumulative_actual / sav.cumulative_target) * 100)) : 0;
-
-  type PortItem = { key: keyof Savings; label: string; color: string };
-  const portfolio: PortItem[] = [
-    { key: "epargne_revolut", label: "Epargne Revolut", color: "#818cf8" },
-    { key: "pea", label: "PEA", color: S.success },
-    { key: "traderepublic", label: "TradeRepublic", color: "#a78bfa" },
-    { key: "assurance_vie_conservateur", label: "Assurance Vie (Le Conservateur)", color: S.primary },
-    { key: "per", label: "PER", color: S.accent },
-    { key: "livret_a", label: "Livret A", color: "#22d3ee" },
-    { key: "bitstack", label: "Bitstack", color: "#f59e0b" },
-    { key: "swissborg", label: "Swissborg", color: "#34d399" },
-  ];
-
-  const portVals = portfolio.map(p => ({ ...p, invested: (sav[p.key] as number) ?? 0, value: (m.portfolio_values?.[p.key as string] as number) ?? 0 })).sort((a, b) => b.invested - a.invested);
-  const totalInvested = portVals.reduce((s, p) => s + p.invested, 0);
-  const totalValue = portVals.reduce((s, p) => s + p.value, 0);
+  const allItems = PORTFOLIO_CATEGORIES.flatMap(c => c.items);
+  const totalInvested = allItems.reduce((s, p) => s + ((sav[p.key] as number) ?? 0), 0);
+  const pv = m.portfolio_values || {};
+  const totalValue = allItems.reduce((s, p) => s + ((pv[p.key as string] as number) ?? 0), 0);
   const totalPlusValue = totalValue - totalInvested;
-
   const portfolioChart = months.map(mo => {
-    const inv = portfolio.reduce((s, p) => s + ((mo.savings[p.key] as number) ?? 0), 0);
-    const pv = mo.portfolio_values || {};
-    const val = portfolio.reduce((s, p) => s + ((pv[p.key as string] as number) ?? 0), 0);
+    const inv = allItems.reduce((s, p) => s + ((mo.savings[p.key] as number) ?? 0), 0);
+    const mpv = mo.portfolio_values || {};
+    const val = allItems.reduce((s, p) => s + ((mpv[p.key as string] as number) ?? 0), 0);
     return { name: mo.month_name.slice(0, 3), "Investis": inv, "Valeur": val > 0 ? val : undefined, "Plus-value": val > 0 ? val - inv : undefined };
   });
-
   const savingsChart = months.map(mo => ({ name: mo.month_name.slice(0, 3), "Objectif": mo.savings.target_monthly, "Realise": mo.savings.actual_monthly }));
-
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      {/* Cumul hero */}
-      <Card style={{ background: `linear-gradient(135deg, ${S.accent}12, ${S.bg})`, borderColor: `${S.accent}30` }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap" as const, gap: 16, marginBottom: 20 }}>
-          <div>
-            <SLabel>Cumul economies 2026</SLabel>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
-              <EditableAmt value={sav.cumulative_actual} onChange={v => onSavingsChange(m.month_key, { cumulative_actual: v })} color={S.accent} size="lg" />
-              <span style={{ color: S.muted, fontSize: 14 }}>/ {fmt(sav.cumulative_target)} objectif</span>
-            </div>
+      {/* Objectifs editables */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <Card style={{ borderColor: `${S.accent}30`, background: `linear-gradient(135deg, ${S.accent}06, ${S.bg})` }}>
+          <SLabel>Objectif economies 2026 (annuel)</SLabel>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" as const }}>
+            <EditableAmt value={sav.cumulative_actual} onChange={v => onSavingsChange(m.month_key, { cumulative_actual: v })} color={S.accent} size="lg" />
+            <span style={{ color: S.muted, fontSize: 13 }}>epargnes sur</span>
+            <EditableAmt value={sav.cumulative_target} onChange={v => onSavingsChange(m.month_key, { cumulative_target: v })} color={S.primary} size="md" />
+            <span style={{ color: S.muted, fontSize: 13 }}>objectif</span>
           </div>
-          <div style={{ textAlign: "right" }}>
-            <p style={{ fontFamily: S.heading, fontSize: 42, fontWeight: 800, color: pct >= 100 ? S.success : S.accent, margin: 0, lineHeight: 1 }}>{pct}%</p>
-            <p style={{ color: S.muted, fontSize: 12, margin: "4px 0 0" }}>atteint</p>
+          <div style={{ background: "rgba(0,0,0,0.06)", borderRadius: 999, height: 10, overflow: "hidden", marginTop: 14, marginBottom: 6 }}>
+            <div style={{ background: `linear-gradient(90deg, ${S.success}, ${S.accent})`, height: "100%", width: `${pct}%`, borderRadius: 999, transition: "width 0.7s ease" }} />
           </div>
-        </div>
-        <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 999, height: 14, overflow: "hidden", marginBottom: 8 }}>
-          <div style={{ background: `linear-gradient(90deg, ${S.success}, ${S.accent})`, height: "100%", width: `${pct}%`, borderRadius: 999, transition: "width 0.7s ease" }} />
-        </div>
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: S.muted }}>
-          <span>{fmt(sav.cumulative_actual)} epargnes</span><span>Objectif: {fmt(sav.cumulative_target)}</span>
-        </div>
-      </Card>
+          <p style={{ fontFamily: S.heading, fontSize: 28, fontWeight: 800, color: pct >= 100 ? S.success : S.accent, margin: 0 }}>{pct}%</p>
+        </Card>
+        <Card>
+          <SLabel>Objectif mensuel &amp; realise</SLabel>
+          <div style={{ display: "flex", gap: 24, flexWrap: "wrap" as const }}>
+            <div><p style={{ color: S.muted, fontSize: 12, margin: "0 0 4px" }}>Objectif / mois</p><EditableAmt value={sav.target_monthly} onChange={v => onSavingsChange(m.month_key, { target_monthly: v })} color={S.accent} size="lg" /></div>
+            <div><p style={{ color: S.muted, fontSize: 12, margin: "0 0 4px" }}>Realise ce mois</p><EditableAmt value={sav.actual_monthly} onChange={v => onSavingsChange(m.month_key, { actual_monthly: v })} color={S.success} size="lg" /></div>
+          </div>
+        </Card>
+      </div>
 
-      <Card>
-        <SLabel>Objectif mensuel &amp; realise</SLabel>
-        <div style={{ display: "flex", gap: 32, flexWrap: "wrap" as const, alignItems: "center" }}>
-          <div><p style={{ color: S.muted, fontSize: 12, margin: "0 0 4px" }}>Objectif mensuel</p><EditableAmt value={sav.target_monthly} onChange={v => onSavingsChange(m.month_key, { target_monthly: v })} color={S.accent} size="lg" /></div>
-          <div><p style={{ color: S.muted, fontSize: 12, margin: "0 0 4px" }}>Realise ce mois</p><EditableAmt value={sav.actual_monthly} onChange={v => onSavingsChange(m.month_key, { actual_monthly: v })} color={S.success} size="lg" /></div>
+      {/* Totaux portefeuille */}
+      {totalInvested > 0 && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+          {[{ l: "Total investi", v: totalInvested, c: S.primary }, { l: "Valeur actuelle", v: totalValue, c: totalValue > 0 ? S.success : S.muted }, { l: "Plus-value totale", v: totalPlusValue, c: totalPlusValue >= 0 ? S.success : S.danger }].map(({ l, v, c }) => (
+            <Card key={l} className="card-h" style={{ textAlign: "center" }}>
+              <SLabel>{l}</SLabel>
+              <p style={{ fontFamily: S.heading, fontSize: 22, fontWeight: 700, color: c, margin: 0 }}>{v > 0 || l === "Plus-value totale" ? fmt(v) : "—"}</p>
+            </Card>
+          ))}
         </div>
-      </Card>
+      )}
 
-      {/* Portfolio comparison table */}
+      {/* Portfolio categories groupees */}
       <Card>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap" as const, gap: 8 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap" as const, gap: 8 }}>
           <SLabel>Investissements effectues &amp; Valeur du portefeuille</SLabel>
-          <div style={{ display: "flex", gap: 16 }}>
-            <div style={{ textAlign: "center" }}><p style={{ color: S.muted, fontSize: 11, margin: "0 0 2px" }}>Total investi</p><p style={{ fontFamily: S.heading, fontSize: 18, fontWeight: 700, color: S.primary, margin: 0 }}>{fmt(totalInvested)}</p></div>
-            <div style={{ textAlign: "center" }}><p style={{ color: S.muted, fontSize: 11, margin: "0 0 2px" }}>Valeur actuelle</p><p style={{ fontFamily: S.heading, fontSize: 18, fontWeight: 700, color: totalValue > 0 ? S.success : S.muted, margin: 0 }}>{totalValue > 0 ? fmt(totalValue) : "—"}</p></div>
-            {totalValue > 0 && <div style={{ textAlign: "center" }}><p style={{ color: S.muted, fontSize: 11, margin: "0 0 2px" }}>Plus-value</p><p style={{ fontFamily: S.heading, fontSize: 18, fontWeight: 700, color: totalPlusValue >= 0 ? S.success : S.danger, margin: 0 }}>{totalPlusValue >= 0 ? "+" : ""}{fmt(totalPlusValue)}</p></div>}
-          </div>
+          {totalValue > 0 && (
+            <div style={{ display: "flex", gap: 16 }}>
+              <span style={{ color: S.muted, fontSize: 12 }}>Investi: <strong style={{ color: S.primary }}>{fmt(totalInvested)}</strong></span>
+              <span style={{ color: S.muted, fontSize: 12 }}>Valeur: <strong style={{ color: S.success }}>{fmt(totalValue)}</strong></span>
+              <span style={{ color: S.muted, fontSize: 12 }}>+/-: <strong style={{ color: totalPlusValue >= 0 ? S.success : S.danger }}>{totalPlusValue >= 0 ? "+" : ""}{fmt(totalPlusValue)}</strong></span>
+            </div>
+          )}
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 120px 120px 90px", gap: 8, padding: "0 4px", marginBottom: 4 }}>
-            {["Ligne", "Investi", "Valeur actuelle", "+/-"].map(h => <span key={h} style={{ color: S.muted, fontSize: 11, fontWeight: 600, textAlign: h === "Ligne" ? "left" : "right" }}>{h}</span>)}
-          </div>
-          {portVals.map(p => {
-            const diff = p.value - p.invested;
-            const hasPv = p.value > 0;
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 120px 120px 80px", gap: 8, padding: "0 12px 8px", borderBottom: `1px solid ${S.border}`, marginBottom: 12 }}>
+          {["Ligne", "Investi", "Valeur actuelle", "+/-"].map((h, i) => (
+            <span key={h} style={{ color: S.muted, fontSize: 11, fontWeight: 700, textAlign: i > 0 ? "right" : "left" }}>{h}</span>
+          ))}
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+          {PORTFOLIO_CATEGORIES.map((cat) => {
+            const catInv = cat.items.reduce((s, p) => s + ((sav[p.key] as number) ?? 0), 0);
+            const catVal = cat.items.reduce((s, p) => s + ((pv[p.key as string] as number) ?? 0), 0);
+            const catDiff = catVal - catInv;
             return (
-              <div key={p.key as string} style={{ display: "grid", gridTemplateColumns: "1fr 120px 120px 90px", gap: 8, alignItems: "center", padding: "8px 12px", background: S.surface2, borderRadius: 10 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: p.color, flexShrink: 0 }} />
-                  <span style={{ fontSize: 13, color: p.invested > 0 ? S.text : S.muted }}>{p.label}</span>
+              <div key={cat.label} style={{ marginBottom: 14 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 120px 120px 80px", gap: 8, padding: "8px 12px", background: `${cat.color}10`, borderRadius: 10, marginBottom: 5, borderLeft: `3px solid ${cat.color}` }}>
+                  <span style={{ fontFamily: S.heading, fontSize: 15, fontWeight: 700, color: cat.color }}>{cat.label}</span>
+                  <span style={{ fontFamily: S.heading, fontSize: 14, color: cat.color, fontWeight: 700, textAlign: "right" }}>{fmt(catInv)}</span>
+                  <span style={{ fontFamily: S.heading, fontSize: 14, color: catVal > 0 ? S.success : S.muted, fontWeight: 700, textAlign: "right" }}>{catVal > 0 ? fmt(catVal) : "—"}</span>
+                  <span style={{ fontFamily: S.heading, fontSize: 13, color: catVal > 0 ? (catDiff >= 0 ? S.success : S.danger) : S.muted, fontWeight: 700, textAlign: "right" }}>{catVal > 0 ? `${catDiff >= 0 ? "+" : ""}${fmt(catDiff)}` : "—"}</span>
                 </div>
-                <div style={{ textAlign: "right" }}><EditableAmt value={p.invested} onChange={v => onSavingsChange(m.month_key, { [p.key]: v } as unknown as Partial<Savings>)} color={p.color} size="sm" /></div>
-                <div style={{ textAlign: "right" }}><EditableAmt value={p.value} onChange={v => onPortfolioValuesChange(m.month_key, { [p.key as string]: v })} color={hasPv ? S.success : S.muted} size="sm" /></div>
-                <div style={{ textAlign: "right", fontFamily: S.heading, fontSize: 14, fontWeight: 700, color: hasPv ? (diff >= 0 ? S.success : S.danger) : S.muted }}>
-                  {hasPv ? `${diff >= 0 ? "+" : ""}${fmt(diff)}` : "—"}
+                <div style={{ display: "flex", flexDirection: "column", gap: 3, paddingLeft: 8 }}>
+                  {cat.items.map((p) => {
+                    const inv = (sav[p.key] as number) ?? 0;
+                    const val = (pv[p.key as string] as number) ?? 0;
+                    const diff = val - inv;
+                    return (
+                      <div key={p.key as string} className="row-h" style={{ display: "grid", gridTemplateColumns: "1fr 120px 120px 80px", gap: 8, alignItems: "center", padding: "7px 12px", background: S.surface2, borderRadius: 8 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <div style={{ width: 6, height: 6, borderRadius: "50%", background: cat.color, flexShrink: 0, opacity: 0.6 }} />
+                          <span style={{ fontSize: 13, color: inv > 0 ? S.text : S.muted }}>{p.label}</span>
+                        </div>
+                        <div style={{ textAlign: "right" }}><EditableAmt value={inv} onChange={v => onSavingsChange(m.month_key, { [p.key]: v } as unknown as Partial<Savings>)} color={cat.color} size="sm" /></div>
+                        <div style={{ textAlign: "right" }}><EditableAmt value={val} onChange={v => onPortfolioValuesChange(m.month_key, { [p.key as string]: v })} color={val > 0 ? S.success : S.muted} size="sm" /></div>
+                        <div style={{ textAlign: "right", fontFamily: S.heading, fontSize: 13, fontWeight: 700, color: val > 0 ? (diff >= 0 ? S.success : S.danger) : S.muted }}>{val > 0 ? `${diff >= 0 ? "+" : ""}${fmt(diff)}` : "—"}</div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             );
@@ -723,45 +743,40 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
         </div>
       </Card>
 
-      {/* Portfolio chart */}
-      <Card>
-        <SLabel>Evolution du portefeuille — investissements vs valeur</SLabel>
-        <ResponsiveContainer width="100%" height={280}>
-          <ComposedChart data={portfolioChart} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-            <CartesianGrid stroke="rgba(255,255,255,0.04)" strokeDasharray="3 3" />
-            <XAxis dataKey="name" tick={{ fill: S.muted, fontSize: 12, fontFamily: S.font }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fill: S.muted, fontSize: 11, fontFamily: S.font }} axisLine={false} tickLine={false} tickFormatter={v => `${(v / 1000).toFixed(0)}k`} />
-            <Tooltip content={<ChartTip />} />
-            <ReferenceLine y={0} stroke={S.muted} strokeDasharray="3 3" strokeWidth={1} />
-            <Bar dataKey="Investis" fill={`${S.primary}70`} radius={[4, 4, 0, 0]} maxBarSize={24} />
-            <Bar dataKey="Valeur" fill={`${S.success}70`} radius={[4, 4, 0, 0]} maxBarSize={24} />
-            <Line type="monotone" dataKey="Plus-value" stroke={S.accent} strokeWidth={2.5} dot={{ fill: S.accent, r: 4, strokeWidth: 0 }} connectNulls />
-          </ComposedChart>
-        </ResponsiveContainer>
-        <div style={{ display: "flex", gap: 20, marginTop: 12, justifyContent: "center" }}>
-          {[{ c: `${S.primary}70`, l: "Investissements effectues" }, { c: `${S.success}70`, l: "Valeur portefeuille" }, { c: S.accent, l: "Plus-value" }].map(({ c, l }) => (
-            <div key={l} style={{ display: "flex", alignItems: "center", gap: 6 }}><div style={{ width: 12, height: 12, background: c, borderRadius: 3 }} /><span style={{ color: S.muted, fontSize: 12 }}>{l}</span></div>
-          ))}
-        </div>
-        <p style={{ color: S.muted, fontSize: 11, textAlign: "center", margin: "8px 0 0" }}>Entrez la valeur actuelle dans le tableau ci-dessus pour voir evoluer la courbe</p>
-      </Card>
+      {/* Charts */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <Card>
+          <SLabel>Evolution portefeuille par mois</SLabel>
+          <ResponsiveContainer width="100%" height={220}>
+            <ComposedChart data={portfolioChart}>
+              <CartesianGrid stroke="rgba(0,0,0,0.05)" strokeDasharray="3 3" />
+              <XAxis dataKey="name" tick={{ fill: S.muted, fontSize: 11, fontFamily: S.font }} axisLine={false} tickLine={false} />
+              <YAxis yAxisId="left" tick={{ fill: S.muted, fontSize: 10, fontFamily: S.font }} axisLine={false} tickLine={false} tickFormatter={v => `${(v / 1000).toFixed(0)}k`} />
+              <YAxis yAxisId="right" orientation="right" tick={{ fill: S.accent, fontSize: 10, fontFamily: S.font }} axisLine={false} tickLine={false} tickFormatter={v => `${(v / 1000).toFixed(0)}k`} />
+              <Tooltip content={<ChartTip />} />
+              <ReferenceLine yAxisId="right" y={0} stroke={S.muted} strokeDasharray="3 3" strokeWidth={1} />
+              <Bar yAxisId="left" dataKey="Investis" fill={`${S.primary}45`} radius={[3, 3, 0, 0]} maxBarSize={20} />
+              <Bar yAxisId="left" dataKey="Valeur" fill={`${S.success}45`} radius={[3, 3, 0, 0]} maxBarSize={20} />
+              <Line yAxisId="right" type="monotone" dataKey="Plus-value" stroke={S.accent} strokeWidth={2.5} dot={{ fill: S.accent, r: 3, strokeWidth: 0 }} connectNulls />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </Card>
+        <Card>
+          <SLabel>Economies mensuelles</SLabel>
+          <ResponsiveContainer width="100%" height={220}>
+            <ComposedChart data={savingsChart}>
+              <CartesianGrid stroke="rgba(0,0,0,0.05)" />
+              <XAxis dataKey="name" tick={{ fill: S.muted, fontSize: 11, fontFamily: S.font }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: S.muted, fontSize: 10, fontFamily: S.font }} axisLine={false} tickLine={false} width={32} />
+              <Tooltip content={<ChartTip />} />
+              <Bar dataKey="Objectif" fill="rgba(0,0,0,0.08)" radius={[3, 3, 0, 0]} maxBarSize={16} />
+              <Bar dataKey="Realise" fill={S.success} radius={[3, 3, 0, 0]} maxBarSize={16} />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </Card>
+      </div>
 
-      {/* Savings chart */}
-      <Card>
-        <SLabel>Economies mensuelles — objectif vs realise</SLabel>
-        <ResponsiveContainer width="100%" height={200}>
-          <ComposedChart data={savingsChart}>
-            <CartesianGrid stroke="rgba(255,255,255,0.04)" />
-            <XAxis dataKey="name" tick={{ fill: S.muted, fontSize: 11, fontFamily: S.font }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fill: S.muted, fontSize: 10, fontFamily: S.font }} axisLine={false} tickLine={false} width={36} />
-            <Tooltip content={<ChartTip />} />
-            <Bar dataKey="Objectif" fill="rgba(255,255,255,0.1)" radius={[3, 3, 0, 0]} maxBarSize={18} />
-            <Bar dataKey="Realise" fill={S.success} radius={[3, 3, 0, 0]} maxBarSize={18} />
-          </ComposedChart>
-        </ResponsiveContainer>
-      </Card>
-
-      {/* Monthly table */}
+      {/* Monthly recap */}
       <Card>
         <SLabel>Recapitulatif mensuel</SLabel>
         <div style={{ overflowX: "auto" }}>
@@ -772,8 +787,8 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
                 const ecart = mo.savings.cumulative_actual - mo.savings.cumulative_target;
                 const isCur = mo.month_key === m.month_key;
                 return (
-                  <tr key={mo.month_key} className="row-h" style={{ borderBottom: `1px solid ${S.border}`, background: isCur ? `${S.accent}08` : "transparent" }}>
-                    <td style={{ padding: "9px 14px", fontFamily: S.heading, fontSize: 17, color: isCur ? S.accent : S.text, fontWeight: 600 }}>{mo.month_name}{isCur ? " *" : ""}</td>
+                  <tr key={mo.month_key} className="row-h" style={{ borderBottom: `1px solid ${S.border}`, background: isCur ? `${S.accent}06` : "transparent" }}>
+                    <td style={{ padding: "9px 14px", fontFamily: S.heading, fontSize: 16, color: isCur ? S.accent : S.text, fontWeight: 600 }}>{mo.month_name}{isCur ? " *" : ""}</td>
                     <td style={{ padding: "9px 14px", color: S.muted }}>{fmt(mo.savings.target_monthly)}</td>
                     <td style={{ padding: "9px 14px", color: S.success, fontWeight: 600 }}>{fmt(mo.savings.actual_monthly)}</td>
                     <td style={{ padding: "9px 14px", color: S.muted }}>{fmt(mo.savings.cumulative_target)}</td>
