@@ -729,6 +729,52 @@ function ProjectionTab({ forecast: f }: { forecast: Forecast }) {
 }
 
 
+
+// ── Historique ────────────────────────────────────────────────────────────────
+function HistoriqueTab({ months }: { months: Month[] }) {
+  let cumul = 0;
+  const rows = months.map(m => { const inc = m.income_salary + m.income_other; const exp = m.expenses.reduce((s, e) => s + e.amount, 0); const sav = m.savings?.target_monthly ?? 140; const bal = inc - exp - sav; cumul += bal; return { ...m, inc, exp, sav, bal, cumul, vc: m.expenses.filter(e => e.validated).length, tc: m.expenses.length }; });
+  const ti = rows.reduce((s, r) => s + r.inc, 0); const te = rows.reduce((s, r) => s + r.exp, 0); const fc = rows.length > 0 ? rows[rows.length-1].cumul : 0;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 16 }}>
+        {[{ l: "Total revenus 2026", v: ti, c: S.success }, { l: "Total depenses 2026", v: te, c: S.danger }, { l: "Solde cumule fin 2026", v: fc, c: fc >= 0 ? S.primary : S.danger }].map(({ l, v, c }) => (
+          <Card key={l} className="card-h"><SLabel>{l}</SLabel><p style={{ fontFamily: S.heading, fontSize: 26, fontWeight: 700, color: c, margin: 0 }}>{fmt(v)}</p></Card>
+        ))}
+      </div>
+      <Card>
+        <SLabel>Historique detaille 2026 — mois par mois avec solde cumule</SLabel>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: S.font, fontSize: 13 }}>
+            <thead><tr>{["Mois", "Revenu", "Depenses", "Economies", "Solde mensuel", "Solde cumule", "Validation"].map(h => <th key={h} style={{ padding: "10px 14px", textAlign: "left", color: S.muted, fontWeight: 600, fontSize: 11, borderBottom: `2px solid ${S.border}`, textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>{h}</th>)}</tr></thead>
+            <tbody>{rows.map(r => {
+              const bc = r.bal >= 0 ? S.success : S.danger; const cc = r.cumul >= 0 ? S.success : S.danger; const pv = r.tc > 0 ? Math.round((r.vc/r.tc)*100) : 0;
+              return (<tr key={r.month_key} className="row-h" style={{ borderBottom: `1px solid ${S.border}` }}>
+                <td style={{ padding: "12px 14px", fontFamily: S.heading, fontSize: 17, color: S.text, fontWeight: 700 }}>{r.month_name}</td>
+                <td style={{ padding: "12px 14px", color: S.success, fontWeight: 600 }}>{fmt(r.inc)}</td>
+                <td style={{ padding: "12px 14px", color: S.danger, fontWeight: 600 }}>{fmt(r.exp)}</td>
+                <td style={{ padding: "12px 14px", color: S.accent }}>{fmt(r.sav)}</td>
+                <td style={{ padding: "12px 14px", color: bc, fontWeight: 700 }}>{fmt(r.bal)}</td>
+                <td style={{ padding: "12px 14px" }}><span style={{ fontFamily: S.heading, fontSize: 18, fontWeight: 800, color: cc }}>{fmt(r.cumul)}</span></td>
+                <td style={{ padding: "12px 14px" }}><div style={{ display: "flex", alignItems: "center", gap: 8 }}><div style={{ flex: 1, background: "rgba(0,0,0,0.06)", borderRadius: 999, height: 6, overflow: "hidden", minWidth: 50 }}><div style={{ background: pv === 100 ? S.success : S.accent, height: "100%", width: `${pv}%`, borderRadius: 999 }} /></div><span style={{ color: pv === 100 ? S.success : S.muted, fontSize: 12, fontWeight: 600, whiteSpace: "nowrap" }}>{r.vc}/{r.tc}</span></div></td>
+              </tr>);
+            })}</tbody>
+            <tfoot><tr style={{ borderTop: `2px solid ${S.border}` }}>
+              <td style={{ padding: "12px 14px", fontFamily: S.heading, fontSize: 17, fontWeight: 800 }}>TOTAL</td>
+              <td style={{ padding: "12px 14px", fontFamily: S.heading, fontSize: 16, color: S.success, fontWeight: 700 }}>{fmt(ti)}</td>
+              <td style={{ padding: "12px 14px", fontFamily: S.heading, fontSize: 16, color: S.danger, fontWeight: 700 }}>{fmt(te)}</td>
+              <td style={{ padding: "12px 14px", fontFamily: S.heading, fontSize: 16, color: S.accent, fontWeight: 700 }}>{fmt(rows.reduce((s, r) => s + r.sav, 0))}</td>
+              <td></td>
+              <td style={{ padding: "12px 14px", fontFamily: S.heading, fontSize: 20, fontWeight: 800, color: fc >= 0 ? S.success : S.danger }}>{fmt(fc)}</td>
+              <td></td>
+            </tr></tfoot>
+          </table>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
 // ── Economies ─────────────────────────────────────────────────────────────────
 const PORTFOLIO_CATEGORIES: { label: string; color: string; items: { key: keyof Savings; label: string }[] }[] = [
   { label: "Actions / Cryptos", color: "#16a34a", items: [{ key: "pea", label: "PEA" }, { key: "traderepublic", label: "TradeRepublic" }, { key: "degiro", label: "Degiro" }, { key: "bitstack", label: "Bitstack" }, { key: "swissborg", label: "Swissborg" }] },
@@ -912,6 +958,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
