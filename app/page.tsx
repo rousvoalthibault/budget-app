@@ -598,11 +598,60 @@ function DepensesTab({ month: m, monthKey, onValidate, onAmountChange, onIncomeC
   const [addingTo, setAddingTo] = useState<"fixed" | "variable" | "investment" | null>(null);
   const [newLabel, setNewLabel] = useState("");
   const [newAmount, setNewAmount] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [recurrenceStep, setRecurrenceStep] = useState<"form" | "recurrence" | "picker" | null>(null);
+  const [selectedMonths, setSelectedMonths] = useState<Set<string>>(new Set());
+  const [pendingAdd, setPendingAdd] = useState<{ label: string; amount: number; category: string } | null>(null);
   const labelRef = useRef<HTMLInputElement>(null);
 
-  function openAdd(cat: "fixed" | "variable" | "investment") { setAddingTo(cat); setNewLabel(""); setNewAmount(""); setTimeout(() => labelRef.current?.focus(), 50); }
-  function cancelAdd() { setAddingTo(null); setNewLabel(""); setNewAmount(""); }
-  function submitAdd() { const a = parseFloat(newAmount); if (!newLabel.trim() || isNaN(a) || a < 0) return; onAddExpense(newLabel.trim(), a, addingTo!); setAddingTo(null); setNewLabel(""); setNewAmount(""); }
+  // All existing expense labels for suggestions
+  const allLabels = [...new Set(m.expenses.map(e => e.label))].sort();
+  const filteredLabels = newLabel.trim() ? allLabels.filter(l => l.toLowerCase().includes(newLabel.toLowerCase())) : allLabels;
+  const isNewLabel = newLabel.trim() && !allLabels.some(l => l.toLowerCase() === newLabel.trim().toLowerCase());
+
+  const MONTH_KEYS = ["2026-01","2026-02","2026-03","2026-04","2026-05","2026-06","2026-07","2026-08","2026-09","2026-10","2026-11","2026-12"];
+  const MONTH_SHORT = ["Jan","Fev","Mar","Avr","Mai","Jun","Jul","Aou","Sep","Oct","Nov","Dec"];
+
+  function openAdd(cat: "fixed" | "variable" | "investment") { setAddingTo(cat); setNewLabel(""); setNewAmount(""); setRecurrenceStep("form"); setShowSuggestions(false); setTimeout(() => labelRef.current?.focus(), 50); }
+  function cancelAdd() { setAddingTo(null); setNewLabel(""); setNewAmount(""); setRecurrenceStep(null); setPendingAdd(null); }
+
+  function submitAdd() {
+    const a = parseFloat(newAmount);
+    if (!newLabel.trim() || isNaN(a) || a < 0) return;
+    setPendingAdd({ label: newLabel.trim(), amount: a, category: addingTo! });
+    setRecurrenceStep("recurrence");
+  }
+
+  function confirmRecurrence(type: "single" | "all" | "custom") {
+    if (!pendingAdd) return;
+    if (type === "single") {
+      fetch(`/api/budget/month/${monthKey}/expense`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ label: pendingAdd.label, amount: pendingAdd.amount, category: pendingAdd.category, propagate: false }),
+      }).then(() => window.location.reload());
+    } else if (type === "all") {
+      onAddExpense(pendingAdd.label, pendingAdd.amount, pendingAdd.category);
+    } else if (type === "custom") {
+      // Call for each selected month individually via non-propagating add
+      selectedMonths.forEach(mk => {
+        fetch(`/api/budget/month/${mk}/expense`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ label: pendingAdd!.label, amount: pendingAdd!.amount, category: pendingAdd!.category, propagate: false }),
+        });
+      });
+      showToast(`${pendingAdd.label} sur ${selectedMonths.size} mois`);
+      setTimeout(() => window.location.reload(), 500);
+    }
+    cancelAdd();
+  }
+
+  function selectLabel(label: string) {
+    setNewLabel(label);
+    setShowSuggestions(false);
+    // Pre-fill amount if this expense exists
+    const existing = m.expenses.find(e => e.label === label);
+    if (existing) setNewAmount(existing.amount.toString());
+  }
 
   const fixed = m.expenses.filter(e => e.category === "fixed");
   const invest = m.expenses.filter(e => e.category === "investment");
@@ -630,15 +679,60 @@ function DepensesTab({ month: m, monthKey, onValidate, onAmountChange, onIncomeC
 
   function AddRow({ category, color }: { category: "fixed" | "variable" | "investment"; color: string }) {
     if (addingTo !== category) return null;
+
+    if (recurrenceStep === "recurrence" && pendingAdd) return (
+      <div style={{ padding: "14px 16px", background: `${color}06`, borderRadius: 12, border: `1px solid ${color}40` }}>
+        <p style={{ fontFamily: S.heading, fontSize: 16, fontWeight: 700, color: S.text, margin: "0 0 4px" }}>{pendingAdd.label} — {fmt(pendingAdd.amount)}</p>
+        <p style={{ color: S.muted, fontSize: 13, margin: "0 0 12px" }}>Cette depense est-elle recurrente ?</p>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
+          <button onClick={() => confirmRecurrence("single")} style={{ background: S.surface2, border: `1px solid ${S.border}`, borderRadius: 8, padding: "8px 14px", fontSize: 13, fontFamily: S.font, fontWeight: 600, color: S.text }}>Juste ce mois</button>
+          <button onClick={() => confirmRecurrence("all")} style={{ background: color, border: "none", borderRadius: 8, padding: "8px 14px", fontSize: 13, fontFamily: S.font, fontWeight: 600, color: "#fff" }}>Tous les mois suivants</button>
+          <button onClick={() => { setRecurrenceStep("picker"); setSelectedMonths(new Set([monthKey])); }} style={{ background: S.surface2, border: `1px solid ${color}40`, borderRadius: 8, padding: "8px 14px", fontSize: 13, fontFamily: S.font, fontWeight: 600, color: color }}>Choisir les mois</button>
+          <button onClick={cancelAdd} style={{ background: "transparent", color: S.muted, border: `1px solid ${S.border}`, borderRadius: 8, padding: "8px 14px", fontSize: 13, fontFamily: S.font }}><X size={12} /></button>
+        </div>
+      </div>
+    );
+
+    if (recurrenceStep === "picker" && pendingAdd) return (
+      <div style={{ padding: "14px 16px", background: `${color}06`, borderRadius: 12, border: `1px solid ${color}40` }}>
+        <p style={{ fontFamily: S.heading, fontSize: 16, fontWeight: 700, color: S.text, margin: "0 0 4px" }}>{pendingAdd.label} — {fmt(pendingAdd.amount)}</p>
+        <p style={{ color: S.muted, fontSize: 13, margin: "0 0 10px" }}>Cochez les mois souhaites :</p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 6, marginBottom: 12 }}>
+          {MONTH_KEYS.map((mk, i) => {
+            const sel = selectedMonths.has(mk);
+            return <button key={mk} onClick={() => { const s = new Set(selectedMonths); if (sel) s.delete(mk); else s.add(mk); setSelectedMonths(s); }} style={{ padding: "6px 4px", fontSize: 12, fontWeight: sel ? 700 : 500, borderRadius: 8, border: `1.5px solid ${sel ? color : S.border}`, background: sel ? `${color}15` : S.surface2, color: sel ? color : S.muted, fontFamily: S.font }}>{MONTH_SHORT[i]}</button>;
+          })}
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={() => confirmRecurrence("custom")} disabled={selectedMonths.size === 0} style={{ background: color, border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 13, fontFamily: S.font, fontWeight: 700, color: "#fff", opacity: selectedMonths.size === 0 ? 0.5 : 1 }}>Confirmer ({selectedMonths.size} mois)</button>
+          <button onClick={() => setRecurrenceStep("recurrence")} style={{ background: "transparent", color: S.muted, border: `1px solid ${S.border}`, borderRadius: 8, padding: "8px 12px", fontSize: 13, fontFamily: S.font }}>Retour</button>
+        </div>
+      </div>
+    );
+
     return (
-      <div style={{ display: "flex", gap: 8, padding: "8px 12px", background: `${color}08`, borderRadius: 10, border: `1px dashed ${color}50`, alignItems: "center" }}>
-        <input ref={labelRef} value={newLabel} onChange={e => setNewLabel(e.target.value)} placeholder="Nom de la depense" onKeyDown={e => { if (e.key === "Enter") submitAdd(); if (e.key === "Escape") cancelAdd(); }} style={{ flex: 1, minWidth: 100, background: S.surface2, border: `1px solid ${color}40`, borderRadius: 7, padding: "5px 10px", color: S.text, fontSize: 13, fontFamily: S.font }} />
-        <input value={newAmount} onChange={e => setNewAmount(e.target.value)} placeholder="0 €" type="number" min="0" step="0.01" onKeyDown={e => { if (e.key === "Enter") submitAdd(); if (e.key === "Escape") cancelAdd(); }} style={{ width: 80, background: S.surface2, border: `1px solid ${color}40`, borderRadius: 7, padding: "5px 10px", color: S.text, fontSize: 13, fontFamily: S.font }} />
-        <button onClick={submitAdd} disabled={isAdding} style={{ background: color, color: "#fff", border: "none", borderRadius: 7, padding: "5px 14px", fontSize: 12, fontWeight: 700, fontFamily: S.font, display: "flex", alignItems: "center", gap: 4, opacity: isAdding ? 0.6 : 1 }}>
-          {isAdding ? <div style={{ width: 10, height: 10, border: "1.5px solid #fff", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} /> : <Check size={12} />}
-          Ajouter
-        </button>
-        <button onClick={cancelAdd} style={{ background: "transparent", color: S.muted, border: `1px solid ${S.border}`, borderRadius: 7, padding: "5px 10px", fontSize: 12, fontFamily: S.font, display: "flex", alignItems: "center" }}><X size={12} /></button>
+      <div style={{ position: "relative" }}>
+        <div style={{ display: "flex", gap: 8, padding: "8px 12px", background: `${color}06`, borderRadius: 10, border: `1px dashed ${color}50`, alignItems: "center" }}>
+          <div style={{ position: "relative", flex: 1, minWidth: 120 }}>
+            <input ref={labelRef} value={newLabel} onChange={e => { setNewLabel(e.target.value); setShowSuggestions(true); }} onFocus={() => setShowSuggestions(true)} placeholder="Nom (ou choisir)" onKeyDown={e => { if (e.key === "Enter") submitAdd(); if (e.key === "Escape") cancelAdd(); }} style={{ width: "100%", background: S.surface2, border: `1px solid ${color}40`, borderRadius: 7, padding: "5px 10px", color: S.text, fontSize: 13, fontFamily: S.font }} />
+            {showSuggestions && (filteredLabels.length > 0 || isNewLabel) && (
+              <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, background: S.surface, border: `1px solid ${S.border}`, borderRadius: 10, maxHeight: 180, overflowY: "auto", zIndex: 20, boxShadow: "0 8px 24px rgba(0,0,0,0.08)" }}>
+                {filteredLabels.slice(0, 8).map(l => (
+                  <div key={l} onMouseDown={() => selectLabel(l)} style={{ padding: "8px 12px", cursor: "pointer", fontSize: 13, color: S.text, borderBottom: `1px solid ${S.border}` }}>{l}</div>
+                ))}
+                {isNewLabel && (
+                  <div onMouseDown={() => { setShowSuggestions(false); }} style={{ padding: "8px 12px", cursor: "pointer", fontSize: 13, color: color, fontWeight: 700, background: `${color}06` }}>+ Creer &quot;{newLabel.trim()}&quot;</div>
+                )}
+              </div>
+            )}
+          </div>
+          <input value={newAmount} onChange={e => setNewAmount(e.target.value)} placeholder="Montant" type="number" min="0" step="0.01" onKeyDown={e => { if (e.key === "Enter") submitAdd(); if (e.key === "Escape") cancelAdd(); }} style={{ width: 80, background: S.surface2, border: `1px solid ${color}40`, borderRadius: 7, padding: "5px 10px", color: S.text, fontSize: 13, fontFamily: S.font }} />
+          <button onClick={submitAdd} disabled={isAdding} style={{ background: color, color: "#fff", border: "none", borderRadius: 7, padding: "5px 14px", fontSize: 12, fontWeight: 700, fontFamily: S.font, display: "flex", alignItems: "center", gap: 4, opacity: isAdding ? 0.6 : 1 }}>
+            {isAdding ? <div style={{ width: 10, height: 10, border: "1.5px solid #fff", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} /> : <Check size={12} />}
+            Ajouter
+          </button>
+          <button onClick={cancelAdd} style={{ background: "transparent", color: S.muted, border: `1px solid ${S.border}`, borderRadius: 7, padding: "5px 10px", fontSize: 12, fontFamily: S.font, display: "flex", alignItems: "center" }}><X size={12} /></button>
+        </div>
       </div>
     );
   }
@@ -1093,6 +1187,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
