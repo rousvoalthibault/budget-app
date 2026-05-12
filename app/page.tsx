@@ -301,7 +301,7 @@ export default function BudgetApp() {
             onValidate={(l, v) => patchExpense(m.month_key, l, { validated: v })} saving={saving} />
         )}
         {tab === "depenses" && m && (
-          <DepensesTab month={m} monthKey={m.month_key}
+          <DepensesTab month={m} months={months} monthKey={m.month_key}
             onValidate={(l, v) => patchExpense(m.month_key, l, { validated: v })}
             onAmountChange={(l, a) => patchExpense(m.month_key, l, { amount: a })}
             onIncomeChange={(f, v) => patchIncome(m.month_key, f, v)}
@@ -585,8 +585,8 @@ function SwipeValidator({ expenses, onValidate, onAmountChange, saving }: { expe
 
 
 // ── Depenses ──────────────────────────────────────────────────────────────────
-function DepensesTab({ month: m, monthKey, onValidate, onAmountChange, onIncomeChange, onBudgetChange, onAddExpense, onDeleteExpense, saving, isAdding }: {
-  month: Month; monthKey: string;
+function DepensesTab({ month: m, months, monthKey, onValidate, onAmountChange, onIncomeChange, onBudgetChange, onAddExpense, onDeleteExpense, saving, isAdding }: {
+  month: Month; months: Month[]; monthKey: string;
   onValidate: (l: string, v: boolean) => void;
   onAmountChange: (l: string, a: number) => void;
   onIncomeChange: (f: "income_salary" | "income_other", v: number) => void;
@@ -605,7 +605,7 @@ function DepensesTab({ month: m, monthKey, onValidate, onAmountChange, onIncomeC
   const labelRef = useRef<HTMLInputElement>(null);
 
   // All existing expense labels for suggestions
-  const allLabels = [...new Set(m.expenses.map(e => e.label))].sort();
+  const allLabels = [...new Set(months.flatMap(mo => mo.expenses.map(e => e.label)))].sort();
   const filteredLabels = newLabel.trim() ? allLabels.filter(l => l.toLowerCase().includes(newLabel.toLowerCase())) : allLabels;
   const isNewLabel = newLabel.trim() && !allLabels.some(l => l.toLowerCase() === newLabel.trim().toLowerCase());
 
@@ -712,15 +712,26 @@ function DepensesTab({ month: m, monthKey, onValidate, onAmountChange, onIncomeC
     return (
       <div style={{ position: "relative" }}>
         <div style={{ display: "flex", gap: 8, padding: "8px 12px", background: `${color}06`, borderRadius: 10, border: `1px dashed ${color}50`, alignItems: "center" }}>
-          <div style={{ position: "relative", flex: 1, minWidth: 120 }}>
-            <input ref={labelRef} value={newLabel} onChange={e => { setNewLabel(e.target.value); setShowSuggestions(true); }} onFocus={() => setShowSuggestions(true)} placeholder="Nom (ou choisir)" onKeyDown={e => { if (e.key === "Enter") submitAdd(); if (e.key === "Escape") cancelAdd(); }} style={{ width: "100%", background: S.surface2, border: `1px solid ${color}40`, borderRadius: 7, padding: "5px 10px", color: S.text, fontSize: 13, fontFamily: S.font }} />
+          <div style={{ position: "relative", flex: 1, minWidth: 150 }}>
+            <div style={{ position: "relative" }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={S.muted} strokeWidth="2" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <input ref={labelRef} value={newLabel} onChange={e => { setNewLabel(e.target.value); setShowSuggestions(true); }} onFocus={() => setShowSuggestions(true)} onBlur={() => setTimeout(() => setShowSuggestions(false), 250)} placeholder="Rechercher ou creer..." onKeyDown={e => { if (e.key === "Enter") { if (filteredLabels.length === 1 && !newLabel.trim()) { selectLabel(filteredLabels[0]); } else { submitAdd(); } } if (e.key === "Escape") cancelAdd(); }} style={{ width: "100%", background: S.surface2, border: `1px solid ${showSuggestions ? color : S.border}`, borderRadius: 7, padding: "6px 10px 6px 30px", color: S.text, fontSize: 13, fontFamily: S.font, transition: "border-color 0.15s" }} />
+            </div>
             {showSuggestions && (filteredLabels.length > 0 || isNewLabel) && (
-              <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, background: S.surface, border: `1px solid ${S.border}`, borderRadius: 10, maxHeight: 180, overflowY: "auto", zIndex: 20, boxShadow: "0 8px 24px rgba(0,0,0,0.08)" }}>
-                {filteredLabels.slice(0, 8).map(l => (
-                  <div key={l} onMouseDown={() => selectLabel(l)} style={{ padding: "8px 12px", cursor: "pointer", fontSize: 13, color: S.text, borderBottom: `1px solid ${S.border}` }}>{l}</div>
-                ))}
+              <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, background: S.surface, border: `1px solid ${color}30`, borderRadius: 10, maxHeight: 220, overflowY: "auto", zIndex: 20, boxShadow: "0 12px 32px rgba(0,0,0,0.1)" }}>
+                {newLabel.trim() && <div style={{ padding: "6px 12px", fontSize: 11, color: S.muted, fontWeight: 600, borderBottom: `1px solid ${S.border}` }}>{filteredLabels.length} resultat{filteredLabels.length > 1 ? "s" : ""}</div>}
+                {filteredLabels.slice(0, 10).map(l => {
+                  const idx3 = l.toLowerCase().indexOf(newLabel.toLowerCase());
+                  return (
+                    <div key={l} onMouseDown={() => selectLabel(l)} style={{ padding: "9px 12px", cursor: "pointer", fontSize: 13, color: S.text, borderBottom: `1px solid ${S.border}`, display: "flex", alignItems: "center", gap: 8 }} onMouseEnter={e => (e.currentTarget.style.background = `${color}08`)} onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                      <span>{idx3 >= 0 ? <>{l.slice(0, idx3)}<strong style={{ color: color }}>{l.slice(idx3, idx3 + newLabel.length)}</strong>{l.slice(idx3 + newLabel.length)}</> : l}</span>
+                    </div>
+                  );
+                })}
                 {isNewLabel && (
-                  <div onMouseDown={() => { setShowSuggestions(false); }} style={{ padding: "8px 12px", cursor: "pointer", fontSize: 13, color: color, fontWeight: 700, background: `${color}06` }}>+ Creer &quot;{newLabel.trim()}&quot;</div>
+                  <div onMouseDown={() => setShowSuggestions(false)} style={{ padding: "9px 12px", cursor: "pointer", fontSize: 13, color: color, fontWeight: 700, background: `${color}04`, borderTop: `1px solid ${S.border}`, display: "flex", alignItems: "center", gap: 6 }}>
+                    <Plus size={14} /> Creer &quot;{newLabel.trim()}&quot;
+                  </div>
                 )}
               </div>
             )}
@@ -1186,6 +1197,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
