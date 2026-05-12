@@ -92,7 +92,7 @@ function EditableAmt({ value, onChange, color, size = "md" }: { value: number; o
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function BudgetApp() {
-  const [tab, setTab] = useState<"dashboard" | "depenses" | "projection" | "historique" | "economies">("dashboard");
+  const [tab, setTab] = useState<"dashboard" | "depenses" | "projection" | "historique" | "salaires" | "economies">("dashboard");
   const [months, setMonths] = useState<Month[]>([]);
   const [forecast, setForecast] = useState<Forecast | null>(null);
   const [idx, setIdx] = useState(0);
@@ -222,6 +222,7 @@ export default function BudgetApp() {
     { id: "depenses", label: "Depenses" },
     { id: "projection", label: "Projection 12 mois" },
     { id: "historique", label: "Historique" },
+    { id: "salaires", label: "Salaires" },
     { id: "economies", label: "Economies" },
   ] as const;
 
@@ -311,6 +312,7 @@ export default function BudgetApp() {
         )}
         {tab === "projection" && forecast && <ProjectionTab forecast={forecast} />}
         {tab === "historique" && months.length > 0 && <HistoriqueTab months={months} />}
+        {tab === "salaires" && <SalairesTab showToast={showToast} />}
         {tab === "economies" && months.length > 0 && (
           <EconomiesTab months={months} currentIdx={idx}
             onSavingsChange={(mk, u) => patchSavings(mk, u)}
@@ -385,6 +387,20 @@ function DashboardTab({ month: m, netBalance, totalExpenses, validatedBudget, va
 }
 
 
+
+function ConfettiBurst({ onDone }: { onDone: () => void }) {
+  const [go, setGo] = useState(false);
+  const parts = useRef(Array.from({ length: 28 }, () => ({
+    x: (Math.random() - 0.5) * 400, y: Math.random() * -350 - 30, r: Math.random() * 720 - 360,
+    sz: 5 + Math.random() * 8, d: Math.random() * 200, round: Math.random() > 0.4,
+    color: ["#22c55e","#f59e0b","#2563EB","#F97316","#ec4899","#8b5cf6","#14b8a6"][Math.floor(Math.random() * 7)],
+  })));
+  useEffect(() => { requestAnimationFrame(() => requestAnimationFrame(() => setGo(true))); const t = setTimeout(onDone, 1200); return () => clearTimeout(t); }, [onDone]);
+  return (<div style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden", zIndex: 60 }}>
+    {parts.current.map((p, i) => (<div key={i} style={{ position: "absolute", left: "50%", top: "50%", marginLeft: -p.sz/2, marginTop: -p.sz/2, width: p.sz, height: p.sz, background: p.color, borderRadius: p.round ? "50%" : "2px", transform: go ? `translate(${p.x}px, ${p.y}px) rotate(${p.r}deg) scale(0)` : "translate(0,0) rotate(0deg) scale(1)", transition: `all ${0.7 + Math.random()*0.4}s cubic-bezier(0.25,0.46,0.45,0.94) ${p.d}ms`, opacity: go ? 0 : 1 }} />))}
+  </div>);
+}
+
 function SwipeValidator({ expenses, onValidate, onAmountChange, saving }: { expenses: Expense[]; onValidate: (label: string, v: boolean) => void; onAmountChange?: (label: string, amount: number) => void; saving: string | null }) {
   const pending = expenses.filter(e => !e.validated);
   const [ci, setCi] = useState(0);
@@ -392,6 +408,7 @@ function SwipeValidator({ expenses, onValidate, onAmountChange, saving }: { expe
   const [drag, setDrag] = useState(false);
   const sx = useRef(0);
   const [fly, setFly] = useState<"right"|"left"|null>(null);
+  const [confetti, setConfetti] = useState(false);
   const [skipped, setSkipped] = useState<string[]>([]);
   const [fs, setFs] = useState(false);
   const [reviewMode, setReviewMode] = useState(false);
@@ -404,7 +421,7 @@ function SwipeValidator({ expenses, onValidate, onAmountChange, saving }: { expe
   function he() {
     if (!drag) return; setDrag(false);
     if (ox > 80 && cur) {
-      setFly("right"); onValidate(cur.label, true);
+      setFly("right"); setConfetti(true); onValidate(cur.label, true);
       setTimeout(() => { setCi(i => i+1); setOx(0); setFly(null); }, 450);
     } else if (ox < -80 && cur) {
       setFly("left");
@@ -501,6 +518,7 @@ function SwipeValidator({ expenses, onValidate, onAmountChange, saving }: { expe
         <span style={{ fontSize: 16, fontWeight: 700 }}>Valider</span>
       </div>
 
+      {confetti && <ConfettiBurst onDone={() => setConfetti(false)} />}
       {cardEl}
     </div>
   );
@@ -520,6 +538,7 @@ function SwipeValidator({ expenses, onValidate, onAmountChange, saving }: { expe
       <div style={{ display: "flex", justifyContent: "center", padding: "8px 20px 20px", position: "relative", minHeight: 180, touchAction: "none" }}>
         <div style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", color: S.danger, opacity: isL ? 0.7 : 0.08, transition: drag ? "none" : "opacity 0.2s", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}><X size={28} /><span style={{ fontSize: 11, fontWeight: 700 }}>Revoir</span></div>
         <div style={{ position: "absolute", right: 16, top: "50%", transform: "translateY(-50%)", color: S.success, opacity: isR ? 0.7 : 0.08, transition: drag ? "none" : "opacity 0.2s", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}><Check size={28} /><span style={{ fontSize: 11, fontWeight: 700 }}>Valider</span></div>
+        {confetti && <ConfettiBurst onDone={() => setConfetti(false)} />}
         {cardEl}
       </div>
     </Card>
@@ -808,6 +827,51 @@ function HistoriqueTab({ months }: { months: Month[] }) {
   );
 }
 
+
+// ── Salaires ──────────────────────────────────────────────────────────────────
+function SalairesTab({ showToast: toast }: { showToast: (msg: string) => void }) {
+  const [data, setData] = useState<{ years: number[]; months: { name: string; values: number[] }[]; totals: number[] } | null>(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => { fetch("/api/budget/salary-history").then(r => r.json()).then(d => { setData(d); setLoading(false); }).catch(() => setLoading(false)); }, []);
+  async function updateCell(mi: number, yi: number, value: number) {
+    if (!data) return;
+    const nd = { ...data, months: data.months.map((m, i) => i === mi ? { ...m, values: m.values.map((v, j) => j === yi ? value : v) } : m) };
+    nd.totals = nd.years.map((_, yi2) => nd.months.reduce((s, m) => s + m.values[yi2], 0));
+    setData(nd);
+    try { await fetch("/api/budget/salary-history", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(nd) }); toast("Salaire mis a jour"); } catch { toast("Erreur"); }
+  }
+  if (loading) return <Card style={{ textAlign: "center", padding: 40 }}><p style={{ color: S.muted }}>Chargement...</p></Card>;
+  if (!data) return <Card style={{ textAlign: "center", padding: 40 }}><p style={{ color: S.danger }}>Erreur</p></Card>;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <Card>
+        <SLabel>Historique des salaires bruts</SLabel>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: S.font, fontSize: 13, minWidth: 800 }}>
+            <thead><tr>
+              <th style={{ padding: "10px 14px", textAlign: "left", color: S.muted, fontWeight: 700, fontSize: 11, borderBottom: `2px solid ${S.border}`, position: "sticky", left: 0, background: S.surface, zIndex: 2 }}>MOIS</th>
+              {data.years.map(y => (<th key={y} style={{ padding: "10px 12px", textAlign: "right", color: y === 2026 ? S.accent : S.muted, fontWeight: 700, fontSize: 12, borderBottom: `2px solid ${S.border}` }}>{y}</th>))}
+            </tr></thead>
+            <tbody>{data.months.map((m, mi) => (
+              <tr key={m.name} className="row-h" style={{ borderBottom: `1px solid ${S.border}` }}>
+                <td style={{ padding: "10px 14px", fontFamily: S.heading, fontSize: 15, color: S.text, fontWeight: 600, position: "sticky", left: 0, background: S.surface, zIndex: 1 }}>{m.name}</td>
+                {m.values.map((v, yi) => (<td key={yi} style={{ padding: "8px 8px", textAlign: "right" }}>
+                  {v > 0 ? <EditableAmt value={v} onChange={val => updateCell(mi, yi, val)} color={data.years[yi] === 2026 ? S.accent : S.text} size="sm" /> : <span onClick={() => updateCell(mi, yi, 0)} style={{ color: S.muted, fontSize: 12, cursor: "pointer", opacity: 0.3 }}>—</span>}
+                </td>))}
+              </tr>
+            ))}</tbody>
+            <tfoot><tr style={{ borderTop: `2px solid ${S.border}` }}>
+              <td style={{ padding: "12px 14px", fontFamily: S.heading, fontSize: 16, fontWeight: 800, color: S.text, position: "sticky", left: 0, background: S.surface }}>TOTAL</td>
+              {data.totals.map((t, yi) => (<td key={yi} style={{ padding: "12px 8px", textAlign: "right", fontFamily: S.heading, fontSize: 15, fontWeight: 800, color: data.years[yi] === 2026 ? S.accent : S.success }}>{fmt(t)}</td>))}
+            </tr></tfoot>
+          </table>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+
 // ── Economies ─────────────────────────────────────────────────────────────────
 const PORTFOLIO_CATEGORIES: { label: string; color: string; items: { key: keyof Savings; label: string }[] }[] = [
   { label: "Actions / Cryptos", color: "#16a34a", items: [{ key: "pea", label: "PEA" }, { key: "traderepublic", label: "TradeRepublic" }, { key: "degiro", label: "Degiro" }, { key: "bitstack", label: "Bitstack" }, { key: "swissborg", label: "Swissborg" }] },
@@ -991,6 +1055,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
