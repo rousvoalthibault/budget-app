@@ -340,16 +340,15 @@ function DashboardTab({ month: m, months, idx, netBalance, totalExpenses, valida
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16 }}>
         {[
-          { label: "Revenus du mois", value: income, color: S.success, editable: false, sub: m.income_other > 0 ? `${fmt(m.income_salary)} + ${fmt(m.income_other)} autres` : undefined },
-          { label: "Total dépenses", value: totalExpenses, color: S.danger, editable: false, sub: validatedBudget > 0 ? `dont ${fmt(validatedBudget)} enveloppes` : undefined },
-          { label: "Solde net", value: netBalance, color: balColor, editable: false },
-          { label: "Solde cumulé YTD", value: (() => { let c2 = 0; for (let i2 = 0; i2 <= idx; i2++) { const m2 = months[i2]; c2 += m2.income_salary + m2.income_other - m2.expenses.reduce((s2: number, e2: Expense) => s2 + e2.amount, 0) - (m2.savings?.target_monthly ?? 140); } return Math.round(c2); })(), color: (() => { let c2 = 0; for (let i2 = 0; i2 <= idx; i2++) { const m2 = months[i2]; c2 += m2.income_salary + m2.income_other - m2.expenses.reduce((s2: number, e2: Expense) => s2 + e2.amount, 0) - (m2.savings?.target_monthly ?? 140); } return c2 >= 0 ? S.primary : S.danger; })(), editable: false, sub: "Depuis janvier" },
-        { label: "Objectif économies", value: m.savings?.target_monthly ?? 140, color: S.accent, editable: false, sub: `Cumul: ${fmt(m.savings?.cumulative_target ?? 0)}` },
-        ].map(({ label, value, color, editable, field, sub }) => (
+          { label: "Revenus du mois", value: income, color: S.success, sub: m.income_other > 0 ? `${fmt(m.income_salary)} + ${fmt(m.income_other)} autres` : undefined },
+          { label: "Total dépenses", value: totalExpenses, color: S.danger, sub: validatedBudget > 0 ? `dont ${fmt(validatedBudget)} enveloppes` : undefined },
+          { label: "Solde net", value: netBalance, color: balColor },
+          { label: "Solde cumulé YTD", value: (() => { let c2 = 0; for (let i2 = 0; i2 <= idx; i2++) { const m2 = months[i2]; c2 += m2.income_salary + m2.income_other - m2.expenses.reduce((s2: number, e2: Expense) => s2 + e2.amount, 0) - (m2.savings?.target_monthly ?? 140); } return Math.round(c2); })(), color: (() => { let c2 = 0; for (let i2 = 0; i2 <= idx; i2++) { const m2 = months[i2]; c2 += m2.income_salary + m2.income_other - m2.expenses.reduce((s2: number, e2: Expense) => s2 + e2.amount, 0) - (m2.savings?.target_monthly ?? 140); } return c2 >= 0 ? S.primary : S.danger; })(), sub: "Depuis janvier" },
+        { label: "Objectif économies", value: m.savings?.target_monthly ?? 140, color: S.accent, sub: `Cumul: ${fmt(m.savings?.cumulative_target ?? 0)}` },
+        ].map(({ label, value, color, sub }) => (
           <Card key={label} className="card-h" style={{ background: `linear-gradient(135deg, ${color}14, ${S.bg})`, borderColor: `${color}28` }}>
             <SLabel>{label}</SLabel>
-            {editable && field ? <EditableAmt value={value} onChange={v => onIncomeChange(field, v)} color={color} size="lg" />
-              : <p style={{ fontFamily: S.heading, fontSize: 30, fontWeight: 700, color, margin: 0 }}>{fmt(value)}</p>}
+            <p style={{ fontFamily: S.heading, fontSize: 30, fontWeight: 700, color, margin: 0 }}>{fmt(value)}</p>
             {sub && <p style={{ color: S.muted, fontSize: 12, margin: "6px 0 0" }}>{sub}</p>}
           </Card>
         ))}
@@ -1094,6 +1093,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
