@@ -92,7 +92,7 @@ function EditableAmt({ value, onChange, color, size = "md" }: { value: number; o
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function BudgetApp() {
-  const [tab, setTab] = useState<"dashboard" | "depenses" | "projection" | "economies">("dashboard");
+  const [tab, setTab] = useState<"dashboard" | "depenses" | "projection" | "historique" | "economies">("dashboard");
   const [months, setMonths] = useState<Month[]>([]);
   const [forecast, setForecast] = useState<Forecast | null>(null);
   const [idx, setIdx] = useState(0);
@@ -221,6 +221,7 @@ export default function BudgetApp() {
     { id: "dashboard", label: "Tableau de bord" },
     { id: "depenses", label: "Depenses" },
     { id: "projection", label: "Projection 12 mois" },
+    { id: "historique", label: "Historique" },
     { id: "economies", label: "Economies" },
   ] as const;
 
@@ -309,6 +310,7 @@ export default function BudgetApp() {
             saving={saving} isAdding={saving === "adding"} />
         )}
         {tab === "projection" && forecast && <ProjectionTab forecast={forecast} />}
+        {tab === "historique" && months.length > 0 && <HistoriqueTab months={months} />}
         {tab === "economies" && months.length > 0 && (
           <EconomiesTab months={months} currentIdx={idx}
             onSavingsChange={(mk, u) => patchSavings(mk, u)}
@@ -377,28 +379,53 @@ function DashboardTab({ month: m, netBalance, totalExpenses, validatedBudget, va
         })}
       </div>
 
-      {pending.length > 0 && (
-        <Card>
-          <SLabel>A valider ce mois ({pending.length})</SLabel>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            {pending.slice(0, 8).map(e => {
-              const Ico = (e.icon && ICONS[e.icon]) ? ICONS[e.icon] : CreditCard;
-              return (
-                <div key={e.label} className="row-h" style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", background: S.surface2, borderRadius: 10 }}>
-                  <Ico size={14} color={S.muted} />
-                  <span style={{ flex: 1, fontSize: 13, color: S.muted }}>{e.label}</span>
-                  <span style={{ fontFamily: S.heading, fontSize: 16, fontWeight: 700, color: S.text }}>{fmt(e.amount)}</span>
-                  <button className="val-btn" onClick={() => onValidate(e.label, true)} disabled={saving === e.label} style={{ background: S.success, color: "#fff", border: "none", borderRadius: 7, padding: "4px 12px", fontSize: 12, fontFamily: S.font, fontWeight: 700, opacity: saving === e.label ? 0.5 : 1 }}>Valider</button>
-                </div>
-              );
-            })}
-            {pending.length > 8 && <p style={{ color: S.muted, fontSize: 12, textAlign: "center", margin: "4px 0 0" }}>+ {pending.length - 8} autres dans Depenses</p>}
-          </div>
-        </Card>
-      )}
+      <SwipeValidator expenses={m.expenses} onValidate={onValidate} saving={saving} />
     </div>
   );
 }
+
+
+function SwipeValidator({ expenses, onValidate, saving }: { expenses: Expense[]; onValidate: (label: string, v: boolean) => void; saving: string | null }) {
+  const pending = expenses.filter(e => !e.validated);
+  const [ci, setCi] = useState(0);
+  const [ox, setOx] = useState(0);
+  const [drag, setDrag] = useState(false);
+  const sx = useRef(0);
+  const [fly, setFly] = useState<"right"|"left"|null>(null);
+  const cur = pending[ci];
+  function hs(x: number) { setDrag(true); sx.current = x; setOx(0); }
+  function hm(x: number) { if (drag) setOx(x - sx.current); }
+  function he() {
+    if (!drag) return; setDrag(false);
+    if (ox > 80 && cur) { setFly("right"); onValidate(cur.label, true); setTimeout(() => { setCi(i => i+1); setOx(0); setFly(null); }, 350); }
+    else if (ox < -80) { setFly("left"); setTimeout(() => { setCi(i => i+1); setOx(0); setFly(null); }, 350); }
+    else setOx(0);
+  }
+  if (!pending.length) return <Card style={{ textAlign: "center", padding: "32px 20px" }}><Check size={32} color={S.success} style={{ margin: "0 auto 12px" }} /><p style={{ fontFamily: S.heading, fontSize: 22, fontWeight: 700, color: S.success, margin: 0 }}>Toutes les depenses validees !</p></Card>;
+  if (ci >= pending.length) return <Card style={{ textAlign: "center", padding: "32px 20px" }}><Check size={32} color={S.success} style={{ margin: "0 auto 12px" }} /><p style={{ fontFamily: S.heading, fontSize: 22, fontWeight: 700, color: S.success, margin: 0 }}>Session terminee !</p><p style={{ color: S.muted, fontSize: 13, margin: "6px 0 0" }}>{ci} depenses traitees</p><button onClick={() => setCi(0)} style={{ marginTop: 12, background: S.primary, color: "#fff", border: "none", borderRadius: 10, padding: "8px 20px", fontSize: 14, fontFamily: S.font, fontWeight: 600 }}>Recommencer</button></Card>;
+  const Ico = (cur.icon && ICONS[cur.icon]) ? ICONS[cur.icon] : CreditCard;
+  const isR = ox > 50; const isL = ox < -50;
+  const tx = fly === "right" ? 600 : fly === "left" ? -600 : ox;
+  const rot = fly === "right" ? 25 : fly === "left" ? -25 : ox * 0.06;
+  return (
+    <Card style={{ padding: 0, overflow: "hidden" }}>
+      <div style={{ padding: "12px 20px 8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}><SLabel>Valider les depenses ({pending.length - ci} restantes)</SLabel><span style={{ color: S.muted, fontSize: 12, fontWeight: 600 }}>{ci+1}/{pending.length}</span></div>
+      <div style={{ display: "flex", justifyContent: "center", padding: "8px 20px 20px", position: "relative", minHeight: 170, touchAction: "none" }}>
+        <div style={{ position: "absolute", left: 20, top: "50%", transform: "translateY(-50%)", color: S.danger, opacity: isL ? 0.8 : 0.12, transition: drag ? "none" : "opacity 0.2s", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}><X size={28} /><span style={{ fontSize: 11, fontWeight: 700 }}>Passer</span></div>
+        <div style={{ position: "absolute", right: 20, top: "50%", transform: "translateY(-50%)", color: S.success, opacity: isR ? 0.8 : 0.12, transition: drag ? "none" : "opacity 0.2s", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}><Check size={28} /><span style={{ fontSize: 11, fontWeight: 700 }}>Valider</span></div>
+        <div onMouseDown={e => hs(e.clientX)} onMouseMove={e => hm(e.clientX)} onMouseUp={he} onMouseLeave={() => drag && he()} onTouchStart={e => hs(e.touches[0].clientX)} onTouchMove={e => hm(e.touches[0].clientX)} onTouchEnd={he}
+          style={{ width: 280, userSelect: "none", transform: `translateX(${tx}px) rotate(${rot}deg)`, transition: drag ? "none" : "all 0.35s cubic-bezier(0.4,0,0.2,1)", opacity: fly ? 0 : 1, cursor: "grab", background: isR ? `${S.success}10` : isL ? `${S.danger}10` : S.surface, border: `2px solid ${isR ? S.success : isL ? S.danger : S.border}`, borderRadius: 16, padding: "24px 20px", textAlign: "center", boxShadow: drag ? "0 8px 32px rgba(0,0,0,0.12)" : "0 2px 8px rgba(0,0,0,0.06)" }}>
+          <div style={{ width: 48, height: 48, borderRadius: 14, background: `${S.accent}15`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}><Ico size={24} color={S.accent} /></div>
+          <p style={{ fontFamily: S.heading, fontSize: 20, fontWeight: 700, color: S.text, margin: "0 0 4px" }}>{cur.label}</p>
+          <p style={{ fontFamily: S.heading, fontSize: 28, fontWeight: 800, color: S.accent, margin: "0 0 6px" }}>{fmt(cur.amount)}</p>
+          <span style={{ background: `${S.primary}12`, color: S.primary, fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 6 }}>{cur.category}</span>
+          <p style={{ color: S.muted, fontSize: 12, marginTop: 14 }}>← Passer · Glisser · Valider →</p>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 
 // ── Depenses ──────────────────────────────────────────────────────────────────
 function DepensesTab({ month: m, monthKey, onValidate, onAmountChange, onIncomeChange, onBudgetChange, onAddExpense, onDeleteExpense, saving, isAdding }: {
@@ -621,6 +648,52 @@ function ProjectionTab({ forecast: f }: { forecast: Forecast }) {
   );
 }
 
+
+function HistoriqueTab({ months }: { months: Month[] }) {
+  let cumul = 0;
+  const rows = months.map(m => { const inc = m.income_salary + m.income_other; const exp = m.expenses.reduce((s, e) => s + e.amount, 0); const sav = m.savings?.target_monthly ?? 140; const bal = inc - exp - sav; cumul += bal; return { ...m, inc, exp, sav, bal, cumul, vc: m.expenses.filter(e => e.validated).length, tc: m.expenses.length }; });
+  const ti = rows.reduce((s, r) => s + r.inc, 0); const te = rows.reduce((s, r) => s + r.exp, 0); const fc = rows.length > 0 ? rows[rows.length-1].cumul : 0;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 16 }}>
+        {[{ l: "Total revenus 2026", v: ti, c: S.success }, { l: "Total depenses 2026", v: te, c: S.danger }, { l: "Solde cumule fin 2026", v: fc, c: fc >= 0 ? S.primary : S.danger }].map(({ l, v, c }) => (
+          <Card key={l} className="card-h"><SLabel>{l}</SLabel><p style={{ fontFamily: S.heading, fontSize: 26, fontWeight: 700, color: c, margin: 0 }}>{fmt(v)}</p></Card>
+        ))}
+      </div>
+      <Card>
+        <SLabel>Historique detaille 2026 — mois par mois avec solde cumule</SLabel>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: S.font, fontSize: 13 }}>
+            <thead><tr>{["Mois", "Revenu", "Depenses", "Economies", "Solde mensuel", "Solde cumule", "Validation"].map(h => <th key={h} style={{ padding: "10px 14px", textAlign: "left", color: S.muted, fontWeight: 600, fontSize: 11, borderBottom: `2px solid ${S.border}`, textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>{h}</th>)}</tr></thead>
+            <tbody>{rows.map(r => {
+              const bc = r.bal >= 0 ? S.success : S.danger; const cc = r.cumul >= 0 ? S.success : S.danger; const pv = r.tc > 0 ? Math.round((r.vc/r.tc)*100) : 0;
+              return (<tr key={r.month_key} className="row-h" style={{ borderBottom: `1px solid ${S.border}` }}>
+                <td style={{ padding: "12px 14px", fontFamily: S.heading, fontSize: 17, color: S.text, fontWeight: 700 }}>{r.month_name}</td>
+                <td style={{ padding: "12px 14px", color: S.success, fontWeight: 600 }}>{fmt(r.inc)}</td>
+                <td style={{ padding: "12px 14px", color: S.danger, fontWeight: 600 }}>{fmt(r.exp)}</td>
+                <td style={{ padding: "12px 14px", color: S.accent }}>{fmt(r.sav)}</td>
+                <td style={{ padding: "12px 14px", color: bc, fontWeight: 700 }}>{fmt(r.bal)}</td>
+                <td style={{ padding: "12px 14px" }}><span style={{ fontFamily: S.heading, fontSize: 18, fontWeight: 800, color: cc }}>{fmt(r.cumul)}</span></td>
+                <td style={{ padding: "12px 14px" }}><div style={{ display: "flex", alignItems: "center", gap: 8 }}><div style={{ flex: 1, background: "rgba(0,0,0,0.06)", borderRadius: 999, height: 6, overflow: "hidden", minWidth: 50 }}><div style={{ background: pv === 100 ? S.success : S.accent, height: "100%", width: `${pv}%`, borderRadius: 999 }} /></div><span style={{ color: pv === 100 ? S.success : S.muted, fontSize: 12, fontWeight: 600, whiteSpace: "nowrap" }}>{r.vc}/{r.tc}</span></div></td>
+              </tr>);
+            })}</tbody>
+            <tfoot><tr style={{ borderTop: `2px solid ${S.border}` }}>
+              <td style={{ padding: "12px 14px", fontFamily: S.heading, fontSize: 17, fontWeight: 800 }}>TOTAL</td>
+              <td style={{ padding: "12px 14px", fontFamily: S.heading, fontSize: 16, color: S.success, fontWeight: 700 }}>{fmt(ti)}</td>
+              <td style={{ padding: "12px 14px", fontFamily: S.heading, fontSize: 16, color: S.danger, fontWeight: 700 }}>{fmt(te)}</td>
+              <td style={{ padding: "12px 14px", fontFamily: S.heading, fontSize: 16, color: S.accent, fontWeight: 700 }}>{fmt(rows.reduce((s, r) => s + r.sav, 0))}</td>
+              <td></td>
+              <td style={{ padding: "12px 14px", fontFamily: S.heading, fontSize: 20, fontWeight: 800, color: fc >= 0 ? S.success : S.danger }}>{fmt(fc)}</td>
+              <td></td>
+            </tr></tfoot>
+          </table>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+
 // ── Economies ─────────────────────────────────────────────────────────────────
 const PORTFOLIO_CATEGORIES: { label: string; color: string; items: { key: keyof Savings; label: string }[] }[] = [
   { label: "Actions / Cryptos", color: "#16a34a", items: [{ key: "pea", label: "PEA" }, { key: "traderepublic", label: "TradeRepublic" }, { key: "degiro", label: "Degiro" }, { key: "bitstack", label: "Bitstack" }, { key: "swissborg", label: "Swissborg" }] },
@@ -804,4 +877,5 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
