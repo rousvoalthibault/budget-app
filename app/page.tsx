@@ -99,13 +99,56 @@ export default function BudgetApp() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string; ok?: boolean } | null>(null);
+  const [authToken, setAuthToken] = useState<string | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [authMode, setAuthMode] = useState<"login" | "register">("login");
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPw, setAuthPw] = useState("");
+  const [authName, setAuthName] = useState("");
+  const [authError, setAuthError] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
+
+  // Check auth on mount
+  useEffect(() => {
+    const t = typeof window !== "undefined" ? localStorage.getItem("budget_token") : null;
+    setAuthToken(t);
+    setAuthChecked(true);
+  }, []);
+
+  function authHeaders(): Record<string, string> {
+    return authToken ? { "x-user-token": authToken, "Content-Type": "application/json" } : { "Content-Type": "application/json" };
+  }
+
+  async function handleAuth() {
+    setAuthLoading(true); setAuthError("");
+    try {
+      const endpoint = authMode === "register" ? "/api/budget/auth/register" : "/api/budget/auth/login";
+      const body = authMode === "register" ? { email: authEmail, password: authPw, name: authName } : { email: authEmail, password: authPw };
+      const r = await fetch(endpoint, { method: "POST", headers: authHeaders(), body: JSON.stringify(body) });
+      const d = await r.json();
+      if (d.success && d.token) {
+        localStorage.setItem("budget_token", d.token);
+        setAuthToken(d.token);
+      } else {
+        setAuthError(d.detail || "Erreur de connexion");
+      }
+    } catch { setAuthError("Erreur de connexion"); }
+    setAuthLoading(false);
+  }
+
+  function logout() {
+    localStorage.removeItem("budget_token");
+    setAuthToken(null);
+    setMonths([]);
+    setForecast(null);
+  }
 
   function showToast(msg: string, ok = true) { setToast({ msg, ok }); setTimeout(() => setToast(null), 3000); }
 
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [mr, fr] = await Promise.all([fetch("/api/budget/months"), fetch("/api/budget/forecast")]);
+      const [mr, fr] = await Promise.all([fetch("/api/budget/months", { headers: authHeaders() }), fetch("/api/budget/forecast", { headers: authHeaders() })]);
       const md = await mr.json(); const fd = await fr.json();
       const mths: Month[] = md.months || [];
       setMonths(mths); setForecast(fd);
@@ -118,7 +161,7 @@ export default function BudgetApp() {
     const init = async () => {
       setLoading(true);
       try {
-        const [mr, fr] = await Promise.all([fetch("/api/budget/months"), fetch("/api/budget/forecast")]);
+        const [mr, fr] = await Promise.all([fetch("/api/budget/months", { headers: authHeaders() }), fetch("/api/budget/forecast", { headers: authHeaders() })]);
         const md = await mr.json(); const fd = await fr.json();
         const mths: Month[] = md.months || [];
         setMonths(mths); setForecast(fd);
@@ -132,13 +175,13 @@ export default function BudgetApp() {
   async function patchExpense(mk: string, label: string, updates: Partial<Expense>) {
     setSaving(label);
     try {
-      const r = await fetch(`/api/budget/month/${mk}/expense`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ label, ...updates }) });
+      const r = await fetch(`/api/budget/month/${mk}/expense`, { method: "PATCH", headers: authHeaders(), body: JSON.stringify({ label, ...updates }) });
       const d = await r.json();
       if (d.success) {
         setMonths(prev => prev.map(m => m.month_key !== mk ? m : { ...m, expenses: m.expenses.map(e => e.label === label ? { ...e, ...updates } : e) }));
         if (updates.validated !== undefined) showToast(updates.validated ? `${label} validee` : `${label} devalidee`);
         else showToast("Montant mis à jour");
-        fetch("/api/budget/forecast").then(r => r.json()).then(setForecast);
+        fetch("/api/budget/forecast", { headers: authHeaders() }).then(r => r.json()).then(setForecast);
       }
     } catch { showToast("Erreur", false); }
     finally { setSaving(null); }
@@ -149,7 +192,7 @@ export default function BudgetApp() {
     try {
       const r = await fetch(`/api/budget/month/${mk}/expense`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders(),
         body: JSON.stringify({ label, amount, category, propagate: true }),
       });
       const d = await r.json();
@@ -166,7 +209,7 @@ export default function BudgetApp() {
     try {
       const r = await fetch(`/api/budget/month/${mk}/expense/${encodeURIComponent(label)}`, { method: "DELETE" });
       const d = await r.json();
-      if (d.success) { setMonths(prev => prev.map(m => m.month_key !== mk ? m : { ...m, expenses: m.expenses.filter(e => e.label !== label) })); showToast(`${label} supprimee`); fetch("/api/budget/forecast").then(r => r.json()).then(setForecast); }
+      if (d.success) { setMonths(prev => prev.map(m => m.month_key !== mk ? m : { ...m, expenses: m.expenses.filter(e => e.label !== label) })); showToast(`${label} supprimee`); fetch("/api/budget/forecast", { headers: authHeaders() }).then(r => r.json()).then(setForecast); }
     } catch { showToast("Erreur", false); }
     finally { setSaving(null); }
   }
@@ -175,16 +218,16 @@ export default function BudgetApp() {
     setSaving("income");
     try {
       const body: Record<string, number> = {}; body[field] = value;
-      const r = await fetch(`/api/budget/month/${mk}/income`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const r = await fetch(`/api/budget/month/${mk}/income`, { method: "PATCH", headers: authHeaders(), body: JSON.stringify(body) });
       const d = await r.json();
-      if (d.success) { setMonths(prev => prev.map(m => m.month_key !== mk ? m : { ...m, [field]: value })); showToast("Revenu mis à jour"); fetch("/api/budget/forecast").then(r => r.json()).then(setForecast); }
+      if (d.success) { setMonths(prev => prev.map(m => m.month_key !== mk ? m : { ...m, [field]: value })); showToast("Revenu mis à jour"); fetch("/api/budget/forecast", { headers: authHeaders() }).then(r => r.json()).then(setForecast); }
     } catch { showToast("Erreur", false); }
     finally { setSaving(null); }
   }
 
   async function patchSavings(mk: string, updates: Partial<Savings>) {
     try {
-      const r = await fetch(`/api/budget/month/${mk}/savings`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(updates) });
+      const r = await fetch(`/api/budget/month/${mk}/savings`, { method: "PATCH", headers: authHeaders(), body: JSON.stringify(updates) });
       const d = await r.json();
       if (d.success) { setMonths(prev => prev.map(m => m.month_key !== mk ? m : { ...m, savings: { ...m.savings, ...updates } })); showToast("Épargne mise à jour"); }
     } catch { showToast("Erreur", false); }
@@ -192,7 +235,7 @@ export default function BudgetApp() {
 
   async function patchPortfolioValues(mk: string, updates: Record<string, number>) {
     try {
-      const r = await fetch(`/api/budget/month/${mk}/portfolio-values`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(updates) });
+      const r = await fetch(`/api/budget/month/${mk}/portfolio-values`, { method: "PATCH", headers: authHeaders(), body: JSON.stringify(updates) });
       const d = await r.json();
       if (d.success) { setMonths(prev => prev.map(m => m.month_key !== mk ? m : { ...m, portfolio_values: { ...(m.portfolio_values || {}), ...updates } })); showToast("Valeur portefeuille mise à jour"); }
     } catch { showToast("Erreur", false); }
@@ -200,12 +243,12 @@ export default function BudgetApp() {
 
   async function patchBudgetAlloc(mk: string, updates: { amounts?: Record<string, number>; validated?: Record<string, boolean> }) {
     try {
-      const r = await fetch(`/api/budget/month/${mk}/budget-allocation`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(updates) });
+      const r = await fetch(`/api/budget/month/${mk}/budget-allocation`, { method: "PATCH", headers: authHeaders(), body: JSON.stringify(updates) });
       const d = await r.json();
       if (d.success) {
         setMonths(prev => prev.map(m => m.month_key !== mk ? m : { ...m, budget_allocation: updates.amounts ? { ...m.budget_allocation, ...updates.amounts } as BudgetAlloc : m.budget_allocation, budget_validated: updates.validated ? { ...(m.budget_validated || {}), ...updates.validated } : m.budget_validated }));
         showToast("Budget mis à jour");
-        fetch("/api/budget/forecast").then(r => r.json()).then(setForecast);
+        fetch("/api/budget/forecast", { headers: authHeaders() }).then(r => r.json()).then(setForecast);
       }
     } catch { showToast("Erreur", false); }
   }
@@ -225,6 +268,35 @@ export default function BudgetApp() {
     { id: "economies", label: "Économies" },
     { id: "salaires", label: "Salaires" },
   ] as const;
+
+  // Auth guard: show login if not authenticated
+  if (authChecked && !authToken) return (
+    <div style={{ background: S.bg, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: S.font }}>
+      <div style={{ background: S.surface, borderRadius: 20, padding: "40px 36px", width: "100%", maxWidth: 400, border: `1px solid ${S.border}`, boxShadow: "0 8px 32px rgba(0,0,0,0.06)" }}>
+        <h1 style={{ fontFamily: S.heading, fontSize: 28, fontWeight: 800, textAlign: "center", margin: "0 0 4px", color: S.text }}>Budget Personnel</h1>
+        <p style={{ color: S.muted, fontSize: 14, textAlign: "center", margin: "0 0 28px" }}>
+          {authMode === "register" ? "Inscription" : "Connexion"}
+        </p>
+        {authError && <div style={{ background: `${S.danger}10`, border: `1px solid ${S.danger}40`, borderRadius: 10, padding: "10px 14px", marginBottom: 16, color: S.danger, fontSize: 13 }}>{authError}</div>}
+        {authMode === "register" && (
+          <input value={authName} onChange={e => setAuthName(e.target.value)} placeholder="Nom (optionnel)" style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${S.border}`, background: S.surface2, color: S.text, fontSize: 14, fontFamily: S.font, marginBottom: 12, outline: "none" }} />
+        )}
+        <input value={authEmail} onChange={e => setAuthEmail(e.target.value)} placeholder="Email" type="email" style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${S.border}`, background: S.surface2, color: S.text, fontSize: 14, fontFamily: S.font, marginBottom: 12, outline: "none" }} onKeyDown={e => e.key === "Enter" && handleAuth()} />
+        <input value={authPw} onChange={e => setAuthPw(e.target.value)} placeholder="Mot de passe" type="password" style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${S.border}`, background: S.surface2, color: S.text, fontSize: 14, fontFamily: S.font, marginBottom: 20, outline: "none" }} onKeyDown={e => e.key === "Enter" && handleAuth()} />
+        <button onClick={handleAuth} disabled={authLoading} style={{ width: "100%", padding: "12px", borderRadius: 10, border: "none", background: S.primary, color: "#fff", fontSize: 15, fontWeight: 700, fontFamily: S.font, opacity: authLoading ? 0.7 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+          {authLoading && <div style={{ width: 14, height: 14, border: "2px solid #fff", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />}
+          {authMode === "register" ? "Creer mon compte" : "Se connecter"}
+        </button>
+        <p style={{ textAlign: "center", marginTop: 16, color: S.muted, fontSize: 13 }}>
+          {authMode === "register" ? "Deja un compte ? " : "Pas encore de compte ? "}
+          <button onClick={() => { setAuthMode(authMode === "register" ? "login" : "register"); setAuthError(""); }} style={{ background: "none", border: "none", color: S.primary, fontWeight: 700, fontSize: 13, fontFamily: S.font, textDecoration: "underline" }}>
+            {authMode === "register" ? "Se connecter" : "Inscription"}
+          </button>
+        </p>
+      </div>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    </div>
+  );
 
   if (loading) return (
     <div style={{ background: S.bg, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16, fontFamily: S.font }}>
@@ -281,6 +353,7 @@ export default function BudgetApp() {
             <button onClick={() => setIdx(i => Math.min(months.length - 1, i + 1))} disabled={idx === months.length - 1} style={{ background: "transparent", border: `1px solid ${S.border}`, color: idx === months.length - 1 ? S.muted : S.text, width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", opacity: idx === months.length - 1 ? 0.4 : 1 }}><ArrowRight size={14} /></button>
           </div>
         )}
+        <button onClick={logout} title="Deconnexion" style={{ background: "transparent", border: `1px solid ${S.border}`, color: S.muted, width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", marginRight: 4 }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg></button>
         <button onClick={loadData} title="Actualiser" style={{ background: "transparent", border: `1px solid ${S.border}`, color: S.muted, width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center" }}><RefreshCw size={13} /></button>
       </header>
 
@@ -406,7 +479,7 @@ function AiAnalysis({ month, months, idx }: { month: Month; months: Month[]; idx
     let cumulBal = 0;
     for (let i = 0; i <= idx; i++) { const mi2 = months[i]; cumulBal += mi2.income_salary + mi2.income_other - mi2.expenses.reduce((s, e) => s + e.amount, 0) - (mi2.savings?.target_monthly ?? 140); }
     const prompt = `Budget ${month.month_name} 2026: Revenu: ${income}EUR, Depenses fixes: ${fixed}EUR (${income > 0 ? Math.round(fixed/income*100) : 0}%), Variables: ${variable}EUR, Investissements: ${invest}EUR, Epargne: ${savings}EUR, Solde net: ${balance}EUR, Cumul depuis jan: ${Math.round(cumulBal)}EUR, Taux effort: ${income > 0 ? Math.round(expenses/income*100) : 0}%, Validation: ${month.expenses.filter(e => e.validated).length}/${month.expenses.length}`;
-    try { const r = await fetch("/api/analyze", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt }) }); const d = await r.json(); setAnalysis(d.analysis); } catch { setAnalysis("Analyse indisponible."); }
+    try { const r = await fetch("/api/analyze", { method: "POST", headers: authHeaders(), body: JSON.stringify({ prompt }) }); const d = await r.json(); setAnalysis(d.analysis); } catch { setAnalysis("Analyse indisponible."); }
     setLoading(false);
   }
   return (
@@ -626,7 +699,7 @@ function DepensesTab({ month: m, months, monthKey, onValidate, onAmountChange, o
     if (!pendingAdd) return;
     if (type === "single") {
       fetch(`/api/budget/month/${monthKey}/expense`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
+        method: "POST", headers: authHeaders(),
         body: JSON.stringify({ label: pendingAdd.label, amount: pendingAdd.amount, category: pendingAdd.category, propagate: false }),
       }).then(() => window.location.reload());
     } else if (type === "all") {
@@ -635,7 +708,7 @@ function DepensesTab({ month: m, months, monthKey, onValidate, onAmountChange, o
       // Call for each selected month individually via non-propagating add
       selectedMonths.forEach(mk => {
         fetch(`/api/budget/month/${mk}/expense`, {
-          method: "POST", headers: { "Content-Type": "application/json" },
+          method: "POST", headers: authHeaders(),
           body: JSON.stringify({ label: pendingAdd!.label, amount: pendingAdd!.amount, category: pendingAdd!.category, propagate: false }),
         });
       });
@@ -992,13 +1065,13 @@ function HistoriqueTab({ months }: { months: Month[] }) {
 function SalairesTab({ showToast: toast }: { showToast: (msg: string) => void }) {
   const [data, setData] = useState<{ years: number[]; months: { name: string; values: number[] }[]; totals: number[] } | null>(null);
   const [loading, setLoading] = useState(true);
-  useEffect(() => { fetch("/api/budget/salary-history").then(r => r.json()).then(d => { setData(d); setLoading(false); }).catch(() => setLoading(false)); }, []);
+  useEffect(() => { fetch("/api/budget/salary-history", { headers: authHeaders() }).then(r => r.json()).then(d => { setData(d); setLoading(false); }).catch(() => setLoading(false)); }, []);
   async function updateCell(mi: number, yi: number, value: number) {
     if (!data) return;
     const nd = { ...data, months: data.months.map((m, i) => i === mi ? { ...m, values: m.values.map((v, j) => j === yi ? value : v) } : m) };
     nd.totals = nd.years.map((_, yi2) => nd.months.reduce((s, m) => s + m.values[yi2], 0));
     setData(nd);
-    try { await fetch("/api/budget/salary-history", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(nd) }); toast("Salaire mis à jour"); } catch { toast("Erreur"); }
+    try { await fetch("/api/budget/salary-history", { method: "PUT", headers: authHeaders(), body: JSON.stringify(nd) }); toast("Salaire mis à jour"); } catch { toast("Erreur"); }
   }
   if (loading) return <Card style={{ textAlign: "center", padding: 40 }}><p style={{ color: S.muted }}>Chargement...</p></Card>;
   if (!data) return <Card style={{ textAlign: "center", padding: 40 }}><p style={{ color: S.danger }}>Erreur</p></Card>;
@@ -1215,6 +1288,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
