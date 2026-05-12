@@ -34,7 +34,7 @@ interface Month {
   portfolio_values?: Record<string, number>;
   balance_end_of_month: number; notes: string;
 }
-interface ForecastMonth { month_key: string; month_name: string; income: number; expenses: number; savings_target: number; balance: number; alert_type: string; }
+interface ForecastMonth { month_key: string; month_name: string; income: number; expenses: number; savings_target: number; balance: number; alert_type: string; message?: string; }
 interface Alert { month_key: string; month_name: string; projected_balance: number; alert_type: string; message: string; }
 interface Forecast { months: ForecastMonth[]; alerts: Alert[]; total_income: number; total_expenses: number; total_savings: number; }
 
@@ -958,6 +958,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
