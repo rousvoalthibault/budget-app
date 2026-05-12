@@ -799,8 +799,8 @@ function DepensesTab({ month: m, months, monthKey, onValidate, onAmountChange, o
       </Card>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-        <ColCard title="Dépenses fixes" items={fixed} color={S.primary} catKey="fixed" />
-        <ColCard title="Investissements & epargne" items={invest} color={S.accent} catKey="investment" />
+        {ColCard({ title: "Dépenses fixes", items: fixed, color: S.primary, catKey: "fixed" })}
+        {ColCard({ title: "Investissements & epargne", items: invest, color: S.accent, catKey: "investment" })}
       </div>
 
       <Card>
@@ -1215,6 +1215,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
