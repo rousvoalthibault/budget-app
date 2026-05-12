@@ -137,7 +137,7 @@ export default function BudgetApp() {
       if (d.success) {
         setMonths(prev => prev.map(m => m.month_key !== mk ? m : { ...m, expenses: m.expenses.map(e => e.label === label ? { ...e, ...updates } : e) }));
         if (updates.validated !== undefined) showToast(updates.validated ? `${label} validee` : `${label} devalidee`);
-        else showToast("Montant mis a jour");
+        else showToast("Montant mis à jour");
         fetch("/api/budget/forecast").then(r => r.json()).then(setForecast);
       }
     } catch { showToast("Erreur", false); }
@@ -177,7 +177,7 @@ export default function BudgetApp() {
       const body: Record<string, number> = {}; body[field] = value;
       const r = await fetch(`/api/budget/month/${mk}/income`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const d = await r.json();
-      if (d.success) { setMonths(prev => prev.map(m => m.month_key !== mk ? m : { ...m, [field]: value })); showToast("Revenu mis a jour"); fetch("/api/budget/forecast").then(r => r.json()).then(setForecast); }
+      if (d.success) { setMonths(prev => prev.map(m => m.month_key !== mk ? m : { ...m, [field]: value })); showToast("Revenu mis à jour"); fetch("/api/budget/forecast").then(r => r.json()).then(setForecast); }
     } catch { showToast("Erreur", false); }
     finally { setSaving(null); }
   }
@@ -186,7 +186,7 @@ export default function BudgetApp() {
     try {
       const r = await fetch(`/api/budget/month/${mk}/savings`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(updates) });
       const d = await r.json();
-      if (d.success) { setMonths(prev => prev.map(m => m.month_key !== mk ? m : { ...m, savings: { ...m.savings, ...updates } })); showToast("Epargne mise a jour"); }
+      if (d.success) { setMonths(prev => prev.map(m => m.month_key !== mk ? m : { ...m, savings: { ...m.savings, ...updates } })); showToast("Épargne mise à jour"); }
     } catch { showToast("Erreur", false); }
   }
 
@@ -194,7 +194,7 @@ export default function BudgetApp() {
     try {
       const r = await fetch(`/api/budget/month/${mk}/portfolio-values`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(updates) });
       const d = await r.json();
-      if (d.success) { setMonths(prev => prev.map(m => m.month_key !== mk ? m : { ...m, portfolio_values: { ...(m.portfolio_values || {}), ...updates } })); showToast("Valeur portefeuille mise a jour"); }
+      if (d.success) { setMonths(prev => prev.map(m => m.month_key !== mk ? m : { ...m, portfolio_values: { ...(m.portfolio_values || {}), ...updates } })); showToast("Valeur portefeuille mise à jour"); }
     } catch { showToast("Erreur", false); }
   }
 
@@ -204,7 +204,7 @@ export default function BudgetApp() {
       const d = await r.json();
       if (d.success) {
         setMonths(prev => prev.map(m => m.month_key !== mk ? m : { ...m, budget_allocation: updates.amounts ? { ...m.budget_allocation, ...updates.amounts } as BudgetAlloc : m.budget_allocation, budget_validated: updates.validated ? { ...(m.budget_validated || {}), ...updates.validated } : m.budget_validated }));
-        showToast("Budget mis a jour");
+        showToast("Budget mis à jour");
         fetch("/api/budget/forecast").then(r => r.json()).then(setForecast);
       }
     } catch { showToast("Erreur", false); }
@@ -219,11 +219,11 @@ export default function BudgetApp() {
 
   const TABS = [
     { id: "dashboard", label: "Tableau de bord" },
-    { id: "depenses", label: "Depenses" },
+    { id: "depenses", label: "Dépenses" },
     { id: "projection", label: "Projection 12 mois" },
     { id: "historique", label: "Historique" },
+    { id: "economies", label: "Économies" },
     { id: "salaires", label: "Salaires" },
-    { id: "economies", label: "Economies" },
   ] as const;
 
   if (loading) return (
@@ -296,7 +296,7 @@ export default function BudgetApp() {
       {/* ── Content ────────────────────────────────────────────────── */}
       <main key={tab} style={{ padding: "24px", maxWidth: 1200, margin: "0 auto", animation: "fadeUp 0.25s ease" }}>
         {tab === "dashboard" && m && (
-          <DashboardTab month={m} netBalance={netBal} totalExpenses={totalExp} validatedBudget={validatedBudget} validatedCount={validatedCnt} totalCount={totalItems}
+          <DashboardTab month={m} months={months} idx={idx} netBalance={netBal} totalExpenses={totalExp} validatedBudget={validatedBudget} validatedCount={validatedCnt} totalCount={totalItems}
             onIncomeChange={(f, v) => patchIncome(m.month_key, f, v)}
             onValidate={(l, v) => patchExpense(m.month_key, l, { validated: v })} saving={saving} />
         )}
@@ -324,8 +324,8 @@ export default function BudgetApp() {
 }
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
-function DashboardTab({ month: m, netBalance, totalExpenses, validatedBudget, validatedCount, totalCount, onIncomeChange, onValidate, saving }: {
-  month: Month; netBalance: number; totalExpenses: number; validatedBudget: number; validatedCount: number; totalCount: number;
+function DashboardTab({ month: m, months, idx, netBalance, totalExpenses, validatedBudget, validatedCount, totalCount, onIncomeChange, onValidate, saving }: {
+  month: Month; months: Month[]; idx: number; netBalance: number; totalExpenses: number; validatedBudget: number; validatedCount: number; totalCount: number;
   onIncomeChange: (f: "income_salary" | "income_other", v: number) => void;
   onValidate: (label: string, v: boolean) => void; saving: string | null;
 }) {
@@ -341,9 +341,10 @@ function DashboardTab({ month: m, netBalance, totalExpenses, validatedBudget, va
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16 }}>
         {[
           { label: "Salaire du mois", value: m.income_salary, color: S.success, editable: true, field: "income_salary" as const },
-          { label: "Total depenses", value: totalExpenses, color: S.danger, editable: false, sub: validatedBudget > 0 ? `dont ${fmt(validatedBudget)} enveloppes` : undefined },
+          { label: "Total dépenses", value: totalExpenses, color: S.danger, editable: false, sub: validatedBudget > 0 ? `dont ${fmt(validatedBudget)} enveloppes` : undefined },
           { label: "Solde net", value: netBalance, color: balColor, editable: false },
-          { label: "Objectif economies", value: m.savings?.target_monthly ?? 140, color: S.accent, editable: false, sub: `Cumul: ${fmt(m.savings?.cumulative_target ?? 0)}` },
+          { label: "Solde cumulé YTD", value: (() => { let c2 = 0; for (let i2 = 0; i2 <= idx; i2++) { const m2 = months[i2]; c2 += m2.income_salary + m2.income_other - m2.expenses.reduce((s2: number, e2: Expense) => s2 + e2.amount, 0) - (m2.savings?.target_monthly ?? 140); } return Math.round(c2); })(), color: (() => { let c2 = 0; for (let i2 = 0; i2 <= idx; i2++) { const m2 = months[i2]; c2 += m2.income_salary + m2.income_other - m2.expenses.reduce((s2: number, e2: Expense) => s2 + e2.amount, 0) - (m2.savings?.target_monthly ?? 140); } return c2 >= 0 ? S.primary : S.danger; })(), editable: false, sub: "Depuis janvier" },
+        { label: "Objectif économies", value: m.savings?.target_monthly ?? 140, color: S.accent, editable: false, sub: `Cumul: ${fmt(m.savings?.cumulative_target ?? 0)}` },
         ].map(({ label, value, color, editable, field, sub }) => (
           <Card key={label} className="card-h" style={{ background: `linear-gradient(135deg, ${color}14, ${S.bg})`, borderColor: `${color}28` }}>
             <SLabel>{label}</SLabel>
@@ -353,6 +354,8 @@ function DashboardTab({ month: m, netBalance, totalExpenses, validatedBudget, va
           </Card>
         ))}
       </div>
+
+      <AiAnalysis month={m} months={months} idx={idx} />
 
       <Card>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
@@ -365,7 +368,7 @@ function DashboardTab({ month: m, netBalance, totalExpenses, validatedBudget, va
       </Card>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
-        {[{ label: "Depenses fixes", items: fixed, color: S.primary }, { label: "Investissements", items: invest, color: S.accent }, { label: "Variables", items: variable, color: S.warning }].map(({ label, items, color }) => {
+        {[{ label: "Dépenses fixes", items: fixed, color: S.primary }, { label: "Investissements", items: invest, color: S.accent }, { label: "Variables", items: variable, color: S.warning }].map(({ label, items, color }) => {
           const total = items.reduce((s, e) => s + e.amount, 0);
           const pct = income > 0 ? Math.round((total / income) * 100) : 0;
           return (
@@ -387,6 +390,42 @@ function DashboardTab({ month: m, netBalance, totalExpenses, validatedBudget, va
 }
 
 
+
+
+function AiAnalysis({ month, months, idx }: { month: Month; months: Month[]; idx: number }) {
+  const [analysis, setAnalysis] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  async function analyze() {
+    setLoading(true);
+    const income = month.income_salary + month.income_other;
+    const expenses = month.expenses.reduce((s, e) => s + e.amount, 0);
+    const fixed = month.expenses.filter(e => e.category === "fixed").reduce((s, e) => s + e.amount, 0);
+    const variable = month.expenses.filter(e => e.category === "variable").reduce((s, e) => s + e.amount, 0);
+    const invest = month.expenses.filter(e => e.category === "investment").reduce((s, e) => s + e.amount, 0);
+    const savings = month.savings?.target_monthly ?? 140;
+    const balance = income - expenses - savings;
+    let cumulBal = 0;
+    for (let i = 0; i <= idx; i++) { const mi2 = months[i]; cumulBal += mi2.income_salary + mi2.income_other - mi2.expenses.reduce((s, e) => s + e.amount, 0) - (mi2.savings?.target_monthly ?? 140); }
+    const prompt = `Budget ${month.month_name} 2026: Revenu: ${income}EUR, Depenses fixes: ${fixed}EUR (${income > 0 ? Math.round(fixed/income*100) : 0}%), Variables: ${variable}EUR, Investissements: ${invest}EUR, Epargne: ${savings}EUR, Solde net: ${balance}EUR, Cumul depuis jan: ${Math.round(cumulBal)}EUR, Taux effort: ${income > 0 ? Math.round(expenses/income*100) : 0}%, Validation: ${month.expenses.filter(e => e.validated).length}/${month.expenses.length}`;
+    try { const r = await fetch("/api/analyze", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt }) }); const d = await r.json(); setAnalysis(d.analysis); } catch { setAnalysis("Analyse indisponible."); }
+    setLoading(false);
+  }
+  return (
+    <Card style={{ borderColor: `${S.primary}20`, background: `linear-gradient(135deg, ${S.primary}04, ${S.bg})` }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: analysis ? 14 : 0, gap: 12, flexWrap: "wrap" as const }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={S.primary} strokeWidth="2"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+          <SLabel>Analyse IA du budget</SLabel>
+        </div>
+        <button onClick={analyze} disabled={loading} style={{ background: loading ? S.surface2 : S.primary, color: "#fff", border: "none", borderRadius: 10, padding: "7px 16px", fontSize: 13, fontFamily: S.font, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, opacity: loading ? 0.7 : 1 }}>
+          {loading && <div style={{ width: 12, height: 12, border: "2px solid #fff", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />}
+          {loading ? "Analyse..." : analysis ? "Relancer" : "Analyser mon budget"}
+        </button>
+      </div>
+      {analysis && <div style={{ fontSize: 14, lineHeight: 1.8, color: S.text, whiteSpace: "pre-line", background: S.surface2, borderRadius: 12, padding: "16px 18px" }}>{analysis}</div>}
+    </Card>
+  );
+}
 
 function ConfettiBurst({ onDone }: { onDone: () => void }) {
   const [go, setGo] = useState(false);
@@ -527,7 +566,7 @@ function SwipeValidator({ expenses, onValidate, onAmountChange, saving }: { expe
   return (
     <Card style={{ padding: 0, overflow: "hidden" }}>
       <div style={{ padding: "12px 20px 8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <SLabel>{reviewMode ? "Revoir les depenses" : "Valider les depenses"} ({list.length - ci} restantes)</SLabel>
+        <SLabel>{reviewMode ? "Revoir les dépenses" : "Valider les dépenses"} ({list.length - ci} restantes)</SLabel>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <span style={{ color: S.muted, fontSize: 12, fontWeight: 600 }}>{Math.min(ci+1, list.length)}/{list.length}</span>
           <button onClick={() => setFs(true)} title="Plein ecran" style={{ background: S.surface2, border: `1px solid ${S.border}`, borderRadius: 8, width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", color: S.muted }}>
@@ -639,7 +678,7 @@ function DepensesTab({ month: m, monthKey, onValidate, onAmountChange, onIncomeC
       </Card>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-        <ColCard title="Depenses fixes" items={fixed} color={S.primary} catKey="fixed" />
+        <ColCard title="Dépenses fixes" items={fixed} color={S.primary} catKey="fixed" />
         <ColCard title="Investissements & epargne" items={invest} color={S.accent} catKey="investment" />
       </div>
 
@@ -708,16 +747,16 @@ function ProjectionTab({ forecast: f }: { forecast: Forecast }) {
   const rolling: EM[] = [...fromCur, ...proj];
 
   let cumul = 0;
-  const chartData = rolling.map(m => { cumul += m.balance; const ip = (m as EM).is_projected; return { name: m.month_name.slice(0,3) + (ip ? "*" : ""), full: m.month_name + (ip ? " (proj.)" : ""), "Revenu": m.income, "Depenses": m.expenses, "Solde mensuel": m.balance, "Solde cumule": cumul, isProj: ip }; });
+  const chartData = rolling.map(m => { cumul += m.balance; const ip = (m as EM).is_projected; return { name: m.month_name.slice(0,3) + (ip ? "*" : ""), full: m.month_name + (ip ? " (proj.)" : ""), "Revenu": m.income, "Dépenses": m.expenses, "Solde mensuel": m.balance, "Solde cumulé": cumul, isProj: ip }; });
   const alerts = rolling.filter(m => m.alert_type !== "ok");
   const ti = rolling.reduce((s, m) => s + m.income, 0);
   const te = rolling.reduce((s, m) => s + m.expenses, 0);
-  const fc = chartData.length > 0 ? chartData[chartData.length-1]["Solde cumule"] : 0;
+  const fc = chartData.length > 0 ? chartData[chartData.length-1]["Solde cumulé"] : 0;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))", gap: 16 }}>
-        {[{ l: "Revenus 12 mois", v: ti, c: S.success }, { l: "Depenses 12 mois", v: te, c: S.danger }, { l: "Solde cumule final", v: fc, c: fc >= 0 ? S.primary : S.danger }].map(({ l, v, c }) => (
+        {[{ l: "Revenus 12 mois", v: ti, c: S.success }, { l: "Dépenses 12 mois", v: te, c: S.danger }, { l: "Solde cumulé final", v: fc, c: fc >= 0 ? S.primary : S.danger }].map(({ l, v, c }) => (
           <Card key={l} className="card-h"><SLabel>{l}</SLabel><p style={{ fontFamily: S.heading, fontSize: 28, fontWeight: 700, color: c, margin: 0 }}>{fmt(v)}</p></Card>
         ))}
         <Card className="card-h" style={{ borderColor: alerts.length > 0 ? `${S.danger}40` : `${S.success}30` }}><SLabel>Mois a risque</SLabel><p style={{ fontFamily: S.heading, fontSize: 28, fontWeight: 700, color: alerts.length > 0 ? S.danger : S.success, margin: 0 }}>{alerts.length} mois</p></Card>
@@ -746,13 +785,13 @@ function ProjectionTab({ forecast: f }: { forecast: Forecast }) {
             <Tooltip content={<ChartTip />} />
             <ReferenceLine yAxisId="right" y={0} stroke={S.muted} strokeDasharray="4 4" strokeWidth={1} />
             <Bar yAxisId="left" dataKey="Revenu" fill={`${S.success}50`} radius={[4,4,0,0]} maxBarSize={26} />
-            <Bar yAxisId="left" dataKey="Depenses" fill={`${S.danger}50`} radius={[4,4,0,0]} maxBarSize={26} />
+            <Bar yAxisId="left" dataKey="Dépenses" fill={`${S.danger}50`} radius={[4,4,0,0]} maxBarSize={26} />
             <Line yAxisId="right" type="monotone" dataKey="Solde mensuel" stroke={`${S.warning}80`} strokeWidth={1.5} strokeDasharray="4 2" dot={false} />
-            <Line yAxisId="right" type="monotone" dataKey="Solde cumule" stroke={S.accent} strokeWidth={3} dot={{ fill: S.accent, r: 4, strokeWidth: 0 }} activeDot={{ r: 7 }} />
+            <Line yAxisId="right" type="monotone" dataKey="Solde cumulé" stroke={S.accent} strokeWidth={3} dot={{ fill: S.accent, r: 4, strokeWidth: 0 }} activeDot={{ r: 7 }} />
           </ComposedChart>
         </ResponsiveContainer>
         <div style={{ display: "flex", gap: 16, marginTop: 12, justifyContent: "center", flexWrap: "wrap" as const }}>
-          {[{ c: `${S.success}50`, l: "Revenu" }, { c: `${S.danger}50`, l: "Depenses" }, { c: `${S.warning}80`, l: "Solde mensuel" }, { c: S.accent, l: "Solde cumule" }].map(({ c, l }) => (
+          {[{ c: `${S.success}50`, l: "Revenu" }, { c: `${S.danger}50`, l: "Dépenses" }, { c: `${S.warning}80`, l: "Solde mensuel" }, { c: S.accent, l: "Solde cumulé" }].map(({ c, l }) => (
             <div key={l} style={{ display: "flex", alignItems: "center", gap: 6 }}><div style={{ width: 12, height: 12, background: c, borderRadius: 3 }} /><span style={{ color: S.muted, fontSize: 12 }}>{l}</span></div>
           ))}
         </div>
@@ -762,7 +801,7 @@ function ProjectionTab({ forecast: f }: { forecast: Forecast }) {
         <SLabel>Detail 12 mois avec solde cumule</SLabel>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: S.font, fontSize: 13 }}>
-            <thead><tr>{["Mois","Revenu","Depenses","Economies","Solde mensuel","Solde cumule","Statut"].map(h => <th key={h} style={{ padding: "8px 14px", textAlign: "left", color: S.muted, fontWeight: 600, fontSize: 11, borderBottom: `2px solid ${S.border}` }}>{h}</th>)}</tr></thead>
+            <thead><tr>{["Mois","Revenu","Dépenses","Economies","Solde mensuel","Solde cumulé","Statut"].map(h => <th key={h} style={{ padding: "8px 14px", textAlign: "left", color: S.muted, fontWeight: 600, fontSize: 11, borderBottom: `2px solid ${S.border}` }}>{h}</th>)}</tr></thead>
             <tbody>{(() => { let rc = 0; return rolling.map(mo => { rc += mo.balance; const ac = mo.alert_type === "danger" ? S.danger : mo.alert_type === "warning" ? S.warning : S.success; const ip = (mo as EM).is_projected; return (
               <tr key={mo.month_key} className="row-h" style={{ borderBottom: `1px solid ${S.border}`, opacity: ip ? 0.7 : 1 }}>
                 <td style={{ padding: "9px 14px", fontFamily: S.heading, fontSize: 16, color: ip ? S.muted : S.text, fontWeight: 600 }}>{mo.month_name}{ip && <span style={{ color: S.muted, fontSize: 10, marginLeft: 4 }}>(proj.)</span>}</td>
@@ -790,7 +829,7 @@ function HistoriqueTab({ months }: { months: Month[] }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 16 }}>
-        {[{ l: "Total revenus 2026", v: ti, c: S.success }, { l: "Total depenses 2026", v: te, c: S.danger }, { l: "Solde cumule fin 2026", v: fc, c: fc >= 0 ? S.primary : S.danger }].map(({ l, v, c }) => (
+        {[{ l: "Total revenus 2026", v: ti, c: S.success }, { l: "Total depenses 2026", v: te, c: S.danger }, { l: "Solde cumulé fin 2026", v: fc, c: fc >= 0 ? S.primary : S.danger }].map(({ l, v, c }) => (
           <Card key={l} className="card-h"><SLabel>{l}</SLabel><p style={{ fontFamily: S.heading, fontSize: 26, fontWeight: 700, color: c, margin: 0 }}>{fmt(v)}</p></Card>
         ))}
       </div>
@@ -798,7 +837,7 @@ function HistoriqueTab({ months }: { months: Month[] }) {
         <SLabel>Historique detaille 2026 — mois par mois avec solde cumule</SLabel>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: S.font, fontSize: 13 }}>
-            <thead><tr>{["Mois", "Revenu", "Depenses", "Economies", "Solde mensuel", "Solde cumule", "Validation"].map(h => <th key={h} style={{ padding: "10px 14px", textAlign: "left", color: S.muted, fontWeight: 600, fontSize: 11, borderBottom: `2px solid ${S.border}`, textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>{h}</th>)}</tr></thead>
+            <thead><tr>{["Mois", "Revenu", "Dépenses", "Economies", "Solde mensuel", "Solde cumulé", "Validation"].map(h => <th key={h} style={{ padding: "10px 14px", textAlign: "left", color: S.muted, fontWeight: 600, fontSize: 11, borderBottom: `2px solid ${S.border}`, textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>{h}</th>)}</tr></thead>
             <tbody>{rows.map(r => {
               const bc = r.bal >= 0 ? S.success : S.danger; const cc = r.cumul >= 0 ? S.success : S.danger; const pv = r.tc > 0 ? Math.round((r.vc/r.tc)*100) : 0;
               return (<tr key={r.month_key} className="row-h" style={{ borderBottom: `1px solid ${S.border}` }}>
@@ -838,7 +877,7 @@ function SalairesTab({ showToast: toast }: { showToast: (msg: string) => void })
     const nd = { ...data, months: data.months.map((m, i) => i === mi ? { ...m, values: m.values.map((v, j) => j === yi ? value : v) } : m) };
     nd.totals = nd.years.map((_, yi2) => nd.months.reduce((s, m) => s + m.values[yi2], 0));
     setData(nd);
-    try { await fetch("/api/budget/salary-history", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(nd) }); toast("Salaire mis a jour"); } catch { toast("Erreur"); }
+    try { await fetch("/api/budget/salary-history", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(nd) }); toast("Salaire mis à jour"); } catch { toast("Erreur"); }
   }
   if (loading) return <Card style={{ textAlign: "center", padding: 40 }}><p style={{ color: S.muted }}>Chargement...</p></Card>;
   if (!data) return <Card style={{ textAlign: "center", padding: 40 }}><p style={{ color: S.danger }}>Erreur</p></Card>;
@@ -901,7 +940,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     const val = allItems.reduce((s, p) => s + ((mpv[p.key as string] as number) ?? 0), 0);
     return { name: mo.month_name.slice(0, 3), "Investis": inv, "Valeur": val > 0 ? val : undefined, "Plus-value": val > 0 ? val - inv : undefined };
   });
-  const savingsChart = months.map(mo => ({ name: mo.month_name.slice(0, 3), "Objectif": mo.savings.target_monthly, "Realise": mo.savings.actual_monthly }));
+  const savingsChart = months.map(mo => ({ name: mo.month_name.slice(0, 3), "Objectif": mo.savings.target_monthly, "Réalisé": mo.savings.actual_monthly }));
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {/* Objectifs editables */}
@@ -1021,7 +1060,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
               <YAxis tick={{ fill: S.muted, fontSize: 10, fontFamily: S.font }} axisLine={false} tickLine={false} width={32} />
               <Tooltip content={<ChartTip />} />
               <Bar dataKey="Objectif" fill="rgba(0,0,0,0.08)" radius={[3, 3, 0, 0]} maxBarSize={16} />
-              <Bar dataKey="Realise" fill={S.success} radius={[3, 3, 0, 0]} maxBarSize={16} />
+              <Bar dataKey="Réalisé" fill={S.success} radius={[3, 3, 0, 0]} maxBarSize={16} />
             </ComposedChart>
           </ResponsiveContainer>
         </Card>
@@ -1032,7 +1071,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
         <SLabel>Recapitulatif mensuel</SLabel>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: S.font, fontSize: 13 }}>
-            <thead><tr>{["Mois", "Objectif", "Realise", "Cumul obj.", "Cumul reel", "Ecart"].map(h => <th key={h} style={{ padding: "8px 14px", textAlign: "left", color: S.muted, fontWeight: 600, fontSize: 11, borderBottom: `1px solid ${S.border}` }}>{h}</th>)}</tr></thead>
+            <thead><tr>{["Mois", "Objectif", "Réalisé", "Cumul obj.", "Cumul reel", "Ecart"].map(h => <th key={h} style={{ padding: "8px 14px", textAlign: "left", color: S.muted, fontWeight: 600, fontSize: 11, borderBottom: `1px solid ${S.border}` }}>{h}</th>)}</tr></thead>
             <tbody>
               {months.map(mo => {
                 const ecart = mo.savings.cumulative_actual - mo.savings.cumulative_target;
@@ -1055,6 +1094,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
