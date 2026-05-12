@@ -393,7 +393,7 @@ function SwipeValidator({ expenses, onValidate, onAmountChange, saving }: { expe
   const sx = useRef(0);
   const [fly, setFly] = useState<"right"|"left"|null>(null);
   const [skipped, setSkipped] = useState<string[]>([]);
-  const [fullscreen, setFullscreen] = useState(false);
+  const [fs, setFs] = useState(false);
   const [reviewMode, setReviewMode] = useState(false);
 
   const list = reviewMode ? pending.filter(e => skipped.includes(e.label)) : pending;
@@ -405,92 +405,125 @@ function SwipeValidator({ expenses, onValidate, onAmountChange, saving }: { expe
     if (!drag) return; setDrag(false);
     if (ox > 80 && cur) {
       setFly("right"); onValidate(cur.label, true);
-      setTimeout(() => { setCi(i => i+1); setOx(0); setFly(null); }, 350);
+      setTimeout(() => { setCi(i => i+1); setOx(0); setFly(null); }, 450);
     } else if (ox < -80 && cur) {
       setFly("left");
       if (!reviewMode) setSkipped(s => [...s, cur.label]);
-      setTimeout(() => { setCi(i => i+1); setOx(0); setFly(null); }, 350);
+      setTimeout(() => { setCi(i => i+1); setOx(0); setFly(null); }, 450);
     } else setOx(0);
   }
 
-  function startReview() { setReviewMode(true); setCi(0); }
+  if (!pending.length) return <Card style={{ textAlign: "center", padding: "40px 20px" }}><Check size={36} color={S.success} style={{ margin: "0 auto 12px" }} /><p style={{ fontFamily: S.heading, fontSize: 24, fontWeight: 700, color: S.success, margin: 0 }}>Tout est valide !</p></Card>;
 
   const done = ci >= list.length;
-
-  function renderCard() {
-    if (!pending.length) return (
-      <div style={{ textAlign: "center", padding: "40px 20px" }}>
-        <Check size={36} color={S.success} style={{ margin: "0 auto 12px" }} />
-        <p style={{ fontFamily: S.heading, fontSize: 24, fontWeight: 700, color: S.success, margin: 0 }}>Tout est valide !</p>
-      </div>
-    );
-    if (done) return (
-      <div style={{ textAlign: "center", padding: "32px 20px" }}>
-        <Check size={36} color={S.success} style={{ margin: "0 auto 12px" }} />
-        <p style={{ fontFamily: S.heading, fontSize: 22, fontWeight: 700, color: S.success, margin: 0 }}>Session terminee !</p>
-        {skipped.length > 0 && !reviewMode && (
-          <div style={{ marginTop: 16 }}>
-            <p style={{ color: S.warning, fontSize: 14, fontWeight: 600, margin: "0 0 8px" }}>{skipped.length} depense{skipped.length > 1 ? "s" : ""} a revoir</p>
-            <button onClick={startReview} style={{ background: S.warning, color: "#fff", border: "none", borderRadius: 10, padding: "10px 24px", fontSize: 14, fontFamily: S.font, fontWeight: 700 }}>Revoir maintenant</button>
-          </div>
-        )}
-        {(skipped.length === 0 || reviewMode) && (
-          <button onClick={() => { setCi(0); setSkipped([]); setReviewMode(false); }} style={{ marginTop: 12, background: S.primary, color: "#fff", border: "none", borderRadius: 10, padding: "8px 20px", fontSize: 14, fontFamily: S.font, fontWeight: 600 }}>Recommencer</button>
-        )}
-      </div>
-    );
-
-    const Ico = (cur.icon && ICONS[cur.icon]) ? ICONS[cur.icon] : CreditCard;
-    const isR = ox > 50; const isL = ox < -50;
-    const tx = fly === "right" ? 600 : fly === "left" ? -600 : ox;
-    const rot = fly === "right" ? 25 : fly === "left" ? -25 : ox * 0.06;
-
-    return (
-      <div style={{ display: "flex", justifyContent: "center", padding: "8px 20px 20px", position: "relative", minHeight: fullscreen ? 280 : 180, touchAction: "none" }}>
-        <div style={{ position: "absolute", left: fullscreen ? 40 : 20, top: "50%", transform: "translateY(-50%)", color: S.danger, opacity: isL ? 0.9 : 0.12, transition: drag ? "none" : "opacity 0.2s", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}><X size={fullscreen ? 36 : 28} /><span style={{ fontSize: fullscreen ? 14 : 11, fontWeight: 700 }}>Revoir</span></div>
-        <div style={{ position: "absolute", right: fullscreen ? 40 : 20, top: "50%", transform: "translateY(-50%)", color: S.success, opacity: isR ? 0.9 : 0.12, transition: drag ? "none" : "opacity 0.2s", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}><Check size={fullscreen ? 36 : 28} /><span style={{ fontSize: fullscreen ? 14 : 11, fontWeight: 700 }}>Valider</span></div>
-        <div onMouseDown={e => hs(e.clientX)} onMouseMove={e => hm(e.clientX)} onMouseUp={he} onMouseLeave={() => drag && he()} onTouchStart={e => hs(e.touches[0].clientX)} onTouchMove={e => hm(e.touches[0].clientX)} onTouchEnd={he}
-          style={{ width: fullscreen ? 320 : 280, userSelect: "none", transform: `translateX(${tx}px) rotate(${rot}deg)`, transition: drag ? "none" : "all 0.35s cubic-bezier(0.4,0,0.2,1)", opacity: fly ? 0 : 1, cursor: "grab", background: isR ? `${S.success}10` : isL ? `${S.danger}08` : S.surface, border: `2px solid ${isR ? S.success : isL ? S.danger : S.border}`, borderRadius: 20, padding: fullscreen ? "32px 24px" : "24px 20px", textAlign: "center", boxShadow: drag ? "0 12px 40px rgba(0,0,0,0.15)" : "0 2px 12px rgba(0,0,0,0.06)" }}>
-          <div style={{ width: fullscreen ? 56 : 48, height: fullscreen ? 56 : 48, borderRadius: 16, background: `${S.accent}12`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}><Ico size={fullscreen ? 28 : 24} color={S.accent} /></div>
-          <p style={{ fontFamily: S.heading, fontSize: fullscreen ? 24 : 20, fontWeight: 700, color: S.text, margin: "0 0 6px" }}>{cur.label}</p>
-          {onAmountChange ? (
-            <div style={{ margin: "0 0 8px" }} onClick={e => e.stopPropagation()}>
-              <EditableAmt value={cur.amount} onChange={v => onAmountChange(cur.label, v)} color={S.accent} size="lg" />
-            </div>
-          ) : (
-            <p style={{ fontFamily: S.heading, fontSize: 30, fontWeight: 800, color: S.accent, margin: "0 0 8px" }}>{fmt(cur.amount)}</p>
-          )}
-          <span style={{ background: `${S.primary}10`, color: S.primary, fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 6 }}>{cur.category}</span>
-          <p style={{ color: S.muted, fontSize: 12, marginTop: 16 }}>← Revoir · Glisser · Valider →</p>
+  if (done) return (
+    <Card style={{ textAlign: "center", padding: "32px 20px" }}>
+      <Check size={36} color={S.success} style={{ margin: "0 auto 12px" }} />
+      <p style={{ fontFamily: S.heading, fontSize: 22, fontWeight: 700, color: S.success, margin: 0 }}>Session terminee !</p>
+      {skipped.length > 0 && !reviewMode && (
+        <div style={{ marginTop: 16 }}>
+          <p style={{ color: S.warning, fontSize: 14, fontWeight: 600, margin: "0 0 8px" }}>{skipped.length} depense{skipped.length > 1 ? "s" : ""} a revoir</p>
+          <button onClick={() => { setReviewMode(true); setCi(0); }} style={{ background: S.warning, color: "#fff", border: "none", borderRadius: 10, padding: "10px 24px", fontSize: 14, fontFamily: S.font, fontWeight: 700 }}>Revoir maintenant</button>
         </div>
-      </div>
-    );
-  }
+      )}
+      {(skipped.length === 0 || reviewMode) && (
+        <button onClick={() => { setCi(0); setSkipped([]); setReviewMode(false); }} style={{ marginTop: 12, background: S.primary, color: "#fff", border: "none", borderRadius: 10, padding: "8px 20px", fontSize: 14, fontFamily: S.font, fontWeight: 600 }}>Recommencer</button>
+      )}
+    </Card>
+  );
 
-  const inner = (
-    <>
+  const Ico = (cur.icon && ICONS[cur.icon]) ? ICONS[cur.icon] : CreditCard;
+  const isR = ox > 50; const isL = ox < -50;
+  // Smooth spring animation values
+  const flyX = fly === "right" ? 900 : fly === "left" ? -900 : ox;
+  const flyRot = fly === "right" ? 30 : fly === "left" ? -30 : ox * 0.05;
+  const flyScale = fly ? 0.7 : (drag ? 1.02 : 1);
+  const flyOpacity = fly ? 0 : 1;
+
+  const cardEl = (
+    <div
+      onMouseDown={e => hs(e.clientX)}
+      onMouseMove={e => hm(e.clientX)}
+      onMouseUp={he}
+      onMouseLeave={() => drag && he()}
+      onTouchStart={e => hs(e.touches[0].clientX)}
+      onTouchMove={e => { e.preventDefault(); hm(e.touches[0].clientX); }}
+      onTouchEnd={he}
+      style={{
+        width: fs ? "min(85vw, 360px)" : 280,
+        userSelect: "none",
+        transform: `translateX(${flyX}px) rotate(${flyRot}deg) scale(${flyScale})`,
+        transition: drag ? "none" : "all 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+        opacity: flyOpacity,
+        cursor: drag ? "grabbing" : "grab",
+        background: isR ? `${S.success}08` : isL ? `${S.danger}06` : S.surface,
+        border: `2px solid ${isR ? S.success : isL ? S.danger : S.border}`,
+        borderRadius: fs ? 24 : 20,
+        padding: fs ? "40px 28px" : "24px 20px",
+        textAlign: "center",
+        boxShadow: drag ? "0 20px 60px rgba(0,0,0,0.15)" : "0 4px 20px rgba(0,0,0,0.06)",
+        touchAction: "none",
+      }}
+    >
+      <div style={{ width: fs ? 64 : 48, height: fs ? 64 : 48, borderRadius: 18, background: `${S.accent}10`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+        <Ico size={fs ? 32 : 24} color={S.accent} />
+      </div>
+      <p style={{ fontFamily: S.heading, fontSize: fs ? 26 : 20, fontWeight: 700, color: S.text, margin: "0 0 8px" }}>{cur.label}</p>
+      {onAmountChange ? (
+        <div style={{ margin: "0 0 10px" }} onClick={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()}>
+          <EditableAmt value={cur.amount} onChange={v => onAmountChange(cur.label, v)} color={S.accent} size="lg" />
+        </div>
+      ) : (
+        <p style={{ fontFamily: S.heading, fontSize: fs ? 36 : 30, fontWeight: 800, color: S.accent, margin: "0 0 10px" }}>{fmt(cur.amount)}</p>
+      )}
+      <span style={{ background: `${S.primary}08`, color: S.primary, fontSize: 11, fontWeight: 700, padding: "4px 12px", borderRadius: 8 }}>{cur.category === "fixed" ? "Fixe" : cur.category === "investment" ? "Investissement" : "Variable"}</span>
+      <p style={{ color: S.muted, fontSize: fs ? 14 : 12, marginTop: fs ? 24 : 16, letterSpacing: "0.03em" }}>← Revoir · Glisser · Valider →</p>
+    </div>
+  );
+
+  // Fullscreen: just the card on a blurred backdrop
+  if (fs) return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 9990, background: "rgba(248,250,252,0.85)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
+      {/* Close button */}
+      <button onClick={() => setFs(false)} style={{ position: "absolute", top: 20, right: 20, background: S.surface, border: `1px solid ${S.border}`, borderRadius: 12, width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", color: S.muted, zIndex: 10, boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>
+        <X size={18} />
+      </button>
+      {/* Small counter */}
+      <p style={{ position: "absolute", top: 24, left: 24, color: S.muted, fontSize: 13, fontWeight: 600, fontFamily: S.font }}>{reviewMode ? "Revision" : "Validation"} · {Math.min(ci+1, list.length)}/{list.length}</p>
+
+      {/* Left/Right big indicators */}
+      <div style={{ position: "absolute", left: "8vw", top: "50%", transform: "translateY(-50%)", color: S.danger, opacity: isL ? 0.7 : 0.08, transition: drag ? "none" : "opacity 0.2s", display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+        <X size={44} strokeWidth={2.5} />
+        <span style={{ fontSize: 16, fontWeight: 700 }}>Revoir</span>
+      </div>
+      <div style={{ position: "absolute", right: "8vw", top: "50%", transform: "translateY(-50%)", color: S.success, opacity: isR ? 0.7 : 0.08, transition: drag ? "none" : "opacity 0.2s", display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+        <Check size={44} strokeWidth={2.5} />
+        <span style={{ fontSize: 16, fontWeight: 700 }}>Valider</span>
+      </div>
+
+      {cardEl}
+    </div>
+  );
+
+  // Normal (embedded) mode
+  return (
+    <Card style={{ padding: 0, overflow: "hidden" }}>
       <div style={{ padding: "12px 20px 8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <SLabel>{reviewMode ? "Revoir les depenses" : "Valider les depenses"} ({list.length - ci} restantes)</SLabel>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <span style={{ color: S.muted, fontSize: 12, fontWeight: 600 }}>{Math.min(ci+1, list.length)}/{list.length}</span>
-          <button onClick={() => setFullscreen(f => !f)} title={fullscreen ? "Reduire" : "Plein ecran"} style={{ background: S.surface2, border: `1px solid ${S.border}`, borderRadius: 8, width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", color: S.muted }}>
-            {fullscreen ? <X size={14} /> : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>}
+          <button onClick={() => setFs(true)} title="Plein ecran" style={{ background: S.surface2, border: `1px solid ${S.border}`, borderRadius: 8, width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", color: S.muted }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
           </button>
         </div>
       </div>
-      {renderCard()}
-    </>
-  );
-
-  if (fullscreen) return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 9990, background: `${S.bg}f0`, backdropFilter: "blur(12px)", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-      <div style={{ maxWidth: 500, margin: "0 auto", width: "100%" }}>
-        <Card style={{ border: "none", boxShadow: "0 8px 40px rgba(0,0,0,0.1)", borderRadius: 24 }}>{inner}</Card>
+      <div style={{ display: "flex", justifyContent: "center", padding: "8px 20px 20px", position: "relative", minHeight: 180, touchAction: "none" }}>
+        <div style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", color: S.danger, opacity: isL ? 0.7 : 0.08, transition: drag ? "none" : "opacity 0.2s", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}><X size={28} /><span style={{ fontSize: 11, fontWeight: 700 }}>Revoir</span></div>
+        <div style={{ position: "absolute", right: 16, top: "50%", transform: "translateY(-50%)", color: S.success, opacity: isR ? 0.7 : 0.08, transition: drag ? "none" : "opacity 0.2s", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}><Check size={28} /><span style={{ fontSize: 11, fontWeight: 700 }}>Valider</span></div>
+        {cardEl}
       </div>
-    </div>
+    </Card>
   );
-
-  return <Card style={{ padding: 0, overflow: "hidden" }}>{inner}</Card>;
 }
 
 
@@ -958,6 +991,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
