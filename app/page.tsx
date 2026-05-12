@@ -340,7 +340,7 @@ function DashboardTab({ month: m, months, idx, netBalance, totalExpenses, valida
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16 }}>
         {[
-          { label: "Salaire du mois", value: m.income_salary, color: S.success, editable: true, field: "income_salary" as const },
+          { label: "Revenus du mois", value: income, color: S.success, editable: false, sub: m.income_other > 0 ? `${fmt(m.income_salary)} + ${fmt(m.income_other)} autres` : undefined },
           { label: "Total dépenses", value: totalExpenses, color: S.danger, editable: false, sub: validatedBudget > 0 ? `dont ${fmt(validatedBudget)} enveloppes` : undefined },
           { label: "Solde net", value: netBalance, color: balColor, editable: false },
           { label: "Solde cumulé YTD", value: (() => { let c2 = 0; for (let i2 = 0; i2 <= idx; i2++) { const m2 = months[i2]; c2 += m2.income_salary + m2.income_other - m2.expenses.reduce((s2: number, e2: Expense) => s2 + e2.amount, 0) - (m2.savings?.target_monthly ?? 140); } return Math.round(c2); })(), color: (() => { let c2 = 0; for (let i2 = 0; i2 <= idx; i2++) { const m2 = months[i2]; c2 += m2.income_salary + m2.income_other - m2.expenses.reduce((s2: number, e2: Expense) => s2 + e2.amount, 0) - (m2.savings?.target_monthly ?? 140); } return c2 >= 0 ? S.primary : S.danger; })(), editable: false, sub: "Depuis janvier" },
@@ -1094,6 +1094,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
