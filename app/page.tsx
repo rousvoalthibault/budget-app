@@ -639,8 +639,7 @@ function DepensesTab({ month: m, monthKey, onValidate, onAmountChange, onIncomeC
           body: JSON.stringify({ label: pendingAdd!.label, amount: pendingAdd!.amount, category: pendingAdd!.category, propagate: false }),
         });
       });
-      showToast(`${pendingAdd.label} sur ${selectedMonths.size} mois`);
-      setTimeout(() => window.location.reload(), 500);
+      setTimeout(() => window.location.reload(), 300);
     }
     cancelAdd();
   }
@@ -1187,6 +1186,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
