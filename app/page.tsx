@@ -676,7 +676,7 @@ function DepensesTab({ month: m, months, monthKey, onValidate, onAmountChange, o
     );
   }
 
-  function AddRow({ category, color }: { category: "fixed" | "variable" | "investment"; color: string }) {
+  function addRowForm({ category, color }: { category: "fixed" | "variable" | "investment"; color: string }) {
     if (addingTo !== category) return null;
 
     if (recurrenceStep === "recurrence" && pendingAdd) return (
@@ -777,7 +777,7 @@ function DepensesTab({ month: m, months, monthKey, onValidate, onAmountChange, o
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           {items.map(e => <ExpRow key={e.label} e={e} color={color} />)}
-          <AddRow category={catKey} color={color} />
+          {addRowForm({ category: catKey, color })}
         </div>
         <div style={{ borderTop: `1px solid ${S.border}`, marginTop: 10, paddingTop: 10, display: "flex", justifyContent: "space-between" }}>
           <span style={{ color: S.muted, fontSize: 12 }}>Total ({items.length} lignes)</span>
@@ -813,7 +813,7 @@ function DepensesTab({ month: m, months, monthKey, onValidate, onAmountChange, o
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 8 }}>
           {variable.map(e => <ExpRow key={e.label} e={e} color={S.warning} />)}
         </div>
-        {addingTo === "variable" && <div style={{ marginTop: 8 }}><AddRow category="variable" color={S.warning} /></div>}
+        {addingTo === "variable" && <div style={{ marginTop: 8 }}>{addRowForm({ category: "variable", color: S.warning })}</div>}
         <div style={{ borderTop: `1px solid ${S.border}`, marginTop: 12, paddingTop: 10, display: "flex", justifyContent: "space-between" }}>
           <span style={{ color: S.muted, fontSize: 12 }}>Total ({variable.length} lignes)</span>
           <span style={{ fontFamily: S.heading, fontSize: 20, color: S.warning, fontWeight: 700 }}>{fmt(variable.reduce((s, e) => s + e.amount, 0))}</span>
@@ -845,7 +845,7 @@ function DepensesTab({ month: m, months, monthKey, onValidate, onAmountChange, o
   );
 }
 
-// ── Projection ─────────────────────────────────────────────────────────────────
+// ── Projection ────��────────────────────────────────────────────────────────────
 const ChartTip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; color: string }>; label?: string }) => {
   if (!active || !payload?.length) return null;
   return (
@@ -1215,6 +1215,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
