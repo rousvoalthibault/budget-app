@@ -155,7 +155,7 @@ export default function BudgetApp() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [mr, fr] = await Promise.all([fetch("/api/budget/months", { headers: getAuthHeaders() }), fetch("/api/budget/forecast", { headers: getAuthHeaders() })]);
+      const [mr, fr] = await Promise.all([fetch(`/api/budget/months?year=${selectedYear}`, { headers: getAuthHeaders() }), fetch("/api/budget/forecast", { headers: getAuthHeaders() })]);
       const md = await mr.json(); const fd = await fr.json();
       const mths: Month[] = md.months || [];
       setMonths(mths); setForecast(fd);
@@ -168,7 +168,7 @@ export default function BudgetApp() {
     const init = async () => {
       setLoading(true);
       try {
-        const [mr, fr] = await Promise.all([fetch("/api/budget/months", { headers: getAuthHeaders() }), fetch("/api/budget/forecast", { headers: getAuthHeaders() })]);
+        const [mr, fr] = await Promise.all([fetch(`/api/budget/months?year=${selectedYear}`, { headers: getAuthHeaders() }), fetch("/api/budget/forecast", { headers: getAuthHeaders() })]);
         const md = await mr.json(); const fd = await fr.json();
         const mths: Month[] = md.months || [];
         setMonths(mths); setForecast(fd);
@@ -1295,6 +1295,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
