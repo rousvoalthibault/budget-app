@@ -286,6 +286,28 @@ export default function BudgetApp() {
     { id: "salaires", label: "Salaires" },
   ] as const;
 
+  // In-app alerts computation
+  const inAppAlerts: { type: "danger" | "warning" | "info"; title: string; detail: string }[] = [];
+  if (m) {
+    // Current month balance alert
+    if (netBal < 0) inAppAlerts.push({ type: "danger", title: `Solde negatif ce mois`, detail: `${m.month_name} ${m.year} : ${netBal.toFixed(0)} EUR` });
+    else if (netBal < 300) inAppAlerts.push({ type: "warning", title: `Solde serre ce mois`, detail: `${m.month_name} ${m.year} : ${netBal.toFixed(0)} EUR restants` });
+    // Budget envelope alerts (>80% used)
+    const ba = m.budget_allocation as unknown as Record<string, number>;
+    const bv = (m.budget_validated || {}) as Record<string, boolean>;
+    Object.entries(ba).forEach(([k, alloc]) => {
+      if (alloc > 0 && bv[k]) {
+        inAppAlerts.push({ type: "info", title: `Enveloppe ${k} validee`, detail: `${alloc.toFixed(0)} EUR` });
+      }
+    });
+  }
+  // Forecast alerts
+  if (forecast?.alerts) {
+    forecast.alerts.forEach((a: { month_name: string; alert_type: string; message: string }) => {
+      inAppAlerts.push({ type: a.alert_type === "danger" ? "danger" : "warning", title: a.month_name, detail: a.message });
+    });
+  }
+
   // Auth guard: show login if not authenticated
   if (authChecked && !authToken) return (
     <div style={{ background: S.bg, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: S.font }}>
@@ -1394,6 +1416,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
