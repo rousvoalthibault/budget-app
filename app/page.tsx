@@ -350,6 +350,74 @@ export default function BudgetApp() {
         </div>
       )}
 
+      {/* ── Onboarding Wizard ──────────────────────────────────────── */}
+      {needsOnboarding && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div style={{ background: S.surface, borderRadius: 16, maxWidth: 520, width: "100%", padding: 32, boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }}>
+            <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
+              {[0,1,2].map(s => (<div key={s} style={{ flex: 1, height: 4, borderRadius: 2, background: s <= onboardStep ? S.accent : S.border }} />))}
+            </div>
+
+            {onboardStep === 0 && (<div>
+              <h2 style={{ fontFamily: S.heading, fontSize: 22, fontWeight: 700, margin: "0 0 6px" }}>Bienvenue ! 🎉</h2>
+              <p style={{ color: S.muted, fontSize: 14, margin: "0 0 20px" }}>Configurons votre budget en 3 etapes rapides.</p>
+              <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Salaire net mensuel (EUR)</label>
+              <input type="number" value={obSalary} onChange={e => setObSalary(e.target.value)} placeholder="Ex: 5000" style={{ width: "100%", padding: "12px 14px", fontSize: 18, fontFamily: S.heading, fontWeight: 700, border: `2px solid ${S.border}`, borderRadius: 10, background: S.bg, color: S.text, outline: "none" }} autoFocus />
+              <button onClick={() => { if (obSalary) setOnboardStep(1); }} disabled={!obSalary} style={{ width: "100%", marginTop: 16, padding: "12px", fontSize: 15, fontWeight: 700, background: obSalary ? S.accent : S.border, color: obSalary ? "#fff" : S.muted, border: "none", borderRadius: 10, cursor: obSalary ? "pointer" : "default" }}>Suivant →</button>
+            </div>)}
+
+            {onboardStep === 1 && (<div>
+              <h2 style={{ fontFamily: S.heading, fontSize: 22, fontWeight: 700, margin: "0 0 6px" }}>Charges fixes mensuelles</h2>
+              <p style={{ color: S.muted, fontSize: 14, margin: "0 0 16px" }}>Ajoutez vos depenses recurrentes. Vous pourrez modifier plus tard.</p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
+                {COMMON_EXPENSES.filter(ce => !obExpenses.some(e => e.label === ce.l)).map(ce => (
+                  <button key={ce.l} onClick={() => setObExpenses(p => [...p, { label: ce.l, amount: "", category: ce.c }])} style={{ fontSize: 12, padding: "5px 10px", border: `1px solid ${S.border}`, borderRadius: 6, background: S.bg, color: S.text, cursor: "pointer" }}>+ {ce.l}</button>
+                ))}
+              </div>
+              {obExpenses.map((e, i) => (
+                <div key={i} style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
+                  <span style={{ flex: 1, fontSize: 13, fontWeight: 600 }}>{e.label}</span>
+                  <input type="number" value={e.amount} onChange={ev => { const n = [...obExpenses]; n[i].amount = ev.target.value; setObExpenses(n); }} placeholder="Montant" style={{ width: 100, padding: "6px 10px", fontSize: 14, border: `1px solid ${S.border}`, borderRadius: 6, background: S.bg, color: S.text, textAlign: "right" }} />
+                  <span style={{ fontSize: 12, color: S.muted }}>EUR</span>
+                  <button onClick={() => setObExpenses(p => p.filter((_, j) => j !== i))} style={{ background: "none", border: "none", color: S.danger, cursor: "pointer", fontSize: 16 }}>×</button>
+                </div>
+              ))}
+              <div style={{ display: "flex", gap: 6, marginTop: 8, marginBottom: 16 }}>
+                <input value={obNewLabel} onChange={e => setObNewLabel(e.target.value)} placeholder="Autre depense..." style={{ flex: 1, padding: "6px 10px", fontSize: 13, border: `1px solid ${S.border}`, borderRadius: 6, background: S.bg, color: S.text }} />
+                <button onClick={() => { if (obNewLabel.trim()) { setObExpenses(p => [...p, { label: obNewLabel.trim(), amount: "", category: "fixed" }]); setObNewLabel(""); } }} style={{ padding: "6px 12px", fontSize: 12, fontWeight: 600, border: `1px solid ${S.border}`, borderRadius: 6, background: S.bg, color: S.accent, cursor: "pointer" }}>Ajouter</button>
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={() => setOnboardStep(0)} style={{ flex: 1, padding: "12px", fontSize: 14, border: `1px solid ${S.border}`, borderRadius: 10, background: "transparent", color: S.text, cursor: "pointer" }}>← Retour</button>
+                <button onClick={() => setOnboardStep(2)} style={{ flex: 2, padding: "12px", fontSize: 15, fontWeight: 700, background: S.accent, color: "#fff", border: "none", borderRadius: 10, cursor: "pointer" }}>Suivant →</button>
+              </div>
+            </div>)}
+
+            {onboardStep === 2 && (<div>
+              <h2 style={{ fontFamily: S.heading, fontSize: 22, fontWeight: 700, margin: "0 0 6px" }}>Objectif epargne</h2>
+              <p style={{ color: S.muted, fontSize: 14, margin: "0 0 20px" }}>Combien souhaitez-vous mettre de cote chaque mois ?</p>
+              <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Epargne mensuelle (EUR)</label>
+              <input type="number" value={obSavings} onChange={e => setObSavings(e.target.value)} placeholder="Ex: 500" style={{ width: "100%", padding: "12px 14px", fontSize: 18, fontFamily: S.heading, fontWeight: 700, border: `2px solid ${S.border}`, borderRadius: 10, background: S.bg, color: S.text, outline: "none" }} autoFocus />
+              <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+                <button onClick={() => setOnboardStep(1)} style={{ flex: 1, padding: "12px", fontSize: 14, border: `1px solid ${S.border}`, borderRadius: 10, background: "transparent", color: S.text, cursor: "pointer" }}>← Retour</button>
+                <button onClick={async () => {
+                  try {
+                    const body = { salary: parseFloat(obSalary) || 0, savings_target: parseFloat(obSavings) || 0, start_year: selectedYear, fixed_expenses: obExpenses.filter(e => e.amount).map(e => ({ label: e.label, amount: parseFloat(e.amount) || 0, category: e.category })) };
+                    await fetch("/api/budget/onboarding", { method: "POST", headers: getAuthHeaders(), body: JSON.stringify(body) });
+                    setNeedsOnboarding(false);
+                    setOnboardStep(0);
+                    const mr = await fetch(`/api/budget/months?year=${selectedYear}`, { headers: getAuthHeaders() });
+                    const md = await mr.json();
+                    setMonths(md.months || []);
+                    setIdx(0);
+                    showToast("Budget configure ! 🎉");
+                  } catch { showToast("Erreur lors de la configuration", false); }
+                }} style={{ flex: 2, padding: "12px", fontSize: 15, fontWeight: 700, background: S.accent, color: "#fff", border: "none", borderRadius: 10, cursor: "pointer" }}>Lancer mon budget 🚀</button>
+              </div>
+            </div>)}
+          </div>
+        </div>
+      )}
+
       {/* ── Header ─────────────────────────────────────────────────── */}
       <header style={{ background: S.surface, borderBottom: `1px solid ${S.border}`, padding: "12px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 50 }}>
         <div>
@@ -1325,6 +1393,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
