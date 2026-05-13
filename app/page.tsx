@@ -144,6 +144,7 @@ export default function BudgetApp() {
       if (d.success && d.token) {
         localStorage.setItem("budget_token", d.token);
         setAuthToken(d.token);
+        if (d.needs_onboarding) setNeedsOnboarding(true);
       } else {
         setAuthError(d.detail || "Erreur de connexion");
       }
@@ -1324,6 +1325,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
