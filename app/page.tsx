@@ -481,6 +481,27 @@ export default function BudgetApp() {
             <button onClick={() => { if (idx === months.length - 1 && selectedYear < 2036) { const ny = selectedYear + 1; setSelectedYear(ny); setIdx(0); fetch(`/api/budget/months?year=${ny}`, { headers: getAuthHeaders() }).then(r => r.json()).then(md => setMonths(md.months || [])); } else { setIdx(i => Math.min(months.length - 1, i + 1)); } }} disabled={idx === months.length - 1 && selectedYear >= 2036} style={{ background: "transparent", border: `1px solid ${S.border}`, color: idx === months.length - 1 ? S.muted : S.text, width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", opacity: idx === months.length - 1 ? 0.4 : 1 }}><ArrowRight size={14} /></button>
           </div>
         )}
+        <div style={{ position: "relative" }}>
+          <button onClick={() => setShowAlerts(!showAlerts)} title="Alertes" style={{ background: showAlerts ? `${S.accent}15` : "transparent", border: `1px solid ${showAlerts ? S.accent : S.border}`, color: inAppAlerts.length > 0 ? S.danger : S.muted, width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", marginRight: 4, position: "relative", cursor: "pointer" }}>
+            <Bell size={14} />
+            {inAppAlerts.length > 0 && <span style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16, borderRadius: "50%", background: S.danger, color: "#fff", fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{inAppAlerts.length}</span>}
+          </button>
+          {showAlerts && (
+            <div style={{ position: "absolute", top: 40, right: 0, width: 320, maxHeight: 400, overflowY: "auto", background: S.surface, border: `1px solid ${S.border}`, borderRadius: 12, boxShadow: "0 8px 32px rgba(0,0,0,0.12)", zIndex: 100, padding: 8 }}>
+              <div style={{ padding: "8px 10px 6px", fontFamily: S.heading, fontSize: 14, fontWeight: 700, borderBottom: `1px solid ${S.border}`, marginBottom: 4 }}>Alertes ({inAppAlerts.length})</div>
+              {inAppAlerts.length === 0 && <div style={{ padding: "20px 10px", textAlign: "center", color: S.muted, fontSize: 13 }}>Aucune alerte</div>}
+              {inAppAlerts.map((a, i) => (
+                <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start", padding: "8px 10px", borderRadius: 8, marginBottom: 2, background: a.type === "danger" ? `${S.danger}08` : a.type === "warning" ? `${S.warning}08` : "transparent" }}>
+                  <AlertTriangle size={14} style={{ marginTop: 2, flexShrink: 0 }} color={a.type === "danger" ? S.danger : a.type === "warning" ? S.warning : S.accent} />
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: a.type === "danger" ? S.danger : a.type === "warning" ? S.warning : S.text }}>{a.title}</div>
+                    <div style={{ fontSize: 11, color: S.muted, marginTop: 1 }}>{a.detail}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
         <button onClick={logout} title="Deconnexion" style={{ background: "transparent", border: `1px solid ${S.border}`, color: S.muted, width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", marginRight: 4 }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg></button>
         <button onClick={loadData} title="Actualiser" style={{ background: "transparent", border: `1px solid ${S.border}`, color: S.muted, width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center" }}><RefreshCw size={13} /></button>
       </header>
@@ -1416,6 +1437,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
