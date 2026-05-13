@@ -353,9 +353,30 @@ export default function BudgetApp() {
         {m && (
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <button onClick={() => { if (idx === 0 && selectedYear > 2026) { const ny = selectedYear - 1; setSelectedYear(ny); setIdx(11); fetch(`/api/budget/months?year=${ny}`, { headers: getAuthHeaders() }).then(r => r.json()).then(md => setMonths(md.months || [])); } else { setIdx(i => Math.max(0, i - 1)); } }} disabled={idx === 0 && selectedYear <= 2026} style={{ background: "transparent", border: `1px solid ${S.border}`, color: idx === 0 ? S.muted : S.text, width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", opacity: idx === 0 ? 0.4 : 1 }}><ArrowLeft size={14} /></button>
-            <div style={{ minWidth: 110, textAlign: "center" }}>
-              <div style={{ fontFamily: S.heading, fontSize: 20, fontWeight: 700, color: S.accent, lineHeight: 1 }}>{m.month_name} {m.year}</div>
-              <div style={{ fontSize: 10, color: S.muted, marginTop: 2 }}>{validatedCnt}/{totalItems} valides</div>
+            <div style={{ minWidth: 150, textAlign: "center", position: "relative" }}>
+              <select
+                value={`${selectedYear}-${String(idx + 1).padStart(2, "0")}`}
+                onChange={(e) => {
+                  const [y, mo] = e.target.value.split("-").map(Number);
+                  if (y !== selectedYear) {
+                    setSelectedYear(y);
+                    setIdx(mo - 1);
+                    fetch(`/api/budget/months?year=${y}`, { headers: getAuthHeaders() }).then(r => r.json()).then(md => setMonths(md.months || []));
+                  } else {
+                    setIdx(mo - 1);
+                  }
+                }}
+                style={{ fontFamily: S.heading, fontSize: 17, fontWeight: 700, color: S.accent, background: "transparent", border: `1px solid ${S.border}`, borderRadius: 8, padding: "6px 28px 6px 12px", cursor: "pointer", appearance: "none", WebkitAppearance: "none", textAlign: "center", width: "100%", outline: "none" }}
+              >
+                {YEARS.map(y => {
+                  const MN = ["Janvier","Fevrier","Mars","Avril","Mai","Juin","Juillet","Aout","Septembre","Octobre","Novembre","Decembre"];
+                  return MN.map((mn, mi) => (
+                    <option key={`${y}-${mi}`} value={`${y}-${String(mi + 1).padStart(2, "0")}`}>{mn} {y}</option>
+                  ));
+                })}
+              </select>
+              <div style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: S.muted, fontSize: 10 }}>&#9662;</div>
+              <div style={{ fontSize: 10, color: S.muted, marginTop: 3 }}>{validatedCnt}/{totalItems} valides</div>
             </div>
             <button onClick={() => { if (idx === months.length - 1 && selectedYear < 2036) { const ny = selectedYear + 1; setSelectedYear(ny); setIdx(0); fetch(`/api/budget/months?year=${ny}`, { headers: getAuthHeaders() }).then(r => r.json()).then(md => setMonths(md.months || [])); } else { setIdx(i => Math.min(months.length - 1, i + 1)); } }} disabled={idx === months.length - 1 && selectedYear >= 2036} style={{ background: "transparent", border: `1px solid ${S.border}`, color: idx === months.length - 1 ? S.muted : S.text, width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", opacity: idx === months.length - 1 ? 0.4 : 1 }}><ArrowRight size={14} /></button>
           </div>
@@ -1295,6 +1316,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
