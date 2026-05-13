@@ -1249,7 +1249,169 @@ function SalairesTab({ showToast: toast }: { showToast: (msg: string) => void })
           </table>
         </div>
       </Card>
+
+      {/* Salary Evolution Chart */}
+      <Card>
+        <SLabel>Evolution des salaires bruts annuels</SLabel>
+        <div style={{ height: 250 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart data={data.years.map((y, i) => ({ year: String(y), total: data.totals[i] })).reverse()}>
+              <CartesianGrid strokeDasharray="3 3" stroke={S.border} />
+              <XAxis dataKey="year" tick={{ fontSize: 11, fill: S.muted }} />
+              <YAxis tick={{ fontSize: 10, fill: S.muted }} tickFormatter={(v: number) => `${(v/1000).toFixed(0)}k`} />
+              <Tooltip formatter={(v: number) => [`${v.toLocaleString("fr-FR")} EUR`, "Total brut"]} contentStyle={{ background: S.surface, border: `1px solid ${S.border}`, borderRadius: 8, fontSize: 12 }} />
+              <Bar dataKey="total" fill={S.accent} radius={[4,4,0,0]} />
+              <Line type="monotone" dataKey="total" stroke={S.primary} strokeWidth={2} dot={{ r: 3, fill: S.primary }} />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+      </Card>
+
+      {/* Tax Simulator */}
+      <TaxSimulator latestSalary={data.totals[0]} />
     </div>
+  );
+}
+
+// ── Tax Simulator ──────────────────────────────────────────────────────────────
+const TAX_BRACKETS = [
+  { min: 0, max: 11497, rate: 0 },
+  { min: 11498, max: 29315, rate: 0.11 },
+  { min: 29316, max: 83823, rate: 0.30 },
+  { min: 83824, max: 180294, rate: 0.41 },
+  { min: 180295, max: Infinity, rate: 0.45 },
+];
+const SOCIAL_RATE = 0.25; // cadre ~25%
+const SOCIAL_CONTRIB_INVESTMENT = 0.172; // 17.2% prelevements sociaux
+const FLAT_TAX_RATE = 0.30; // PFU 30%
+
+function calcIR(revenuImposable: number, parts: number): { tax: number; marginalRate: number; effectiveRate: number; byBracket: { bracket: string; amount: number; rate: number }[] } {
+  const qi = revenuImposable / parts;
+  let taxPerPart = 0;
+  const byBracket: { bracket: string; amount: number; rate: number }[] = [];
+  for (const b of TAX_BRACKETS) {
+    if (qi <= b.min) break;
+    const taxable = Math.min(qi, b.max) - b.min;
+    const t = taxable * b.rate;
+    taxPerPart += t;
+    if (taxable > 0) byBracket.push({ bracket: `${b.min.toLocaleString("fr-FR")} - ${b.max === Infinity ? "+" : b.max.toLocaleString("fr-FR")} EUR`, amount: Math.round(t * parts), rate: b.rate });
+  }
+  const totalTax = Math.round(taxPerPart * parts);
+  const marginalRate = TAX_BRACKETS.find(b => qi >= b.min && qi <= b.max)?.rate ?? 0;
+  return { tax: totalTax, marginalRate, effectiveRate: revenuImposable > 0 ? totalTax / revenuImposable : 0, byBracket };
+}
+
+function getParts(situation: string, children: number): number {
+  let parts = situation === "celibataire" ? 1 : 2;
+  if (children >= 1) parts += 0.5;
+  if (children >= 2) parts += 0.5;
+  if (children >= 3) parts += children - 2; // 1 full part per child from 3rd
+  return parts;
+}
+
+function TaxSimulator({ latestSalary }: { latestSalary: number }) {
+  const [brutAnnuel, setBrutAnnuel] = useState(String(latestSalary || 72000));
+  const [situation, setSituation] = useState<"celibataire" | "marie" | "pacse">("celibataire");
+  const [children, setChildren] = useState(0);
+  const [revImmo, setRevImmo] = useState("");
+  const [revActions, setRevActions] = useState("");
+  const [showDetail, setShowDetail] = useState(false);
+
+  const brut = parseFloat(brutAnnuel) || 0;
+  const cotisations = Math.round(brut * SOCIAL_RATE);
+  const netAvantIR = brut - cotisations;
+  const immo = parseFloat(revImmo) || 0;
+  const actions = parseFloat(revActions) || 0;
+  const flatTax = Math.round(actions * FLAT_TAX_RATE);
+  const revenuImposable = Math.round(netAvantIR * 0.9 + immo * 0.7); // 10% abatement salaires, 30% abatement micro-foncier
+  const parts = getParts(situation, children);
+  const ir = calcIR(revenuImposable, parts);
+  const socialImmo = Math.round(immo * SOCIAL_CONTRIB_INVESTMENT);
+  const totalImpot = ir.tax + flatTax + socialImmo;
+  const netApresImpot = netAvantIR + immo + actions - totalImpot;
+  const netMensuel = Math.round(netApresImpot / 12);
+
+  const barTotal = cotisations + totalImpot + netApresImpot;
+  const pctCot = barTotal > 0 ? (cotisations / barTotal) * 100 : 0;
+  const pctImp = barTotal > 0 ? (totalImpot / barTotal) * 100 : 0;
+  const pctNet = 100 - pctCot - pctImp;
+
+  return (
+    <Card>
+      <SLabel>Simulateur fiscal 2026</SLabel>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
+        <div>
+          <label style={{ fontSize: 11, fontWeight: 700, color: S.muted, display: "block", marginBottom: 4, textTransform: "uppercase" as const }}>Salaire brut annuel</label>
+          <input type="number" value={brutAnnuel} onChange={e => setBrutAnnuel(e.target.value)} style={{ width: "100%", padding: "10px 12px", fontSize: 16, fontFamily: S.heading, fontWeight: 700, border: `1px solid ${S.border}`, borderRadius: 8, background: S.bg, color: S.accent, outline: "none" }} />
+        </div>
+        <div>
+          <label style={{ fontSize: 11, fontWeight: 700, color: S.muted, display: "block", marginBottom: 4, textTransform: "uppercase" as const }}>Situation</label>
+          <div style={{ display: "flex", gap: 4 }}>
+            {(["celibataire", "marie", "pacse"] as const).map(s => (
+              <button key={s} onClick={() => setSituation(s)} style={{ flex: 1, padding: "9px 6px", fontSize: 11, fontWeight: 600, border: `1px solid ${situation === s ? S.accent : S.border}`, borderRadius: 6, background: situation === s ? `${S.accent}15` : "transparent", color: situation === s ? S.accent : S.muted, cursor: "pointer", textTransform: "capitalize" as const }}>{s === "celibataire" ? "Celibataire" : s === "marie" ? "Marie(e)" : "Pacse(e)"}</button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <label style={{ fontSize: 11, fontWeight: 700, color: S.muted, display: "block", marginBottom: 4, textTransform: "uppercase" as const }}>Enfants</label>
+          <div style={{ display: "flex", gap: 4 }}>
+            {[0,1,2,3,4].map(n => (
+              <button key={n} onClick={() => setChildren(n)} style={{ width: 36, height: 36, fontSize: 14, fontWeight: 700, border: `1px solid ${children === n ? S.accent : S.border}`, borderRadius: 6, background: children === n ? `${S.accent}15` : "transparent", color: children === n ? S.accent : S.muted, cursor: "pointer" }}>{n}{n === 4 ? "+" : ""}</button>
+            ))}
+          </div>
+          <div style={{ fontSize: 10, color: S.muted, marginTop: 3 }}>{parts} part{parts > 1 ? "s" : ""} fiscale{parts > 1 ? "s" : ""}</div>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div>
+            <label style={{ fontSize: 11, fontWeight: 700, color: S.muted, display: "block", marginBottom: 4, textTransform: "uppercase" as const }}>Revenus immobiliers / an</label>
+            <input type="number" value={revImmo} onChange={e => setRevImmo(e.target.value)} placeholder="0" style={{ width: "100%", padding: "8px 10px", fontSize: 14, border: `1px solid ${S.border}`, borderRadius: 6, background: S.bg, color: S.text, outline: "none" }} />
+          </div>
+          <div>
+            <label style={{ fontSize: 11, fontWeight: 700, color: S.muted, display: "block", marginBottom: 4, textTransform: "uppercase" as const }}>Revenus financiers / an (flat tax)</label>
+            <input type="number" value={revActions} onChange={e => setRevActions(e.target.value)} placeholder="0" style={{ width: "100%", padding: "8px 10px", fontSize: 14, border: `1px solid ${S.border}`, borderRadius: 6, background: S.bg, color: S.text, outline: "none" }} />
+          </div>
+        </div>
+      </div>
+
+      {/* Repartition bar */}
+      <div style={{ display: "flex", height: 28, borderRadius: 8, overflow: "hidden", marginBottom: 12 }}>
+        <div style={{ width: `${pctCot}%`, background: "#f97316", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: "#fff", transition: "width 0.3s" }}>{pctCot > 8 ? "Cotisations" : ""}</div>
+        <div style={{ width: `${pctImp}%`, background: S.danger, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: "#fff", transition: "width 0.3s" }}>{pctImp > 8 ? "Impots" : ""}</div>
+        <div style={{ width: `${pctNet}%`, background: S.accent, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: "#fff", transition: "width 0.3s" }}>{pctNet > 8 ? "Net" : ""}</div>
+      </div>
+
+      {/* Results grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 16 }}>
+        <div style={{ background: S.bg, borderRadius: 10, padding: 14, textAlign: "center" }}>
+          <div style={{ fontSize: 10, color: S.muted, textTransform: "uppercase" as const, marginBottom: 4 }}>Net mensuel</div>
+          <div style={{ fontFamily: S.heading, fontSize: 24, fontWeight: 800, color: S.accent }}>{netMensuel.toLocaleString("fr-FR")} EUR</div>
+        </div>
+        <div style={{ background: S.bg, borderRadius: 10, padding: 14, textAlign: "center" }}>
+          <div style={{ fontSize: 10, color: S.muted, textTransform: "uppercase" as const, marginBottom: 4 }}>Taux moyen</div>
+          <div style={{ fontFamily: S.heading, fontSize: 24, fontWeight: 800, color: "#fbbf24" }}>{(ir.effectiveRate * 100).toFixed(1)}%</div>
+        </div>
+        <div style={{ background: S.bg, borderRadius: 10, padding: 14, textAlign: "center" }}>
+          <div style={{ fontSize: 10, color: S.muted, textTransform: "uppercase" as const, marginBottom: 4 }}>Taux marginal</div>
+          <div style={{ fontFamily: S.heading, fontSize: 24, fontWeight: 800, color: S.danger }}>{(ir.marginalRate * 100).toFixed(0)}%</div>
+        </div>
+      </div>
+
+      {/* Detail table */}
+      <div style={{ fontSize: 13 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${S.border}` }}><span style={{ color: S.muted }}>Salaire brut annuel</span><span style={{ fontWeight: 600 }}>{brut.toLocaleString("fr-FR")} EUR</span></div>
+        <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${S.border}` }}><span style={{ color: S.muted }}>Cotisations sociales (~25%)</span><span style={{ color: "#f97316", fontWeight: 600 }}>-{cotisations.toLocaleString("fr-FR")} EUR</span></div>
+        <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${S.border}` }}><span style={{ color: S.muted }}>Net avant impot</span><span style={{ fontWeight: 600 }}>{netAvantIR.toLocaleString("fr-FR")} EUR</span></div>
+        {immo > 0 && <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${S.border}` }}><span style={{ color: S.muted }}>Revenus immobiliers</span><span style={{ fontWeight: 600 }}>+{immo.toLocaleString("fr-FR")} EUR</span></div>}
+        {actions > 0 && <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${S.border}` }}><span style={{ color: S.muted }}>Revenus financiers (flat tax 30%)</span><span style={{ color: S.danger, fontWeight: 600 }}>-{flatTax.toLocaleString("fr-FR")} EUR</span></div>}
+        <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${S.border}` }}><span style={{ color: S.muted }}>Revenu imposable ({parts} parts)</span><span style={{ fontWeight: 600 }}>{revenuImposable.toLocaleString("fr-FR")} EUR</span></div>
+        <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${S.border}`, cursor: "pointer" }} onClick={() => setShowDetail(!showDetail)}><span style={{ color: S.muted }}>Impot sur le revenu {showDetail ? "▲" : "▼"}</span><span style={{ color: S.danger, fontWeight: 700 }}>-{ir.tax.toLocaleString("fr-FR")} EUR</span></div>
+        {showDetail && ir.byBracket.map((b, i) => (
+          <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0 4px 20px", fontSize: 11, color: S.muted }}><span>{b.bracket} ({(b.rate*100).toFixed(0)}%)</span><span>{b.amount.toLocaleString("fr-FR")} EUR</span></div>
+        ))}
+        {socialImmo > 0 && <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${S.border}` }}><span style={{ color: S.muted }}>Prelevements sociaux (immobilier 17.2%)</span><span style={{ color: S.danger, fontWeight: 600 }}>-{socialImmo.toLocaleString("fr-FR")} EUR</span></div>}
+        <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0", borderTop: `2px solid ${S.border}`, marginTop: 4 }}><span style={{ fontFamily: S.heading, fontWeight: 800, fontSize: 15 }}>Net annuel apres impot</span><span style={{ fontFamily: S.heading, fontWeight: 800, fontSize: 17, color: S.accent }}>{netApresImpot.toLocaleString("fr-FR")} EUR</span></div>
+      </div>
+    </Card>
   );
 }
 
@@ -1437,6 +1599,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
