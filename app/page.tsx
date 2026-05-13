@@ -101,6 +101,8 @@ export default function BudgetApp() {
   const [months, setMonths] = useState<Month[]>([]);
   const [forecast, setForecast] = useState<Forecast | null>(null);
   const [idx, setIdx] = useState(0);
+  const [selectedYear, setSelectedYear] = useState(2026);
+  const YEARS = Array.from({ length: 2036 - 2026 + 1 }, (_, i) => 2026 + i);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string; ok?: boolean } | null>(null);
@@ -923,7 +925,7 @@ function DepensesTab({ month: m, months, monthKey, onValidate, onAmountChange, o
   );
 }
 
-// ── Projection ────��────────────────────────────────────────────────────────────
+// ── Projection ────��──────────────────────────���─────────────────────────────────
 const ChartTip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; color: string }>; label?: string }) => {
   if (!active || !payload?.length) return null;
   return (
@@ -1293,6 +1295,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
