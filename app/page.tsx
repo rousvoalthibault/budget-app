@@ -352,7 +352,7 @@ export default function BudgetApp() {
         </div>
         {m && (
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <button onClick={() => setIdx(i => Math.max(0, i - 1))} disabled={idx === 0} style={{ background: "transparent", border: `1px solid ${S.border}`, color: idx === 0 ? S.muted : S.text, width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", opacity: idx === 0 ? 0.4 : 1 }}><ArrowLeft size={14} /></button>
+            <button onClick={() => { if (idx === 0 && selectedYear > 2026) { const ny = selectedYear - 1; setSelectedYear(ny); setIdx(11); fetch(`/api/budget/months?year=${ny}`, { headers: getAuthHeaders() }).then(r => r.json()).then(md => setMonths(md.months || [])); } else { setIdx(i => Math.max(0, i - 1)); } }} disabled={idx === 0 && selectedYear <= 2026} style={{ background: "transparent", border: `1px solid ${S.border}`, color: idx === 0 ? S.muted : S.text, width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", opacity: idx === 0 ? 0.4 : 1 }}><ArrowLeft size={14} /></button>
             <div style={{ minWidth: 110, textAlign: "center" }}>
               <div style={{ fontFamily: S.heading, fontSize: 20, fontWeight: 700, color: S.accent, lineHeight: 1 }}>{m.month_name} {m.year}</div>
               <div style={{ fontSize: 10, color: S.muted, marginTop: 2 }}>{validatedCnt}/{totalItems} valides</div>
@@ -1295,6 +1295,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
