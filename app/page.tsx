@@ -1238,7 +1238,7 @@ function SalairesTab({ showToast: toast }: { showToast: (msg: string) => void })
               <tr key={m.name} className="row-h" style={{ borderBottom: `1px solid ${S.border}` }}>
                 <td style={{ padding: "10px 14px", fontFamily: S.heading, fontSize: 15, color: S.text, fontWeight: 600, position: "sticky", left: 0, background: S.surface, zIndex: 1 }}>{m.name}</td>
                 {m.values.map((v, yi) => (<td key={yi} style={{ padding: "8px 8px", textAlign: "right" }}>
-                  {v > 0 ? <EditableAmt value={v} onChange={val => updateCell(mi, yi, val)} color={data.years[yi] === 2026 ? S.accent : S.text} size="sm" /> : <span onClick={() => updateCell(mi, yi, 0)} style={{ color: S.muted, fontSize: 12, cursor: "pointer", opacity: 0.3 }}>—</span>}
+                  <EditableAmt value={v} onChange={val => updateCell(mi, yi, val)} color={data.years[yi] === 2026 ? S.accent : S.text} size="sm" />
                 </td>))}
               </tr>
             ))}</tbody>
@@ -1437,6 +1437,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
