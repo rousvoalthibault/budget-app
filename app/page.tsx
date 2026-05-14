@@ -273,7 +273,7 @@ export default function BudgetApp() {
   const m = months[idx];
   const validatedBudget = m ? Object.entries(m.budget_validated || {}).filter(([, v]) => v).reduce((sum, [k]) => sum + ((m.budget_allocation as unknown as Record<string, number>)[k] || 0), 0) : 0;
   const totalExp = m ? m.expenses.reduce((s, e) => s + e.amount, 0) + validatedBudget : 0;
-  const netBal = m ? m.income_salary + m.income_other - totalExp - (m.savings?.target_monthly ?? 140) : 0;
+  const netBal = m ? m.income_salary + m.income_other + ((m as Record<string,number>).income_rente ?? 0) + ((m as Record<string,number>).income_epargne ?? 0) + ((m as Record<string,number>).income_actions ?? 0) + ((m as Record<string,number>).income_virements ?? 0) - totalExp - (m.savings?.target_monthly ?? 140) : 0;
   const validatedCnt = m ? m.expenses.filter(e => e.validated).length + Object.values(m.budget_validated || {}).filter(Boolean).length : 0;
   const totalItems = m ? m.expenses.length + Object.keys(m.budget_allocation).length : 0;
 
@@ -551,7 +551,7 @@ function DashboardTab({ month: m, months, idx, netBalance, totalExpenses, valida
   onIncomeChange: (f: "income_salary" | "income_other", v: number) => void;
   onValidate: (label: string, v: boolean) => void; saving: string | null;
 }) {
-  const income = m.income_salary + m.income_other;
+  const income = m.income_salary + m.income_other + ((m as Record<string,number>).income_rente ?? 0) + ((m as Record<string,number>).income_epargne ?? 0) + ((m as Record<string,number>).income_actions ?? 0) + ((m as Record<string,number>).income_virements ?? 0);
   const balColor = netBalance >= 0 ? S.success : S.danger;
   const fixed = m.expenses.filter(e => e.category === "fixed");
   const invest = m.expenses.filter(e => e.category === "investment");
@@ -1019,7 +1019,7 @@ function DepensesTab({ month: m, months, monthKey, onValidate, onAmountChange, o
           <div><p style={{ color: S.muted, fontSize: 12, margin: "0 0 4px" }}>Epargne</p><EditableAmt value={(m as Record<string,number>).income_epargne ?? 0} onChange={v => onIncomeChange("income_epargne" as "income_other", v)} color={S.muted} size="sm" /></div>
           <div><p style={{ color: S.muted, fontSize: 12, margin: "0 0 4px" }}>Actions</p><EditableAmt value={(m as Record<string,number>).income_actions ?? 0} onChange={v => onIncomeChange("income_actions" as "income_other", v)} color={S.muted} size="sm" /></div>
           <div><p style={{ color: S.muted, fontSize: 12, margin: "0 0 4px" }}>Virements</p><EditableAmt value={(m as Record<string,number>).income_virements ?? 0} onChange={v => onIncomeChange("income_virements" as "income_other", v)} color={S.muted} size="sm" /></div>
-          <div style={{ marginLeft: "auto", textAlign: "right" }}><p style={{ color: S.muted, fontSize: 12, margin: "0 0 4px" }}>Total</p><p style={{ fontFamily: S.heading, fontSize: 26, fontWeight: 700, color: S.success, margin: 0 }}>{fmt(m.income_salary + m.income_other)}</p></div>
+          <div style={{ marginLeft: "auto", textAlign: "right" }}><p style={{ color: S.muted, fontSize: 12, margin: "0 0 4px" }}>Total</p><p style={{ fontFamily: S.heading, fontSize: 26, fontWeight: 700, color: S.success, margin: 0 }}>{fmt(m.income_salary + m.income_other + ((m as Record<string,number>).income_rente ?? 0) + ((m as Record<string,number>).income_epargne ?? 0) + ((m as Record<string,number>).income_actions ?? 0) + ((m as Record<string,number>).income_virements ?? 0))}</p></div>
         </div>
       </Card>
 
@@ -1170,7 +1170,7 @@ function ProjectionTab({ forecast: f, prevCumul = 0 }: { forecast: Forecast; pre
 // ── Historique ────────────────────────────────────────────────────────────────
 function HistoriqueTab({ months }: { months: Month[] }) {
   let cumul = 0;
-  const rows = months.map(m => { const inc = m.income_salary + m.income_other; const expItems = m.expenses.reduce((s, e) => s + e.amount, 0); const budgetEnv = Object.values(m.budget_allocation as unknown as Record<string, number>).reduce((s, v) => s + v, 0); const exp = expItems + budgetEnv; const sav = m.savings?.target_monthly ?? 140; const bal = inc - exp - sav; cumul += bal; return { ...m, inc, exp, sav, bal, cumul, vc: m.expenses.filter(e => e.validated).length, tc: m.expenses.length }; });
+  const rows = months.map(m => { const inc = m.income_salary + m.income_other + ((m as Record<string,number>).income_rente ?? 0) + ((m as Record<string,number>).income_epargne ?? 0) + ((m as Record<string,number>).income_actions ?? 0) + ((m as Record<string,number>).income_virements ?? 0); const expItems = m.expenses.reduce((s, e) => s + e.amount, 0); const budgetEnv = Object.values(m.budget_allocation as unknown as Record<string, number>).reduce((s, v) => s + v, 0); const exp = expItems + budgetEnv; const sav = m.savings?.target_monthly ?? 140; const bal = inc - exp - sav; cumul += bal; return { ...m, inc, exp, sav, bal, cumul, vc: m.expenses.filter(e => e.validated).length, tc: m.expenses.length }; });
   const ti = rows.reduce((s, r) => s + r.inc, 0); const te = rows.reduce((s, r) => s + r.exp, 0); const fc = rows.length > 0 ? rows[rows.length-1].cumul : 0;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -1611,6 +1611,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
