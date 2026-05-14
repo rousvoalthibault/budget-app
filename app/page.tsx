@@ -605,7 +605,7 @@ function DashboardTab({ month: m, months, idx, netBalance, totalExpenses, valida
       </Card>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
-        {[{ label: "Dépenses fixes", items: fixed, color: S.primary }, { label: "Investissements", items: invest, color: S.accent }, { label: "Variables", items: variable, color: S.warning }].map(({ label, items, color }) => {
+        {[{ label: "Dépenses fixes", items: fixed, color: S.primary }, { label: "Variables", items: variable, color: S.warning }].map(({ label, items, color }) => {
           const total = items.reduce((s, e) => s + e.amount, 0);
           const pct = income > 0 ? Math.round((total / income) * 100) : 0;
           return (
@@ -1043,7 +1043,7 @@ function DepensesTab({ month: m, months, monthKey, onValidate, onAmountChange, o
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
         {ColCard({ title: "Dépenses fixes", items: fixed, color: S.primary, catKey: "fixed" })}
-        {ColCard({ title: "Investissements & epargne", items: invest, color: S.accent, catKey: "investment" })}
+
       </div>
 
       <Card>
