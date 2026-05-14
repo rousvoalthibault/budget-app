@@ -578,7 +578,7 @@ function DashboardTab({ month: m, months, idx, netBalance, totalExpenses, valida
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16 }}>
         {[
-          { label: "Revenus du mois", value: income, color: S.success, sub: m.income_other > 0 ? `${fmt(m.income_salary)} + ${fmt(m.income_other)} autres` : undefined },
+          { label: "Revenus du mois", value: income, color: S.success, sub: undefined },
           { label: "Total dépenses", value: totalExpenses, color: S.danger, sub: validatedBudget > 0 ? `dont ${fmt(validatedBudget)} enveloppes` : undefined },
           { label: "Solde net", value: netBalance, color: balColor },
           { label: "Solde cumulé YTD", value: (() => { let c2 = 0; for (let i2 = 0; i2 <= idx; i2++) { const m2 = months[i2]; c2 += m2.income_salary + m2.income_other + ((m2 as unknown as Record<string,number>).income_rente ?? 0) + ((m2 as unknown as Record<string,number>).income_epargne ?? 0) + ((m2 as unknown as Record<string,number>).income_actions ?? 0) + ((m2 as unknown as Record<string,number>).income_virements ?? 0) - m2.expenses.reduce((s2: number, e2: Expense) => s2 + e2.amount, 0) - (m2.savings?.target_monthly ?? 140); } return Math.round(c2); })(), color: (() => { let c2 = 0; for (let i2 = 0; i2 <= idx; i2++) { const m2 = months[i2]; c2 += m2.income_salary + m2.income_other + ((m2 as unknown as Record<string,number>).income_rente ?? 0) + ((m2 as unknown as Record<string,number>).income_epargne ?? 0) + ((m2 as unknown as Record<string,number>).income_actions ?? 0) + ((m2 as unknown as Record<string,number>).income_virements ?? 0) - m2.expenses.reduce((s2: number, e2: Expense) => s2 + e2.amount, 0) - (m2.savings?.target_monthly ?? 140); } return c2 >= 0 ? S.primary : S.danger; })(), sub: "Depuis janvier" },
@@ -1032,7 +1032,7 @@ function DepensesTab({ month: m, months, monthKey, onValidate, onAmountChange, o
         <div style={{ display: "flex", gap: 32, flexWrap: "wrap" as const, alignItems: "center" }}>
           <div><p style={{ color: S.muted, fontSize: 12, margin: "0 0 4px" }}>Salaire principal</p><EditableAmt value={m.income_salary} onChange={v => onIncomeChange("income_salary", v)} color={S.success} size="lg" /></div>
           <div><p style={{ color: S.muted, fontSize: 12, margin: "0 0 4px" }}>Rente</p><EditableAmt value={(m as unknown as Record<string,number>).income_rente ?? 0} onChange={v => onIncomeChange("income_rente" as "income_other", v)} color={S.muted} size="sm" /></div>
-          <div><p style={{ color: S.muted, fontSize: 12, margin: "0 0 4px" }}>Epargne</p><EditableAmt value={(m as unknown as Record<string,number>).income_epargne ?? 0} onChange={v => onIncomeChange("income_epargne" as "income_other", v)} color={S.muted} size="sm" /></div>
+          <div><p style={{ color: S.muted, fontSize: 12, margin: "0 0 4px" }}>Épargne</p><EditableAmt value={(m as unknown as Record<string,number>).income_epargne ?? 0} onChange={v => onIncomeChange("income_epargne" as "income_other", v)} color={S.muted} size="sm" /></div>
           <div><p style={{ color: S.muted, fontSize: 12, margin: "0 0 4px" }}>Actions</p><EditableAmt value={(m as unknown as Record<string,number>).income_actions ?? 0} onChange={v => onIncomeChange("income_actions" as "income_other", v)} color={S.muted} size="sm" /></div>
           <div><p style={{ color: S.muted, fontSize: 12, margin: "0 0 4px" }}>Virements</p><EditableAmt value={(m as unknown as Record<string,number>).income_virements ?? 0} onChange={v => onIncomeChange("income_virements" as "income_other", v)} color={S.muted} size="sm" /></div>
           <div style={{ marginLeft: "auto", textAlign: "right" }}><p style={{ color: S.muted, fontSize: 12, margin: "0 0 4px" }}>Total</p><p style={{ fontFamily: S.heading, fontSize: 26, fontWeight: 700, color: S.success, margin: 0 }}>{fmt(m.income_salary + m.income_other + ((m as unknown as Record<string,number>).income_rente ?? 0) + ((m as unknown as Record<string,number>).income_epargne ?? 0) + ((m as unknown as Record<string,number>).income_actions ?? 0) + ((m as unknown as Record<string,number>).income_virements ?? 0))}</p></div>
@@ -1275,7 +1275,6 @@ function SalairesTab({ showToast: toast }: { showToast: (msg: string) => void })
 
       {/* Salary Evolution Chart */}
       <Card>
-        <ExpandBtn onClick={() => {}} />
         <SLabel>Evolution des salaires bruts annuels (% vs annee precedente)</SLabel>
         <div style={{ height: 250 }}>
           <ResponsiveContainer width="100%" height="100%">
@@ -1585,7 +1584,6 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
       {/* Charts */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
         <Card>
-          <ExpandBtn onClick={() => {}} />
           <SLabel>Evolution portefeuille par mois</SLabel>
           <ResponsiveContainer width="100%" height={220} key="port">
             <ComposedChart data={portfolioChart}>
