@@ -1048,22 +1048,7 @@ function DepensesTab({ month: m, months, monthKey, onValidate, onAmountChange, o
         {ColCard({ title: "Dépenses variables", items: variable, color: S.warning, catKey: "variable" })}
       </div>
 
-      <Card>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-          <SLabel>Depenses variables</SLabel>
-          <button onClick={() => addingTo === "variable" ? cancelAdd() : openAdd("variable")} style={{ background: addingTo === "variable" ? `${S.warning}30` : `${S.warning}20`, color: S.warning, border: `1px solid ${S.warning}40`, borderRadius: 8, width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center" }} title="Ajouter">
-            {addingTo === "variable" ? <X size={14} /> : <Plus size={14} />}
-          </button>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 8 }}>
-          {variable.map(e => <ExpRow key={e.label} e={e} color={S.warning} />)}
-        </div>
-        {addingTo === "variable" && <div style={{ marginTop: 8 }}>{addRowForm({ category: "variable", color: S.warning })}</div>}
-        <div style={{ borderTop: `1px solid ${S.border}`, marginTop: 12, paddingTop: 10, display: "flex", justifyContent: "space-between" }}>
-          <span style={{ color: S.muted, fontSize: 12 }}>Total ({variable.length} lignes)</span>
-          <span style={{ fontFamily: S.heading, fontSize: 20, color: S.warning, fontWeight: 700 }}>{fmt(variable.reduce((s, e) => s + e.amount, 0))}</span>
-        </div>
-      </Card>
+
 
       <Card style={{ borderColor: `${S.primary}25` }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
