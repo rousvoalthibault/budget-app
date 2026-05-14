@@ -1167,7 +1167,7 @@ function ProjectionTab({ forecast: f }: { forecast: Forecast }) {
 // ── Historique ────────────────────────────────────────────────────────────────
 function HistoriqueTab({ months }: { months: Month[] }) {
   let cumul = 0;
-  const rows = months.map(m => { const inc = m.income_salary + m.income_other; const exp = m.expenses.reduce((s, e) => s + e.amount, 0); const sav = m.savings?.target_monthly ?? 140; const bal = inc - exp - sav; cumul += bal; return { ...m, inc, exp, sav, bal, cumul, vc: m.expenses.filter(e => e.validated).length, tc: m.expenses.length }; });
+  const rows = months.map(m => { const inc = m.income_salary + m.income_other; const expItems = m.expenses.reduce((s, e) => s + e.amount, 0); const budgetEnv = Object.values(m.budget_allocation as unknown as Record<string, number>).reduce((s, v) => s + v, 0); const exp = expItems + budgetEnv; const sav = m.savings?.target_monthly ?? 140; const bal = inc - exp - sav; cumul += bal; return { ...m, inc, exp, sav, bal, cumul, vc: m.expenses.filter(e => e.validated).length, tc: m.expenses.length }; });
   const ti = rows.reduce((s, r) => s + r.inc, 0); const te = rows.reduce((s, r) => s + r.exp, 0); const fc = rows.length > 0 ? rows[rows.length-1].cumul : 0;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -1599,6 +1599,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
