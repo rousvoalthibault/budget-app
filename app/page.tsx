@@ -1605,9 +1605,10 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
       {/* Charts */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
         <Card>
+          {xpPort.ex && <div onClick={xpPort.toggle} style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}><div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 16, width: "90vw", height: "80vh", padding: 24, position: "relative" }}><button onClick={xpPort.toggle} style={{ position: "absolute", top: 12, right: 12, background: "none", border: "none", fontSize: 20, cursor: "pointer" }}>×</button><p style={{ fontFamily: S.heading, fontSize: 18, fontWeight: 700, marginBottom: 12 }}>Evolution portefeuille par mois</p><ResponsiveContainer width="100%" height="90%"><ComposedChart data={portfolioChart}><CartesianGrid stroke="rgba(0,0,0,0.05)" /><XAxis dataKey="name" tick={{ fill: S.muted, fontSize: 11, fontFamily: S.font }} axisLine={false} tickLine={false} /><YAxis tick={{ fill: S.muted, fontSize: 10, fontFamily: S.font }} axisLine={false} tickLine={false} width={50} /><Tooltip content={<ChartTip />} />{PORTFOLIO_CATEGORIES.map(cat => <Bar key={cat.label} dataKey={cat.label} fill={cat.color} radius={[3,3,0,0]} maxBarSize={12} />)}</ComposedChart></ResponsiveContainer></div></div>}
           <div style={{ position: "relative", display: "inline-block", float: "right" }}><ExpandBtn onClick={xpPort.toggle} /></div>
           <SLabel>Evolution portefeuille par mois</SLabel>
-          <ResponsiveContainer width="100%" height={220} key="port">
+          <ResponsiveContainer width="100%" height={xpPort.ex ? "100%" : 220} key="port">
             <ComposedChart data={portfolioChart}>
               <CartesianGrid stroke="rgba(0,0,0,0.05)" strokeDasharray="3 3" />
               <XAxis dataKey="name" tick={{ fill: S.muted, fontSize: 11, fontFamily: S.font }} axisLine={false} tickLine={false} />
