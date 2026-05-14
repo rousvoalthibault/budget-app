@@ -1533,7 +1533,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
                       </div>
                     );
                   })}
-                </div>
+                </div>}
               </div>
             );
           })}
@@ -1613,6 +1613,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
