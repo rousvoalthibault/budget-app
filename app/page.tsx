@@ -282,7 +282,7 @@ export default function BudgetApp() {
     { id: "depenses", label: "Dépenses" },
     { id: "projection", label: "Projection 12 mois" },
     { id: "historique", label: "Historique" },
-    { id: "economies", label: "Économies" },
+    { id: "economies", label: "Épargne" },
     { id: "salaires", label: "Salaires" },
   ] as const;
 
@@ -1592,6 +1592,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
