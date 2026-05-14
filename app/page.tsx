@@ -568,19 +568,20 @@ function DashboardTab({ month: m, months, idx, netBalance, totalExpenses, valida
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16 }}>
+      <div style={{ display: "flex", gap: 0, background: S.surface, borderRadius: 14, border: `1px solid ${S.border}`, overflow: "hidden" }}>
         {[
-          { label: "Revenus du mois", value: income, color: S.success, sub: undefined },
-          { label: "Total dépenses", value: totalExpenses, color: S.danger, sub: validatedBudget > 0 ? `dont ${fmt(validatedBudget)} enveloppes` : undefined },
-          { label: "Solde net", value: netBalance, color: balColor },
-          { label: "Solde cumulé YTD", value: (() => { let c2 = 0; for (let i2 = 0; i2 <= idx; i2++) { const m2 = months[i2]; c2 += m2.income_salary + m2.income_other + ((m2 as unknown as Record<string,number>).income_rente ?? 0) + ((m2 as unknown as Record<string,number>).income_epargne ?? 0) + ((m2 as unknown as Record<string,number>).income_actions ?? 0) + ((m2 as unknown as Record<string,number>).income_virements ?? 0) - m2.expenses.filter((e2: Expense) => e2.category !== "investment").reduce((s2: number, e2: Expense) => s2 + e2.amount, 0) - (m2.savings?.target_monthly ?? 140); } return Math.round(c2); })(), color: (() => { let c2 = 0; for (let i2 = 0; i2 <= idx; i2++) { const m2 = months[i2]; c2 += m2.income_salary + m2.income_other + ((m2 as unknown as Record<string,number>).income_rente ?? 0) + ((m2 as unknown as Record<string,number>).income_epargne ?? 0) + ((m2 as unknown as Record<string,number>).income_actions ?? 0) + ((m2 as unknown as Record<string,number>).income_virements ?? 0) - m2.expenses.filter((e2: Expense) => e2.category !== "investment").reduce((s2: number, e2: Expense) => s2 + e2.amount, 0) - (m2.savings?.target_monthly ?? 140); } return c2 >= 0 ? S.primary : S.danger; })(), sub: "Depuis janvier" },
-        { label: "Épargne Mensuelle Totale", value: (m.savings?.target_monthly ?? 140) + m.expenses.filter((e: Expense) => e.category === "investment").reduce((s: number, e: Expense) => s + e.amount, 0), color: S.accent, sub: `Cumul: ${fmt((m.savings?.cumulative_target ?? 0) + months.slice(0, idx + 1).reduce((s: number, mo: Month) => s + mo.expenses.filter((e: Expense) => e.category === "investment").reduce((s2: number, e2: Expense) => s2 + e2.amount, 0), 0))}` },
-        ].map(({ label, value, color, sub }) => (
-          <Card key={label} className="card-h" style={{ background: `linear-gradient(135deg, ${color}14, ${S.bg})`, borderColor: `${color}28` }}>
-            <SLabel>{label}</SLabel>
-            <p style={{ fontFamily: S.heading, fontSize: 30, fontWeight: 700, color, margin: 0 }}>{fmt(value)}</p>
-            {sub && <p style={{ color: S.muted, fontSize: 12, margin: "6px 0 0" }}>{sub}</p>}
-          </Card>
+          { label: "Revenus", value: income, color: S.success, icon: "€", sub: undefined },
+          { label: "Dépenses", value: totalExpenses, color: S.danger, icon: "↓", sub: validatedBudget > 0 ? `dont ${fmt(validatedBudget)} env.` : undefined },
+          { label: "Solde net", value: netBalance, color: balColor, icon: "◎", sub: undefined },
+          { label: "Cumulé YTD", value: (() => { let c2 = 0; for (let i2 = 0; i2 <= idx; i2++) { const m2 = months[i2]; c2 += m2.income_salary + m2.income_other + ((m2 as unknown as Record<string,number>).income_rente ?? 0) + ((m2 as unknown as Record<string,number>).income_epargne ?? 0) + ((m2 as unknown as Record<string,number>).income_actions ?? 0) + ((m2 as unknown as Record<string,number>).income_virements ?? 0) - m2.expenses.filter((e2: Expense) => e2.category !== "investment").reduce((s2: number, e2: Expense) => s2 + e2.amount, 0) - (m2.savings?.target_monthly ?? 140); } return Math.round(c2); })(), color: S.primary, icon: "↗", sub: "Depuis janvier" },
+          { label: "Épargne", value: (m.savings?.target_monthly ?? 140) + m.expenses.filter((e: Expense) => e.category === "investment").reduce((s: number, e: Expense) => s + e.amount, 0), color: S.accent, icon: "★", sub: `Cumul: ${fmt((m.savings?.cumulative_target ?? 0) + months.slice(0, idx + 1).reduce((s: number, mo: Month) => s + mo.expenses.filter((e: Expense) => e.category === "investment").reduce((s2: number, e2: Expense) => s2 + e2.amount, 0), 0))}` },
+        ].map((k, i, arr) => (
+          <div key={k.label} style={{ flex: 1, padding: "14px 14px", borderRight: i < arr.length - 1 ? `1px solid ${S.border}` : "none", textAlign: "center" }}>
+            <div style={{ width: 30, height: 30, borderRadius: 8, background: `${k.color}15`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 6px", fontSize: 13, color: k.color }}>{k.icon}</div>
+            <div style={{ fontSize: 10, color: S.muted, textTransform: "uppercase" as const, fontWeight: 600, letterSpacing: 0.5 }}>{k.label}</div>
+            <div style={{ fontFamily: S.heading, fontSize: 20, fontWeight: 800, color: k.color, margin: "2px 0" }}>{fmt(k.value)}</div>
+            {k.sub && <div style={{ fontSize: 10, color: S.muted }}>{k.sub}</div>}
+          </div>
         ))}
       </div>
 
@@ -596,22 +597,18 @@ function DashboardTab({ month: m, months, idx, netBalance, totalExpenses, valida
         </div>
       </Card>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
-        {[{ label: "Dépenses fixes", items: fixed, color: S.primary }, { label: "Variables", items: variable, color: S.warning }].map(({ label, items, color }) => {
-          const total = items.reduce((s, e) => s + e.amount, 0);
-          const pct = income > 0 ? Math.round((total / income) * 100) : 0;
-          return (
-            <Card key={label} className="card-h">
-              <SLabel>{label} ({items.length})</SLabel>
-              <p style={{ fontFamily: S.heading, fontSize: 26, fontWeight: 700, color, margin: "0 0 10px" }}>{fmt(total)}</p>
-              <div style={{ background: S.surface2, borderRadius: 999, height: 6, overflow: "hidden", marginBottom: 5 }}>
-                <div style={{ background: color, height: "100%", width: `${Math.min(pct, 100)}%`, borderRadius: 999, transition: "width 0.5s" }} />
-              </div>
-              <p style={{ color: S.muted, fontSize: 11, margin: 0 }}>{pct}% du revenu</p>
-            </Card>
-          );
+      <Card>
+        <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase" as const, color: S.muted, letterSpacing: 1, marginBottom: 12 }}>Répartition des dépenses</div>
+        {[{n:"Fixes",v:fixed.reduce((s:number,e:Expense)=>s+e.amount,0),c:S.primary},{n:"Variables",v:variable.reduce((s:number,e:Expense)=>s+e.amount,0),c:S.warning},{n:"Enveloppes",v:Object.values(m.budget_allocation as unknown as Record<string,number>).reduce((s:number,v:number)=>s+v,0),c:S.muted}].map(cat => {
+          const total2 = fixed.reduce((s:number,e:Expense)=>s+e.amount,0) + variable.reduce((s:number,e:Expense)=>s+e.amount,0) + Object.values(m.budget_allocation as unknown as Record<string,number>).reduce((s:number,v:number)=>s+v,0);
+          const pct = total2 > 0 ? Math.round((cat.v / total2) * 100) : 0;
+          return (<div key={cat.n} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
+            <span style={{ width: 90, fontSize: 12, fontWeight: 600, color: S.muted }}>{cat.n}</span>
+            <div style={{ flex: 1, height: 20, background: `${S.border}40`, borderRadius: 6, overflow: "hidden" }}><div style={{ height: "100%", width: `${pct}%`, background: cat.c, borderRadius: 6, display: "flex", alignItems: "center", paddingLeft: 8, fontSize: 10, fontWeight: 700, color: "#fff", transition: "width 0.3s" }}>{pct > 10 ? `${pct}%` : ""}</div></div>
+            <span style={{ width: 80, textAlign: "right" as const, fontSize: 13, fontWeight: 700, color: cat.c }}>{fmt(cat.v)}</span>
+          </div>);
         })}
-      </div>
+      </Card>
 
       <SwipeValidator expenses={m.expenses} onValidate={onValidate} saving={saving} />
     </div>
