@@ -532,7 +532,7 @@ export default function BudgetApp() {
             onDeleteExpense={(label) => deleteExpense(m.month_key, label)}
             saving={saving} isAdding={saving === "adding"} />
         )}
-        {tab === "projection" && forecast && <ProjectionTab forecast={forecast} />}
+        {tab === "projection" && forecast && <ProjectionTab forecast={forecast} prevCumul={(() => { let c = 0; const curMk = months[idx]?.month_key || ""; for (const mo of months) { if (mo.month_key >= curMk) break; const inc = mo.income_salary + mo.income_other; const exp = mo.expenses.reduce((s, e) => s + e.amount, 0) + Object.values(mo.budget_allocation as unknown as Record<string, number>).reduce((s, v) => s + v, 0); c += inc - exp - (mo.savings?.target_monthly ?? 0); } return c; })()} />}
         {tab === "historique" && months.length > 0 && <HistoriqueTab months={months} />}
         {tab === "salaires" && <SalairesTab showToast={showToast} />}
         {tab === "economies" && months.length > 0 && (
@@ -1591,6 +1591,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
