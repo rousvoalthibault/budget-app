@@ -5,7 +5,8 @@ type Ctx = { params: Promise<{ path: string[] }> };
 
 async function proxy(request: Request, ctx: Ctx): Promise<Response> {
   const { path } = await ctx.params;
-  const url = `${process.env.CODEWORDS_RUNTIME_URI}/run/${BACKEND_ID}/${path.join("/")}`;
+  const qs = new URL(request.url).search;
+  const url = `${process.env.CODEWORDS_RUNTIME_URI}/run/${BACKEND_ID}/${path.join("/")}${qs}`;
   const userToken = request.headers.get("x-user-token") || "";
   const headers: HeadersInit = {
     Authorization: `Bearer ${process.env.CODEWORDS_API_KEY}`,
