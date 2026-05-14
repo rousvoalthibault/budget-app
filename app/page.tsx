@@ -1540,7 +1540,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
       </Card>
 
       {/* Charts */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
         <Card>
           <SLabel>Evolution portefeuille par mois</SLabel>
           <ResponsiveContainer width="100%" height={220}>
@@ -1600,6 +1600,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
