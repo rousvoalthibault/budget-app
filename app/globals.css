@@ -50,3 +50,6 @@
   nextjs-portal, [data-nextjs-dialog-overlay], [data-nextjs-toast] { display: none !important; }
 }
 
+
+.chart-expand:fullscreen { background: #fff; padding: 24px; }
+.chart-expand:fullscreen .recharts-responsive-container { height: 90vh !important; }

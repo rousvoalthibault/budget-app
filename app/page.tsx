@@ -81,7 +81,14 @@ function ChartModal({ children, onClose, title }: { children: React.ReactNode; o
   </div>);
 }
 function ExpandBtn({ onClick }: { onClick: () => void }) {
-  return <button onClick={onClick} title="Agrandir" style={{ position: "absolute", top: 8, right: 8, background: `${S.bg}cc`, border: `1px solid ${S.border}`, color: S.muted, width: 24, height: 24, borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", zIndex: 5 }}><Maximize2 size={10} /></button>;
+  const handleClick = (e: React.MouseEvent) => {
+    const card = (e.target as HTMLElement).closest(".chart-expand");
+    if (card) {
+      if (document.fullscreenElement) { document.exitFullscreen(); }
+      else { card.requestFullscreen().catch(() => {}); }
+    } else { onClick(); }
+  };
+  return <button onClick={handleClick} title="Agrandir" style={{ position: "absolute", top: 8, right: 8, background: `${S.bg}cc`, border: `1px solid ${S.border}`, color: S.muted, width: 24, height: 24, borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", zIndex: 5 }}><Maximize2 size={10} /></button>;
 }
 function useExpand() {
   const [ex, setEx] = useState(false);
@@ -1272,7 +1279,7 @@ function SalairesTab({ showToast: toast }: { showToast: (msg: string) => void })
       </Card>
 
       {/* Salary Evolution Chart */}
-      <Card style={xpSal.st}>
+      <Card className="chart-expand" style={xpSal.st}>
         <ExpandBtn onClick={xpSal.toggle} />
         <SLabel>Evolution des salaires bruts annuels (% vs annee precedente)</SLabel>
         <div style={{ height: 250 }}>
