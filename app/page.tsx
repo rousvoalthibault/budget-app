@@ -1588,31 +1588,10 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
           </table>
         </div>
       </Card>
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: S.font, fontSize: 13 }}>
-            <thead><tr>{["Mois", "Objectif", "Réalisé", "Cumul obj.", "Cumul reel", "Ecart"].map(h => <th key={h} style={{ padding: "8px 14px", textAlign: "left", color: S.muted, fontWeight: 600, fontSize: 11, borderBottom: `1px solid ${S.border}` }}>{h}</th>)}</tr></thead>
-            <tbody>
-              {months.map(mo => {
-                const ecart = mo.savings.cumulative_actual - mo.savings.cumulative_target;
-                const isCur = mo.month_key === m.month_key;
-                return (
-                  <tr key={mo.month_key} className="row-h" style={{ borderBottom: `1px solid ${S.border}`, background: isCur ? `${S.accent}06` : "transparent" }}>
-                    <td style={{ padding: "9px 14px", fontFamily: S.heading, fontSize: 16, color: isCur ? S.accent : S.text, fontWeight: 600 }}>{mo.month_name}{isCur ? " *" : ""}</td>
-                    <td style={{ padding: "9px 14px", color: S.muted }}>{fmt(mo.savings.target_monthly)}</td>
-                    <td style={{ padding: "9px 14px", color: S.success, fontWeight: 600 }}>{fmt(mo.savings.actual_monthly)}</td>
-                    <td style={{ padding: "9px 14px", color: S.muted }}>{fmt(mo.savings.cumulative_target)}</td>
-                    <td style={{ padding: "9px 14px", color: S.accent, fontWeight: 600 }}>{fmt(mo.savings.cumulative_actual)}</td>
-                    <td style={{ padding: "9px 14px", color: ecart >= 0 ? S.success : S.danger, fontWeight: 700 }}>{ecart >= 0 ? "+" : ""}{fmt(ecart)}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </Card>
     </div>
   );
 }
+
 
 
 
