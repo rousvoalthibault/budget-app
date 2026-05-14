@@ -1492,6 +1492,25 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
   const savingsChart = months.map(mo => ({ name: mo.month_name.slice(0, 3), "Objectif": mo.savings.target_monthly, "Réalisé": mo.savings.actual_monthly }));
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      {/* Investissements mensuels */}
+      <Card style={{ borderColor: `${S.accent}25` }}>
+        <SLabel>Investissements & épargne mensuels</SLabel>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 8 }}>
+          {m.expenses.filter(e => e.category === "investment").map(e => (
+            <div key={e.label} className="row-h" style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 12px", background: S.surface2, borderRadius: 10, border: `1px solid ${S.border}` }}>
+              <TrendingUp size={14} color={S.accent} />
+              <span style={{ flex: 1, fontSize: 13, fontWeight: 600 }}>{e.label}</span>
+              <span style={{ fontFamily: S.heading, fontSize: 14, fontWeight: 700, color: S.accent }}>{fmt(e.amount)}</span>
+            </div>
+          ))}
+        </div>
+        {m.expenses.filter(e => e.category === "investment").length > 0 && (
+          <div style={{ marginTop: 8, textAlign: "right", fontFamily: S.heading, fontSize: 15, fontWeight: 700, color: S.accent }}>
+            Total: {fmt(m.expenses.filter(e => e.category === "investment").reduce((s, e) => s + e.amount, 0))}
+          </div>
+        )}
+      </Card>
+
       {/* Objectifs editables */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
         <Card style={{ borderColor: `${S.accent}30`, background: `linear-gradient(135deg, ${S.accent}06, ${S.bg})` }}>
