@@ -1258,11 +1258,12 @@ function SalairesTab({ showToast: toast }: { showToast: (msg: string) => void })
             <ComposedChart data={data.years.map((y, i) => { const t = data.totals[i]; const prev = i < data.years.length - 1 ? data.totals[i+1] : 0; const pct = prev > 0 ? ((t - prev) / prev) * 100 : 0; return { year: String(y), total: t, pctChange: Math.round(pct * 10) / 10 }; }).reverse()}>
               <CartesianGrid strokeDasharray="3 3" stroke={S.border} />
               <XAxis dataKey="year" tick={{ fontSize: 11, fill: S.muted }} />
-              <YAxis tick={{ fontSize: 10, fill: S.muted }} tickFormatter={(v: number) => `${v > 0 ? "+" : ""}${v}%`} />
+              <YAxis yAxisId="left" tick={{ fontSize: 10, fill: S.muted }} tickFormatter={(v: number) => `${v > 0 ? "+" : ""}${v}%`} />
+              <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10, fill: S.accent }} tickFormatter={(v: number) => `${(v/1000).toFixed(0)}k`} />
               <Tooltip formatter={(v: number, name: string) => [name === "pctChange" ? `${v > 0 ? "+" : ""}${v}%` : `${v.toLocaleString("fr-FR")} EUR`, name === "pctChange" ? "Variation" : "Total brut"]} contentStyle={{ background: S.surface, border: `1px solid ${S.border}`, borderRadius: 8, fontSize: 12 }} />
-              <ReferenceLine y={0} stroke={S.muted} strokeDasharray="3 3" />
-              <Bar dataKey="pctChange" fill={S.accent} radius={[4,4,0,0]} />
-              <Line type="monotone" dataKey="pctChange" stroke={S.primary} strokeWidth={2} dot={{ r: 3, fill: S.primary }} />
+              <ReferenceLine yAxisId="left" y={0} stroke={S.muted} strokeDasharray="3 3" />
+              <Bar yAxisId="left" dataKey="pctChange" fill={S.accent} radius={[4,4,0,0]} />
+              <Line yAxisId="right" type="monotone" dataKey="total" stroke={S.primary} strokeWidth={2} dot={{ r: 3, fill: S.primary }} />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
@@ -1591,6 +1592,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
