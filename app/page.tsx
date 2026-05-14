@@ -1516,7 +1516,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
                   <span style={{ fontFamily: S.heading, fontSize: 14, color: catVal > 0 ? S.success : S.muted, fontWeight: 700, textAlign: "right" }}>{catVal > 0 ? fmt(catVal) : "—"}</span>
                   <span style={{ fontFamily: S.heading, fontSize: 13, color: catVal > 0 ? (catDiff >= 0 ? S.success : S.danger) : S.muted, fontWeight: 700, textAlign: "right" }}>{catVal > 0 ? `${catDiff >= 0 ? "+" : ""}${fmt(catDiff)}` : "—"}</span>
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 3, paddingLeft: 8 }}>
+                {!collapsed[cat.label] && <div style={{ display: "flex", flexDirection: "column", gap: 3, paddingLeft: 8 }}>
                   {cat.items.map((p) => {
                     const inv = (sav[p.key] as number) ?? 0;
                     const val = (pv[p.key as string] as number) ?? 0;
@@ -1613,6 +1613,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
