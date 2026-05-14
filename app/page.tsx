@@ -138,6 +138,7 @@ export default function BudgetApp() {
   const [obNewLabel, setObNewLabel] = useState("");
   const [obNewAmount, setObNewAmount] = useState("");
   const [showAlerts, setShowAlerts] = useState(false);
+  const [fullChart, setFullChart] = useState<string | null>(null);
   const COMMON_EXPENSES = [{l:"Loyer",c:"fixed"},{l:"Electricite",c:"fixed"},{l:"Internet / Telecom",c:"fixed"},{l:"Assurance",c:"fixed"},{l:"Abonnements (Netflix, Spotify...)",c:"fixed"},{l:"Transports",c:"variable"},{l:"Courses alimentaires",c:"variable"}];
 
   // Check auth on mount
@@ -1627,6 +1628,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
