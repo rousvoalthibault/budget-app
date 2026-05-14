@@ -1559,9 +1559,34 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
         </Card>
       </div>
 
-      {/* Monthly recap */}
+      {/* Monthly +/- values by category */}
       <Card>
-        <SLabel>Recapitulatif mensuel</SLabel>
+        <SLabel>Historique mensuel des plus/moins-values par categorie</SLabel>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: S.font, fontSize: 13 }}>
+            <thead><tr>
+              <th style={{ padding: "8px 14px", textAlign: "left", color: S.muted, fontWeight: 600, fontSize: 11, borderBottom: `1px solid ${S.border}` }}>Mois</th>
+              {PORTFOLIO_CATEGORIES.map(c => <th key={c.label} style={{ padding: "8px 10px", textAlign: "right", color: c.color, fontWeight: 600, fontSize: 10, borderBottom: `1px solid ${S.border}` }}>{c.label}</th>)}
+              <th style={{ padding: "8px 14px", textAlign: "right", color: S.accent, fontWeight: 700, fontSize: 11, borderBottom: `1px solid ${S.border}` }}>Total</th>
+            </tr></thead>
+            <tbody>{months.map(mo => {
+              const mpv = mo.portfolio_values || {};
+              const catPVs = PORTFOLIO_CATEGORIES.map(c => {
+                const inv = c.items.reduce((s, p) => s + ((mo.savings[p.key] as number) ?? 0), 0);
+                const val = c.items.reduce((s, p) => s + ((mpv[p.key as string] as number) ?? 0), 0);
+                return val > 0 ? val - inv : 0;
+              });
+              const totalPV = catPVs.reduce((s, v) => s + v, 0);
+              const isCur = mo.month_key === m.month_key;
+              return (<tr key={mo.month_key} className="row-h" style={{ borderBottom: `1px solid ${S.border}`, background: isCur ? `${S.accent}06` : "transparent" }}>
+                <td style={{ padding: "9px 14px", fontFamily: S.heading, fontSize: 14, color: isCur ? S.accent : S.text, fontWeight: 600 }}>{mo.month_name}</td>
+                {catPVs.map((pv2, ci) => <td key={ci} style={{ padding: "9px 10px", textAlign: "right", fontSize: 12, fontWeight: 600, color: pv2 > 0 ? S.success : pv2 < 0 ? S.danger : S.muted }}>{pv2 !== 0 ? `${pv2 > 0 ? "+" : ""}${fmt(pv2)}` : "-"}</td>)}
+                <td style={{ padding: "9px 14px", textAlign: "right", fontFamily: S.heading, fontSize: 14, fontWeight: 800, color: totalPV >= 0 ? S.accent : S.danger }}>{totalPV !== 0 ? `${totalPV > 0 ? "+" : ""}${fmt(totalPV)}` : "-"}</td>
+              </tr>);
+            })}</tbody>
+          </table>
+        </div>
+      </Card>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: S.font, fontSize: 13 }}>
             <thead><tr>{["Mois", "Objectif", "Réalisé", "Cumul obj.", "Cumul reel", "Ecart"].map(h => <th key={h} style={{ padding: "8px 14px", textAlign: "left", color: S.muted, fontWeight: 600, fontSize: 11, borderBottom: `1px solid ${S.border}` }}>{h}</th>)}</tr></thead>
@@ -1587,6 +1612,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
