@@ -1433,6 +1433,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
 }) {
   const m = months[currentIdx];
   if (!m) return null;
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const sav = m.savings;
   const pct = sav.cumulative_target > 0 ? Math.min(100, Math.round((sav.cumulative_actual / sav.cumulative_target) * 100)) : 0;
   const allItems = PORTFOLIO_CATEGORIES.flatMap(c => c.items);
@@ -1612,6 +1613,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
