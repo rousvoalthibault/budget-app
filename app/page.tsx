@@ -1252,10 +1252,10 @@ function SalairesTab({ showToast: toast }: { showToast: (msg: string) => void })
 
       {/* Salary Evolution Chart */}
       <Card>
-        <SLabel>Evolution des salaires bruts annuels</SLabel>
+        <SLabel>Evolution des salaires bruts annuels (% vs annee precedente)</SLabel>
         <div style={{ height: 250 }}>
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={data.years.map((y, i) => ({ year: String(y), total: data.totals[i] })).reverse()}>
+            <ComposedChart data={data.years.map((y, i) => { const t = data.totals[i]; const prev = i < data.years.length - 1 ? data.totals[i+1] : 0; const pct = prev > 0 ? ((t - prev) / prev) * 100 : 0; return { year: String(y), total: t, pctChange: Math.round(pct * 10) / 10 }; }).reverse()}>
               <CartesianGrid strokeDasharray="3 3" stroke={S.border} />
               <XAxis dataKey="year" tick={{ fontSize: 11, fill: S.muted }} />
               <YAxis tick={{ fontSize: 10, fill: S.muted }} tickFormatter={(v: number) => `${(v/1000).toFixed(0)}k`} />
@@ -1599,6 +1599,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
