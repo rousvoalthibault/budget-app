@@ -201,7 +201,7 @@ export default function BudgetApp() {
       setIdx(i => Math.min(i, mths.length - 1));
     } catch { showToast("Erreur de chargement", false); }
     finally { setLoading(false); }
-  }, []);
+  }, [selectedYear]);
 
   useEffect(() => {
     const init = async () => {
