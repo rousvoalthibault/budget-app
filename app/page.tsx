@@ -565,7 +565,7 @@ function DashboardTab({ month: m, months, idx, netBalance, totalExpenses, valida
           { label: "Revenus du mois", value: income, color: S.success, sub: m.income_other > 0 ? `${fmt(m.income_salary)} + ${fmt(m.income_other)} autres` : undefined },
           { label: "Total dépenses", value: totalExpenses, color: S.danger, sub: validatedBudget > 0 ? `dont ${fmt(validatedBudget)} enveloppes` : undefined },
           { label: "Solde net", value: netBalance, color: balColor },
-          { label: "Solde cumulé YTD", value: (() => { let c2 = 0; for (let i2 = 0; i2 <= idx; i2++) { const m2 = months[i2]; c2 += m2.income_salary + m2.income_other - m2.expenses.reduce((s2: number, e2: Expense) => s2 + e2.amount, 0) - (m2.savings?.target_monthly ?? 140); } return Math.round(c2); })(), color: (() => { let c2 = 0; for (let i2 = 0; i2 <= idx; i2++) { const m2 = months[i2]; c2 += m2.income_salary + m2.income_other - m2.expenses.reduce((s2: number, e2: Expense) => s2 + e2.amount, 0) - (m2.savings?.target_monthly ?? 140); } return c2 >= 0 ? S.primary : S.danger; })(), sub: "Depuis janvier" },
+          { label: "Solde cumulé YTD", value: (() => { let c2 = 0; for (let i2 = 0; i2 <= idx; i2++) { const m2 = months[i2]; c2 += m2.income_salary + m2.income_other + ((m2 as Record<string,number>).income_rente ?? 0) + ((m2 as Record<string,number>).income_epargne ?? 0) + ((m2 as Record<string,number>).income_actions ?? 0) + ((m2 as Record<string,number>).income_virements ?? 0) - m2.expenses.reduce((s2: number, e2: Expense) => s2 + e2.amount, 0) - (m2.savings?.target_monthly ?? 140); } return Math.round(c2); })(), color: (() => { let c2 = 0; for (let i2 = 0; i2 <= idx; i2++) { const m2 = months[i2]; c2 += m2.income_salary + m2.income_other + ((m2 as Record<string,number>).income_rente ?? 0) + ((m2 as Record<string,number>).income_epargne ?? 0) + ((m2 as Record<string,number>).income_actions ?? 0) + ((m2 as Record<string,number>).income_virements ?? 0) - m2.expenses.reduce((s2: number, e2: Expense) => s2 + e2.amount, 0) - (m2.savings?.target_monthly ?? 140); } return c2 >= 0 ? S.primary : S.danger; })(), sub: "Depuis janvier" },
         { label: "Objectif économies", value: m.savings?.target_monthly ?? 140, color: S.accent, sub: `Cumul: ${fmt(m.savings?.cumulative_target ?? 0)}` },
         ].map(({ label, value, color, sub }) => (
           <Card key={label} className="card-h" style={{ background: `linear-gradient(135deg, ${color}14, ${S.bg})`, borderColor: `${color}28` }}>
@@ -1611,6 +1611,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
