@@ -626,7 +626,7 @@ function AiAnalysis({ month, months, idx }: { month: Month; months: Month[]; idx
     const savings = month.savings?.target_monthly ?? 140;
     const balance = income - expenses - savings;
     let cumulBal = 0;
-    for (let i = 0; i <= idx; i++) { const mi2 = months[i]; cumulBal += mi2.income_salary + mi2.income_other - mi2.expenses.reduce((s, e) => s + e.amount, 0) - (mi2.savings?.target_monthly ?? 140); }
+    for (let i = 0; i <= idx; i++) { const mi2 = months[i]; cumulBal += mi2.income_salary + mi2.income_other + ((mi2 as Record<string,number>).income_rente ?? 0) + ((mi2 as Record<string,number>).income_epargne ?? 0) + ((mi2 as Record<string,number>).income_actions ?? 0) + ((mi2 as Record<string,number>).income_virements ?? 0) - mi2.expenses.reduce((s, e) => s + e.amount, 0) - (mi2.savings?.target_monthly ?? 140); }
     const prompt = `Budget ${month.month_name} 2026: Revenu: ${income}EUR, Depenses fixes: ${fixed}EUR (${income > 0 ? Math.round(fixed/income*100) : 0}%), Variables: ${variable}EUR, Investissements: ${invest}EUR, Epargne: ${savings}EUR, Solde net: ${balance}EUR, Cumul depuis jan: ${Math.round(cumulBal)}EUR, Taux effort: ${income > 0 ? Math.round(expenses/income*100) : 0}%, Validation: ${month.expenses.filter(e => e.validated).length}/${month.expenses.length}`;
     try { const r = await fetch("/api/analyze", { method: "POST", headers: getAuthHeaders(), body: JSON.stringify({ prompt }) }); const d = await r.json(); setAnalysis(d.analysis); } catch { setAnalysis("Analyse indisponible."); }
     setLoading(false);
@@ -1611,6 +1611,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
