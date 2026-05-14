@@ -345,6 +345,7 @@ export default function BudgetApp() {
     <div style={{ background: S.bg, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: S.font }}>
       <div style={{ background: S.surface, borderRadius: 20, padding: "40px 36px", width: "100%", maxWidth: 400, border: `1px solid ${S.border}`, boxShadow: "0 8px 32px rgba(0,0,0,0.06)" }}>
         <h1 style={{ fontFamily: S.heading, fontSize: 28, fontWeight: 800, textAlign: "center", margin: "0 0 4px", color: S.text }}>Budget Personnel</h1>
+          <span style={{ fontSize: 11, color: S.muted }}>{getDateFR()}</span>
         <p style={{ color: S.muted, fontSize: 14, textAlign: "center", margin: "0 0 28px" }}>
           {authMode === "register" ? "Inscription" : "Connexion"}
         </p>
@@ -488,6 +489,7 @@ export default function BudgetApp() {
         {/* Brand */}
         <div style={{ padding: "12px 20px", display: "flex", alignItems: "center", gap: 10, borderRight: `1px solid ${S.border}` }}>
           <h1 style={{ fontFamily: S.heading, fontSize: 17, fontWeight: 800, color: S.text, margin: 0 }}>Budget Personnel</h1>
+          <span style={{ fontSize: 11, color: S.muted }}>{getDateFR()}</span>
         </div>
         {/* Month navigation - center */}
         {m && <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
@@ -1017,6 +1019,8 @@ function DepensesTab({ month: m, months, monthKey, onValidate, onAmountChange, o
   }
 
   return (
+    <>
+      {calcPopup && (<div onClick={() => setCalcPopup(null)} style={{ position: "fixed", inset: 0, zIndex: 250, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}><div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 14, width: 340, padding: 24, boxShadow: "0 12px 40px rgba(0,0,0,0.2)" }}><div style={{ fontFamily: S.heading, fontSize: 16, fontWeight: 700, marginBottom: 14 }}>Calculette</div>{calcPopup.lines.map((line, i) => (<div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>{i > 0 && <span style={{ color: S.accent, fontWeight: 700, fontSize: 18 }}>+</span>}<input type="number" value={line} onChange={e => { const nl = [...calcPopup.lines]; nl[i] = e.target.value; setCalcPopup({ ...calcPopup, lines: nl }); }} style={{ flex: 1, padding: "10px 14px", fontSize: 16, border: "1px solid #e0e0e0", borderRadius: 10, background: "#fafafa", outline: "none", fontWeight: 600, textAlign: "right" }} autoFocus={i === calcPopup.lines.length - 1} />{calcPopup.lines.length > 1 && <button onClick={() => setCalcPopup({ ...calcPopup, lines: calcPopup.lines.filter((_, j) => j !== i) })} style={{ border: "none", background: "none", color: "#ef4444", fontSize: 18, cursor: "pointer" }}>x</button>}</div>))}<button onClick={() => setCalcPopup({ ...calcPopup, lines: [...calcPopup.lines, ""] })} style={{ width: "100%", padding: 8, fontSize: 12, border: "1px dashed #ccc", borderRadius: 8, background: "transparent", color: "#888", cursor: "pointer", marginBottom: 14 }}>+ Ajouter une ligne</button><div style={{ borderTop: "2px solid #eee", paddingTop: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}><span style={{ fontFamily: S.heading, fontSize: 22, fontWeight: 800, color: S.accent }}>{calcPopup.lines.reduce((s, l) => s + (parseFloat(l) || 0), 0).toFixed(0)} EUR</span><button onClick={() => { calcPopup.onChange(calcPopup.lines.reduce((s, l) => s + (parseFloat(l) || 0), 0)); setCalcPopup(null); }} style={{ padding: "10px 24px", fontSize: 14, fontWeight: 700, background: S.accent, color: "#fff", border: "none", borderRadius: 10, cursor: "pointer" }}>Valider</button></div></div></div>)}
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <Card style={{ borderColor: `${S.success}30`, background: `linear-gradient(135deg, ${S.success}10, ${S.bg})` }}>
         <SLabel>Revenus du mois</SLabel>
@@ -1063,7 +1067,7 @@ function DepensesTab({ month: m, months, monthKey, onValidate, onAmountChange, o
         <button onClick={() => { const name = prompt("Nom de la nouvelle enveloppe :"); if (name) onBudgetChange({ add_key: name, add_amount: 0 }); }} style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", fontSize: 12, fontWeight: 600, border: `1px dashed ${S.border}`, borderRadius: 8, background: "transparent", color: S.muted, cursor: "pointer", width: "100%", justifyContent: "center" }}><Plus size={12} /> Ajouter une enveloppe</button>
       </Card>
     </div>
-  );
+  </>);
 }
 
 // ── Projection ────��──────────────────────────���─────────────────────────────────
