@@ -69,6 +69,22 @@ function fmt(n: number) {
 }
 
 function getDateFR() {
+
+// Fullscreen chart modal
+function ChartModal({ children, onClose, title }: { children: React.ReactNode; onClose: () => void; title: string }) {
+  return (<div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+    <div onClick={e => e.stopPropagation()} style={{ background: S.surface, borderRadius: 16, width: "95vw", maxWidth: 1200, height: "80vh", padding: 24, display: "flex", flexDirection: "column" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+        <span style={{ fontFamily: S.heading, fontSize: 18, fontWeight: 700 }}>{title}</span>
+        <button onClick={onClose} style={{ background: "none", border: "none", color: S.muted, cursor: "pointer" }}><X size={20} /></button>
+      </div>
+      <div style={{ flex: 1 }}>{children}</div>
+    </div>
+  </div>);
+}
+function ExpandBtn({ onClick }: { onClick: () => void }) {
+  return <button onClick={onClick} title="Agrandir" style={{ position: "absolute", top: 8, right: 8, background: `${S.bg}cc`, border: `1px solid ${S.border}`, color: S.muted, width: 24, height: 24, borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", zIndex: 5 }}><Maximize2 size={10} /></button>;
+}
   return new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 }
 
@@ -1611,6 +1627,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
