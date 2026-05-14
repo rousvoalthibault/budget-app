@@ -1133,7 +1133,7 @@ function ProjectionTab({ forecast: f, prevCumul = 0 }: { forecast: Forecast; pre
 
       <Card>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16, flexWrap: "wrap" as const, gap: 8 }}>
-          <ExpandBtn onClick={() => setExpandedChart(!expandedChart)} />
+          <div style={{ position: "relative", display: "inline-block", float: "right" }}><ExpandBtn onClick={() => setExpandedChart(!expandedChart)} /></div>
           <SLabel>Projection 12 mois — {rolling[0]?.month_name ?? ""} a {rolling[rolling.length-1]?.month_name ?? ""}</SLabel>
           {need > 0 && <span style={{ color: S.muted, fontSize: 11, background: S.surface2, border: `1px solid ${S.border}`, borderRadius: 6, padding: "3px 8px" }}>* = estimation 2027</span>}
         </div>
@@ -1604,7 +1604,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
       {/* Charts */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
         <Card>
-          <ExpandBtn onClick={xpPort.toggle} />
+          <div style={{ position: "relative", display: "inline-block", float: "right" }}><ExpandBtn onClick={xpPort.toggle} /></div>
           <SLabel>Evolution portefeuille par mois</SLabel>
           <ResponsiveContainer width="100%" height={220} key="port">
             <ComposedChart data={portfolioChart}>
