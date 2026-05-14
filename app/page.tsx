@@ -1022,18 +1022,35 @@ function DepensesTab({ month: m, months, monthKey, onValidate, onAmountChange, o
     <>
       {calcPopup && (<div onClick={() => setCalcPopup(null)} style={{ position: "fixed", inset: 0, zIndex: 250, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}><div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 14, width: 340, padding: 24, boxShadow: "0 12px 40px rgba(0,0,0,0.2)" }}><div style={{ fontFamily: S.heading, fontSize: 16, fontWeight: 700, marginBottom: 14 }}>Calculette</div>{calcPopup.lines.map((line, i) => (<div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>{i > 0 && <span style={{ color: S.accent, fontWeight: 700, fontSize: 18 }}>+</span>}<input type="number" value={line} onChange={e => { const nl = [...calcPopup.lines]; nl[i] = e.target.value; setCalcPopup({ ...calcPopup, lines: nl }); }} style={{ flex: 1, padding: "10px 14px", fontSize: 16, border: "1px solid #e0e0e0", borderRadius: 10, background: "#fafafa", outline: "none", fontWeight: 600, textAlign: "right" }} autoFocus={i === calcPopup.lines.length - 1} />{calcPopup.lines.length > 1 && <button onClick={() => setCalcPopup({ ...calcPopup, lines: calcPopup.lines.filter((_, j) => j !== i) })} style={{ border: "none", background: "none", color: "#ef4444", fontSize: 18, cursor: "pointer" }}>x</button>}</div>))}<button onClick={() => setCalcPopup({ ...calcPopup, lines: [...calcPopup.lines, ""] })} style={{ width: "100%", padding: 8, fontSize: 12, border: "1px dashed #ccc", borderRadius: 8, background: "transparent", color: "#888", cursor: "pointer", marginBottom: 14 }}>+ Ajouter une ligne</button><div style={{ borderTop: "2px solid #eee", paddingTop: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}><span style={{ fontFamily: S.heading, fontSize: 22, fontWeight: 800, color: S.accent }}>{calcPopup.lines.reduce((s, l) => s + (parseFloat(l) || 0), 0).toFixed(0)} EUR</span><button onClick={() => { calcPopup.onChange(calcPopup.lines.reduce((s, l) => s + (parseFloat(l) || 0), 0)); setCalcPopup(null); }} style={{ padding: "10px 24px", fontSize: 14, fontWeight: 700, background: S.accent, color: "#fff", border: "none", borderRadius: 10, cursor: "pointer" }}>Valider</button></div></div></div>)}
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <Card style={{ borderColor: `${S.success}30`, background: `linear-gradient(135deg, ${S.success}10, ${S.bg})` }}>
-        <SLabel>Revenus du mois</SLabel>
-        <div style={{ display: "flex", gap: 32, flexWrap: "wrap" as const, alignItems: "center" }}>
-          <div><p style={{ color: S.muted, fontSize: 12, margin: "0 0 4px" }}>Salaire principal</p><EditableAmt value={m.income_salary} onChange={v => onIncomeChange("income_salary", v)} color={S.success} size="lg" /></div>
-          <div><p style={{ color: S.muted, fontSize: 12, margin: "0 0 4px" }}>Rente</p><EditableAmt value={(m as unknown as Record<string,number>).income_rente ?? 0} onChange={v => onIncomeChange("income_rente" as "income_other", v)} color={S.muted} size="sm" /></div>
-          <div><p style={{ color: S.muted, fontSize: 12, margin: "0 0 4px" }}>Épargne</p><EditableAmt value={(m as unknown as Record<string,number>).income_epargne ?? 0} onChange={v => onIncomeChange("income_epargne" as "income_other", v)} color={S.muted} size="sm" /></div>
-          <div><p style={{ color: S.muted, fontSize: 12, margin: "0 0 4px" }}>Actions</p><EditableAmt value={(m as unknown as Record<string,number>).income_actions ?? 0} onChange={v => onIncomeChange("income_actions" as "income_other", v)} color={S.muted} size="sm" /></div>
-          <div><p style={{ color: S.muted, fontSize: 12, margin: "0 0 4px" }}>Virements</p><EditableAmt value={(m as unknown as Record<string,number>).income_virements ?? 0} onChange={v => onIncomeChange("income_virements" as "income_other", v)} color={S.muted} size="sm" /></div>
-          <div><p style={{ color: S.muted, fontSize: 12, margin: "0 0 4px" }}>Autres revenus</p><EditableAmt value={m.income_other} onChange={v => onIncomeChange("income_other", v)} color={S.muted} size="sm" /></div>
-          <div><p style={{ color: S.muted, fontSize: 12, margin: "0 0 4px" }}>Solde ajusté</p><EditableAmt value={(m as unknown as Record<string,number>).income_solde_ajuste ?? 0} onChange={v => onIncomeChange("income_solde_ajuste" as "income_other", v)} color={S.muted} size="sm" /></div>
-          <div style={{ marginLeft: "auto", textAlign: "right" }}><p style={{ color: S.muted, fontSize: 12, margin: "0 0 4px" }}>Revenu total</p><p style={{ fontFamily: S.heading, fontSize: 26, fontWeight: 700, color: S.success, margin: 0 }}>{fmt(m.income_salary + m.income_other + ((m as unknown as Record<string,number>).income_rente ?? 0) + ((m as unknown as Record<string,number>).income_epargne ?? 0) + ((m as unknown as Record<string,number>).income_actions ?? 0) + ((m as unknown as Record<string,number>).income_virements ?? 0))}</p></div>
-        </div>
+      <Card style={{ borderColor: `${S.success}25` }}>
+        {(() => {
+          const RC = {sal: "#16a34a", rente: "#3b82f6", epargne: "#8b5cf6", actions: "#f59e0b", virements: "#06b6d4", autres: "#94a3b8", ajuste: "#ec4899"};
+          const sal = m.income_salary;
+          const rente = (m as unknown as Record<string,number>).income_rente ?? 0;
+          const ep = (m as unknown as Record<string,number>).income_epargne ?? 0;
+          const act = (m as unknown as Record<string,number>).income_actions ?? 0;
+          const vir = (m as unknown as Record<string,number>).income_virements ?? 0;
+          const aut = m.income_other;
+          const adj = (m as unknown as Record<string,number>).income_solde_ajuste ?? 0;
+          const total = sal + rente + ep + act + vir + aut + adj;
+          const items = [{k:"income_salary",l:"Salaire principal",v:sal,c:RC.sal},{k:"income_rente",l:"Rente",v:rente,c:RC.rente},{k:"income_epargne",l:"Épargne",v:ep,c:RC.epargne},{k:"income_actions",l:"Actions",v:act,c:RC.actions},{k:"income_virements",l:"Virements",v:vir,c:RC.virements},{k:"income_other",l:"Autres revenus",v:aut,c:RC.autres},{k:"income_solde_ajuste",l:"Solde ajusté",v:adj,c:RC.ajuste}];
+          return (<>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 14 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: 1, color: S.muted }}>Revenus du mois</div>
+              <div style={{ fontFamily: S.heading, fontSize: 26, fontWeight: 800, color: S.success, lineHeight: 1 }}>{fmt(total)} <span style={{ fontSize: 12, color: S.muted, fontWeight: 600 }}>/ mois</span></div>
+            </div>
+            <div style={{ display: "flex", height: 8, borderRadius: 4, overflow: "hidden", marginBottom: 14, gap: 2 }}>
+              {items.filter(i => i.v > 0).map(i => (<div key={i.k} style={{ width: `${(i.v / total) * 100}%`, background: i.c, borderRadius: 4 }} title={`${i.l}: ${fmt(i.v)}`} />))}
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+              {items.map(i => (<div key={i.k} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 8, background: "#fafbfc" }}>
+                <div style={{ width: 10, height: 10, borderRadius: 3, background: i.c, flexShrink: 0 }} />
+                <span style={{ flex: 1, fontSize: 12, color: S.muted, fontWeight: 500 }}>{i.l}</span>
+                <EditableAmt value={i.v} onChange={v => onIncomeChange(i.k as "income_salary", v)} color={i.c} size="sm" />
+              </div>))}
+            </div>
+          </>);
+        })()}
       </Card>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
