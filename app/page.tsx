@@ -618,7 +618,7 @@ function AiAnalysis({ month, months, idx }: { month: Month; months: Month[]; idx
   const [loading, setLoading] = useState(false);
   async function analyze() {
     setLoading(true);
-    const income = month.income_salary + month.income_other;
+    const income = month.income_salary + month.income_other + ((month as Record<string,number>).income_rente ?? 0) + ((month as Record<string,number>).income_epargne ?? 0) + ((month as Record<string,number>).income_actions ?? 0) + ((month as Record<string,number>).income_virements ?? 0);
     const expenses = month.expenses.reduce((s, e) => s + e.amount, 0);
     const fixed = month.expenses.filter(e => e.category === "fixed").reduce((s, e) => s + e.amount, 0);
     const variable = month.expenses.filter(e => e.category === "variable").reduce((s, e) => s + e.amount, 0);
@@ -1611,6 +1611,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
