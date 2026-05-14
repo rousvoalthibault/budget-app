@@ -554,7 +554,9 @@ export default function BudgetApp() {
         {tab === "economies" && months.length > 0 && (
           <EconomiesTab months={months} currentIdx={idx}
             onSavingsChange={(mk, u) => patchSavings(mk, u)}
-            onPortfolioValuesChange={(mk, u) => patchPortfolioValues(mk, u)} />
+            onPortfolioValuesChange={(mk, u) => patchPortfolioValues(mk, u)}
+            onValidateExpense={(label, v) => patchExpense(months[idx].month_key, label, { validated: v })}
+            onAddInvestment={(label, amount) => addExpense(months[idx].month_key, label, amount, "investment")} />
         )}
       </main>
     </div>
@@ -1468,10 +1470,12 @@ const PORTFOLIO_CATEGORIES: { label: string; color: string; items: { key: keyof 
   { label: "Retraite & Autres", color: "#d97706", items: [{ key: "per", label: "PER" }, { key: "perco", label: "PERCO" }, { key: "irishlife", label: "Irishlife" }, { key: "montres_objets_luxe", label: "Montres / Objets luxe" }, { key: "tontine", label: "Tontine" }] },
 ];
 
-function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesChange }: {
+function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesChange, onValidateExpense, onAddInvestment }: {
   months: Month[]; currentIdx: number;
   onSavingsChange: (mk: string, u: Partial<Savings>) => void;
   onPortfolioValuesChange: (mk: string, u: Record<string, number>) => void;
+  onValidateExpense?: (label: string, validated: boolean) => void;
+  onAddInvestment?: (label: string, amount: number) => void;
 }) {
   const m = months[currentIdx];
   if (!m) return null;
@@ -1504,10 +1508,11 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
               <TrendingUp size={14} color={e.validated ? S.accent : S.muted} />
               <span style={{ flex: 1, fontSize: 13, color: e.validated ? S.text : S.muted, fontWeight: 600 }}>{e.label}</span>
               <span style={{ fontFamily: S.heading, fontSize: 14, fontWeight: 700, color: S.accent }}>{fmt(e.amount)}</span>
-              {e.validated && <Check size={12} color={S.accent} />}
+              <button onClick={() => onValidateExpense && onValidateExpense(e.label, !e.validated)} style={{ width: 28, height: 28, borderRadius: 7, border: `1.5px solid ${e.validated ? S.accent : S.muted}`, background: e.validated ? S.accent : "transparent", color: e.validated ? "#fff" : S.muted, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, cursor: "pointer" }}><Check size={12} /></button>
             </div>
           ))}
         </div>
+        <button onClick={() => { const name = prompt("Nom de l'investissement :"); if (name) { const amt = parseFloat(prompt("Montant mensuel :") || "0"); if (amt > 0 && onAddInvestment) onAddInvestment(name, amt); } }} style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", fontSize: 12, fontWeight: 600, border: `1px dashed ${S.border}`, borderRadius: 8, background: "transparent", color: S.muted, cursor: "pointer", width: "100%", justifyContent: "center" }}><Plus size={12} /> Ajouter un investissement</button>
       </Card>
 
       {/* Objectifs editables */}
