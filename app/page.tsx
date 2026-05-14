@@ -886,6 +886,7 @@ function DepensesTab({ month: m, months, monthKey, onValidate, onAmountChange, o
   const budgetValidated = m.budget_validated || {};
   const validatedBudgetTotal = Object.entries(budgetValidated).filter(([, v]) => v).reduce((sum, [k]) => sum + ((m.budget_allocation as unknown as Record<string, number>)[k] || 0), 0);
 
+  const [calcPopup, setCalcPopup] = useState<{ value: number; lines: string[]; onChange: (v: number) => void } | null>(null);
   function ExpRow({ e, color }: { e: Expense; color: string }) {
     const Ico = (e.icon && ICONS[e.icon]) ? ICONS[e.icon] : CreditCard;
     const isSav = saving === e.label;
@@ -893,7 +894,7 @@ function DepensesTab({ month: m, months, monthKey, onValidate, onAmountChange, o
       <div className="row-h" style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 12px", background: e.validated ? `${color}12` : S.surface2, borderRadius: 10, border: `1px solid ${e.validated ? color + "40" : S.border}`, transition: "all 0.2s" }}>
         <Ico size={14} color={e.validated ? color : S.muted} />
         <span style={{ flex: 1, fontSize: 13, color: e.validated ? S.text : S.muted, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{e.label}</span>
-        <EditableAmt value={e.amount} onChange={v => onAmountChange(e.label, v)} color={color} size="sm" />
+        <div onDoubleClick={() => setCalcPopup({ value: e.amount, lines: [String(e.amount)], onChange: v => onAmountChange(e.label, v) })}><EditableAmt value={e.amount} onChange={v => onAmountChange(e.label, v)} color={color} size="sm" /></div>
         <button className="val-btn" onClick={() => onValidate(e.label, !e.validated)} disabled={isSav} style={{ width: 28, height: 28, borderRadius: 7, border: `1.5px solid ${e.validated ? color : S.muted}`, background: e.validated ? color : "transparent", color: e.validated ? "#fff" : S.muted, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, opacity: isSav ? 0.5 : 1 }} title={e.validated ? "Devalider" : "Valider"}>
           {isSav ? <div style={{ width: 10, height: 10, border: "1.5px solid currentColor", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} /> : <Check size={12} />}
         </button>
