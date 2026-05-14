@@ -274,7 +274,7 @@ export default function BudgetApp() {
     } catch { showToast("Erreur", false); }
   }
 
-  async function patchBudgetAlloc(mk: string, updates: { amounts?: Record<string, number>; validated?: Record<string, boolean> }) {
+  async function patchBudgetAlloc(mk: string, updates: { amounts?: Record<string, number>; validated?: Record<string, boolean>; rename?: { old: string; new: string }; delete_key?: string; add_key?: string; add_amount?: number }) {
     try {
       const r = await fetch(`/api/budget/month/${mk}/budget-allocation`, { method: "PATCH", headers: getAuthHeaders(), body: JSON.stringify(updates) });
       const d = await r.json();
@@ -828,7 +828,7 @@ function DepensesTab({ month: m, months, monthKey, onValidate, onAmountChange, o
   onValidate: (l: string, v: boolean) => void;
   onAmountChange: (l: string, a: number) => void;
   onIncomeChange: (f: "income_salary" | "income_other", v: number) => void;
-  onBudgetChange: (upd: { amounts?: Record<string, number>; validated?: Record<string, boolean> }) => void;
+  onBudgetChange: (upd: { amounts?: Record<string, number>; validated?: Record<string, boolean>; rename?: { old: string; new: string }; delete_key?: string; add_key?: string; add_amount?: number }) => void;
   onAddExpense: (label: string, amount: number, category: string) => void;
   onDeleteExpense: (label: string) => void;
   saving: string | null; isAdding: boolean;
