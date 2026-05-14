@@ -398,7 +398,8 @@ export default function BudgetApp() {
       {/* ── Onboarding Wizard ──────────────────────────────────────── */}
       {needsOnboarding && (
         <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-          <div style={{ background: S.surface, borderRadius: 16, maxWidth: 520, width: "100%", padding: 32, boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }}>
+          <div style={{ background: S.surface, borderRadius: 16, maxWidth: 520, width: "100%", padding: 32, boxShadow: "0 20px 60px rgba(0,0,0,0.15)", position: "relative" as const }}>
+            <button onClick={() => setNeedsOnboarding(false)} style={{ position: "absolute", top: 16, right: 16, background: "none", border: "none", fontSize: 22, cursor: "pointer", color: "#999", lineHeight: 1 }}>x</button>
             <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
               {[0,1,2].map(s => (<div key={s} style={{ flex: 1, height: 4, borderRadius: 2, background: s <= onboardStep ? S.accent : S.border }} />))}
             </div>
