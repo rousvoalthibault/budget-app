@@ -216,7 +216,7 @@ export default function BudgetApp() {
       finally { setLoading(false); }
     };
     init();
-  }, []);
+  }, [selectedYear]);
 
   async function patchExpense(mk: string, label: string, updates: Partial<Expense>) {
     setSaving(label);
@@ -482,19 +482,14 @@ export default function BudgetApp() {
         </div>
         {m && (
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <button onClick={() => { if (idx === 0 && selectedYear > 2026) { const ny = selectedYear - 1; setSelectedYear(ny); setIdx(11); fetch(`/api/budget/months?year=${ny}`, { headers: getAuthHeaders() }).then(r => r.json()).then(md => setMonths(md.months || [])); } else { setIdx(i => Math.max(0, i - 1)); } }} disabled={idx === 0 && selectedYear <= 2026} style={{ background: "transparent", border: `1px solid ${S.border}`, color: idx === 0 ? S.muted : S.text, width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", opacity: idx === 0 ? 0.4 : 1 }}><ArrowLeft size={14} /></button>
+            <button onClick={() => { if (idx === 0 && selectedYear > 2026) { const ny = selectedYear - 1; setSelectedYear(ny); setIdx(11); } else { setIdx(i => Math.max(0, i - 1)); } }} disabled={idx === 0 && selectedYear <= 2026} style={{ background: "transparent", border: `1px solid ${S.border}`, color: idx === 0 ? S.muted : S.text, width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", opacity: idx === 0 ? 0.4 : 1 }}><ArrowLeft size={14} /></button>
             <div style={{ minWidth: 150, textAlign: "center", position: "relative" }}>
               <select
                 value={`${selectedYear}-${String(idx + 1).padStart(2, "0")}`}
                 onChange={(e) => {
                   const [y, mo] = e.target.value.split("-").map(Number);
-                  if (y !== selectedYear) {
-                    setSelectedYear(y);
+                  setSelectedYear(y);
                     setIdx(mo - 1);
-                    fetch(`/api/budget/months?year=${y}`, { headers: getAuthHeaders() }).then(r => r.json()).then(md => setMonths(md.months || []));
-                  } else {
-                    setIdx(mo - 1);
-                  }
                 }}
                 style={{ fontFamily: S.heading, fontSize: 17, fontWeight: 700, color: S.accent, background: "transparent", border: `1px solid ${S.border}`, borderRadius: 8, padding: "6px 28px 6px 12px", cursor: "pointer", appearance: "none", WebkitAppearance: "none", textAlign: "center", width: "100%", outline: "none" }}
               >
@@ -508,7 +503,7 @@ export default function BudgetApp() {
               <div style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: S.muted, fontSize: 10 }}>&#9662;</div>
               <div style={{ fontSize: 10, color: S.muted, marginTop: 3 }}>{validatedCnt}/{totalItems} valides</div>
             </div>
-            <button onClick={() => { if (idx === months.length - 1 && selectedYear < 2036) { const ny = selectedYear + 1; setSelectedYear(ny); setIdx(0); fetch(`/api/budget/months?year=${ny}`, { headers: getAuthHeaders() }).then(r => r.json()).then(md => setMonths(md.months || [])); } else { setIdx(i => Math.min(months.length - 1, i + 1)); } }} disabled={idx === months.length - 1 && selectedYear >= 2036} style={{ background: "transparent", border: `1px solid ${S.border}`, color: idx === months.length - 1 ? S.muted : S.text, width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", opacity: idx === months.length - 1 ? 0.4 : 1 }}><ArrowRight size={14} /></button>
+            <button onClick={() => { if (idx === months.length - 1 && selectedYear < 2036) { const ny = selectedYear + 1; setSelectedYear(ny); setIdx(0); } else { setIdx(i => Math.min(months.length - 1, i + 1)); } }} disabled={idx === months.length - 1 && selectedYear >= 2036} style={{ background: "transparent", border: `1px solid ${S.border}`, color: idx === months.length - 1 ? S.muted : S.text, width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", opacity: idx === months.length - 1 ? 0.4 : 1 }}><ArrowRight size={14} /></button>
           </div>
         )}
         <button onClick={() => setNeedsOnboarding(true)} title="Aide / Onboarding" style={{ background: "transparent", border: `1px solid ${S.border}`, color: S.muted, width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14, fontWeight: 700 }}>?</button>
