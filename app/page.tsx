@@ -599,7 +599,7 @@ function DashboardTab({ month: m, months, idx, netBalance, totalExpenses, valida
 
       <Card>
         <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase" as const, color: S.muted, letterSpacing: 1, marginBottom: 12 }}>Répartition des dépenses</div>
-        {[{n:"Fixes",v:fixed.reduce((s:number,e:Expense)=>s+e.amount,0),c:S.primary},{n:"Variables",v:variable.reduce((s:number,e:Expense)=>s+e.amount,0),c:S.warning},{n:"Enveloppes",v:Object.values(m.budget_allocation as unknown as Record<string,number>).reduce((s:number,v:number)=>s+v,0),c:S.muted}].map(cat => {
+        {[{n:"Fixes",v:fixed.reduce((s:number,e:Expense)=>s+e.amount,0),c:S.primary},{n:"Variables",v:variable.reduce((s:number,e:Expense)=>s+e.amount,0),c:S.warning},{n:"Enveloppes",v:Object.values(m.budget_allocation as unknown as Record<string,number>).reduce((s:number,v:number)=>s+v,0),c:S.muted},{n:"Épargne",v:(m.savings?.target_monthly ?? 0) + m.expenses.filter((e:Expense)=>e.category==="investment").reduce((s:number,e:Expense)=>s+e.amount,0),c:S.accent}].map(cat => {
           const total2 = fixed.reduce((s:number,e:Expense)=>s+e.amount,0) + variable.reduce((s:number,e:Expense)=>s+e.amount,0) + Object.values(m.budget_allocation as unknown as Record<string,number>).reduce((s:number,v:number)=>s+v,0);
           const pct = total2 > 0 ? Math.round((cat.v / total2) * 100) : 0;
           return (<div key={cat.n} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
