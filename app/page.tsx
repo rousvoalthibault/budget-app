@@ -1045,7 +1045,7 @@ function DepensesTab({ month: m, months, monthKey, onValidate, onAmountChange, o
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
         {ColCard({ title: "Dépenses fixes", items: fixed, color: S.primary, catKey: "fixed" })}
-
+        {ColCard({ title: "Dépenses variables", items: variable, color: S.warning, catKey: "variable" })}
       </div>
 
       <Card>
