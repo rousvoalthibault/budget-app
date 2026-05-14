@@ -1072,15 +1072,17 @@ function DepensesTab({ month: m, months, monthKey, onValidate, onAmountChange, o
             return (
               <div key={key} className="row-h" style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 12px", background: isValid ? `${S.primary}12` : S.surface2, borderRadius: 10, border: `1px solid ${isValid ? S.primary + "40" : S.border}`, transition: "all 0.2s" }}>
                 <Wallet size={14} color={isValid ? S.primary : S.muted} />
-                <span style={{ flex: 1, fontSize: 13, color: isValid ? S.text : S.muted, fontWeight: 600 }}>{BUDGET_LABELS[key] || key}</span>
+                <input defaultValue={BUDGET_LABELS[key] || key} onBlur={e => { if (e.target.value !== key) onBudgetChange({ rename: { old: key, new: e.target.value } }); }} style={{ flex: 1, fontSize: 13, color: isValid ? S.text : S.muted, fontWeight: 600, background: "transparent", border: "none", outline: "none", padding: 0, fontFamily: "inherit" }} />
                 <EditableAmt value={amount as number} onChange={v => onBudgetChange({ amounts: { [key]: v } })} color={S.primary} size="sm" />
                 <button className="val-btn" onClick={() => onBudgetChange({ validated: { [key]: !isValid } })} style={{ width: 28, height: 28, borderRadius: 7, border: `1.5px solid ${isValid ? S.primary : S.muted}`, background: isValid ? S.primary : "transparent", color: isValid ? "#fff" : S.muted, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }} title={isValid ? "Devalider" : "Valider"}>
                   <Check size={12} />
                 </button>
+                <button onClick={() => onBudgetChange({ delete_key: key })} style={{ width: 24, height: 24, borderRadius: 6, border: "none", background: "transparent", color: S.muted, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", opacity: 0.5 }} title="Supprimer"><Trash2 size={11} /></button>
               </div>
             );
           })}
         </div>
+        <button onClick={() => { const name = prompt("Nom de la nouvelle enveloppe :"); if (name) onBudgetChange({ add_key: name, add_amount: 0 }); }} style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", fontSize: 12, fontWeight: 600, border: `1px dashed ${S.border}`, borderRadius: 8, background: "transparent", color: S.muted, cursor: "pointer", width: "100%", justifyContent: "center" }}><Plus size={12} /> Ajouter une enveloppe</button>
       </Card>
     </div>
   );
@@ -1569,6 +1571,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
                         <div style={{ textAlign: "right" }}><EditableAmt value={inv} onChange={v => onSavingsChange(m.month_key, { [p.key]: v } as unknown as Partial<Savings>)} color={cat.color} size="sm" /></div>
                         <div style={{ textAlign: "right" }}><EditableAmt value={val} onChange={v => onPortfolioValuesChange(m.month_key, { [p.key as string]: v })} color={val > 0 ? S.success : S.muted} size="sm" /></div>
                         <div style={{ textAlign: "right", fontFamily: S.heading, fontSize: 13, fontWeight: 700, color: val > 0 ? (diff >= 0 ? S.success : S.danger) : S.muted }}>{val > 0 ? `${diff >= 0 ? "+" : ""}${fmt(diff)}` : "—"}</div>
+                        <button onClick={() => { onSavingsChange(m.month_key, { [p.key]: undefined } as unknown as Partial<Savings>); }} style={{ width: 20, height: 20, border: "none", background: "transparent", color: S.muted, cursor: "pointer", opacity: 0.4, display: "flex", alignItems: "center", justifyContent: "center" }} title="Supprimer"><Trash2 size={10} /></button>
                       </div>
                     );
                   })}
