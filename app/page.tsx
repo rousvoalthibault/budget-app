@@ -1015,7 +1015,10 @@ function DepensesTab({ month: m, months, monthKey, onValidate, onAmountChange, o
         <SLabel>Revenus du mois</SLabel>
         <div style={{ display: "flex", gap: 32, flexWrap: "wrap" as const, alignItems: "center" }}>
           <div><p style={{ color: S.muted, fontSize: 12, margin: "0 0 4px" }}>Salaire principal</p><EditableAmt value={m.income_salary} onChange={v => onIncomeChange("income_salary", v)} color={S.success} size="lg" /></div>
-          <div><p style={{ color: S.muted, fontSize: 12, margin: "0 0 4px" }}>Autres revenus</p><EditableAmt value={m.income_other} onChange={v => onIncomeChange("income_other", v)} color={S.muted} size="lg" /></div>
+          <div><p style={{ color: S.muted, fontSize: 12, margin: "0 0 4px" }}>Rente</p><EditableAmt value={(m as Record<string,number>).income_rente ?? 0} onChange={v => onIncomeChange("income_rente" as "income_other", v)} color={S.muted} size="sm" /></div>
+          <div><p style={{ color: S.muted, fontSize: 12, margin: "0 0 4px" }}>Epargne</p><EditableAmt value={(m as Record<string,number>).income_epargne ?? 0} onChange={v => onIncomeChange("income_epargne" as "income_other", v)} color={S.muted} size="sm" /></div>
+          <div><p style={{ color: S.muted, fontSize: 12, margin: "0 0 4px" }}>Actions</p><EditableAmt value={(m as Record<string,number>).income_actions ?? 0} onChange={v => onIncomeChange("income_actions" as "income_other", v)} color={S.muted} size="sm" /></div>
+          <div><p style={{ color: S.muted, fontSize: 12, margin: "0 0 4px" }}>Virements</p><EditableAmt value={(m as Record<string,number>).income_virements ?? 0} onChange={v => onIncomeChange("income_virements" as "income_other", v)} color={S.muted} size="sm" /></div>
           <div style={{ marginLeft: "auto", textAlign: "right" }}><p style={{ color: S.muted, fontSize: 12, margin: "0 0 4px" }}>Total</p><p style={{ fontFamily: S.heading, fontSize: 26, fontWeight: 700, color: S.success, margin: 0 }}>{fmt(m.income_salary + m.income_other)}</p></div>
         </div>
       </Card>
@@ -1608,6 +1611,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
