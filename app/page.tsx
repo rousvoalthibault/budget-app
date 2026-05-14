@@ -211,7 +211,7 @@ export default function BudgetApp() {
         const md = await mr.json(); const fd = await fr.json();
         const mths: Month[] = md.months || [];
         setMonths(mths); setForecast(fd);
-        setIdx(Math.min(new Date().getMonth(), mths.length - 1));
+        // Only set idx to current month on first load, not year switches
       } catch { showToast("Erreur de chargement", false); }
       finally { setLoading(false); }
     };
