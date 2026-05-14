@@ -68,8 +68,6 @@ function fmt(n: number) {
   return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
 }
 
-function getDateFR() {
-
 // Fullscreen chart modal
 function ChartModal({ children, onClose, title }: { children: React.ReactNode; onClose: () => void; title: string }) {
   return (<div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
@@ -85,6 +83,7 @@ function ChartModal({ children, onClose, title }: { children: React.ReactNode; o
 function ExpandBtn({ onClick }: { onClick: () => void }) {
   return <button onClick={onClick} title="Agrandir" style={{ position: "absolute", top: 8, right: 8, background: `${S.bg}cc`, border: `1px solid ${S.border}`, color: S.muted, width: 24, height: 24, borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", zIndex: 5 }}><Maximize2 size={10} /></button>;
 }
+function getDateFR() {
   return new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 }
 
