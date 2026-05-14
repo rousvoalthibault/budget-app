@@ -1089,7 +1089,7 @@ function ProjectionTab({ forecast: f, prevCumul = 0 }: { forecast: Forecast; pre
   const proj: EM[] = Array.from({ length: need }, (_, i) => ({ month_key: `2027-${String(i+1).padStart(2,"0")}`, month_name: NAMES27[i], income: lastM.income, expenses: lastM.expenses, savings_target: lastM.savings_target, balance: lastM.balance, alert_type: lastM.alert_type, is_projected: true }));
   const rolling: EM[] = [...fromCur, ...proj];
 
-  let cumul = 0;
+  let cumul = prevCumul;
   const chartData = rolling.map(m => { cumul += m.balance; const ip = (m as EM).is_projected; return { name: m.month_name.slice(0,3) + (ip ? "*" : ""), full: m.month_name + (ip ? " (proj.)" : ""), "Revenu": m.income, "Dépenses": m.expenses, "Solde mensuel": m.balance, "Solde cumulé": cumul, isProj: ip }; });
   const alerts = rolling.filter(m => m.alert_type !== "ok");
   const ti = rolling.reduce((s, m) => s + m.income, 0);
@@ -1591,6 +1591,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
