@@ -1267,6 +1267,22 @@ function SalairesTab({ showToast: toast }: { showToast: (msg: string) => void })
             </ComposedChart>
           </ResponsiveContainer>
         </div>
+        {(() => {
+          const validTotals = data.totals.filter((t: number) => t > 0);
+          const avgSalary = validTotals.length > 0 ? Math.round(validTotals.reduce((s: number, t: number) => s + t, 0) / validTotals.length) : 0;
+          const pcts = data.years.map((y: number, i: number) => { const t = data.totals[i]; const prev = i < data.years.length - 1 ? data.totals[i+1] : 0; return prev > 0 ? ((t - prev) / prev) * 100 : 0; }).filter((p: number) => p !== 0);
+          const avgPct = pcts.length > 0 ? Math.round((pcts.reduce((s: number, p: number) => s + p, 0) / pcts.length) * 10) / 10 : 0;
+          return (<div style={{ display: "flex", gap: 16, marginTop: 12, justifyContent: "center" }}>
+            <div style={{ textAlign: "center", padding: "8px 20px", background: S.bg, borderRadius: 8 }}>
+              <div style={{ fontSize: 10, color: S.muted, textTransform: "uppercase" as const }}>Variation annuelle moy.</div>
+              <div style={{ fontFamily: S.heading, fontSize: 18, fontWeight: 700, color: avgPct >= 0 ? S.accent : S.danger }}>{avgPct > 0 ? "+" : ""}{avgPct}% / an</div>
+            </div>
+            <div style={{ textAlign: "center", padding: "8px 20px", background: S.bg, borderRadius: 8 }}>
+              <div style={{ fontSize: 10, color: S.muted, textTransform: "uppercase" as const }}>Salaire annuel moyen</div>
+              <div style={{ fontFamily: S.heading, fontSize: 18, fontWeight: 700, color: S.primary }}>{avgSalary.toLocaleString("fr-FR")} EUR</div>
+            </div>
+          </div>);
+        })()}
       </Card>
 
       {/* Tax Simulator */}
@@ -1592,6 +1608,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
