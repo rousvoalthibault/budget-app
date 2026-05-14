@@ -83,6 +83,11 @@ function ChartModal({ children, onClose, title }: { children: React.ReactNode; o
 function ExpandBtn({ onClick }: { onClick: () => void }) {
   return <button onClick={onClick} title="Agrandir" style={{ position: "absolute", top: 8, right: 8, background: `${S.bg}cc`, border: `1px solid ${S.border}`, color: S.muted, width: 24, height: 24, borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", zIndex: 5 }}><Maximize2 size={10} /></button>;
 }
+function useExpand() {
+  const [ex, setEx] = useState(false);
+  const st: React.CSSProperties = ex ? { position: "fixed", inset: 16, zIndex: 200, background: "#fff", borderRadius: 16, boxShadow: "0 0 0 9999px rgba(0,0,0,0.5)", padding: 24, overflow: "auto" } : { position: "relative" };
+  return { ex, toggle: () => setEx(!ex), st };
+}
 function getDateFR() {
   return new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 }
@@ -119,6 +124,7 @@ export default function BudgetApp() {
   const [selectedYear, setSelectedYear] = useState(2026);
   const YEARS = Array.from({ length: 2036 - 2026 + 1 }, (_, i) => 2026 + i);
   const [loading, setLoading] = useState(true);
+  const xpSal = useExpand();
   const [saving, setSaving] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string; ok?: boolean } | null>(null);
   const [authToken, setAuthToken] = useState<string | null>(null);
@@ -1226,6 +1232,7 @@ function HistoriqueTab({ months }: { months: Month[] }) {
 function SalairesTab({ showToast: toast }: { showToast: (msg: string) => void }) {
   const [data, setData] = useState<{ years: number[]; months: { name: string; values: number[] }[]; totals: number[] } | null>(null);
   const [loading, setLoading] = useState(true);
+  const xpSal = useExpand();
   useEffect(() => { fetch("/api/budget/salary-history", { headers: getAuthHeaders() }).then(r => r.json()).then(d => { setData(d); setLoading(false); }).catch(() => setLoading(false)); }, []);
   async function updateCell(mi: number, yi: number, value: number) {
     if (!data) return;
@@ -1263,7 +1270,8 @@ function SalairesTab({ showToast: toast }: { showToast: (msg: string) => void })
       </Card>
 
       {/* Salary Evolution Chart */}
-      <Card>
+      <Card style={xpSal.st}>
+        <ExpandBtn onClick={xpSal.toggle} />
         <SLabel>Evolution des salaires bruts annuels (% vs annee precedente)</SLabel>
         <div style={{ height: 250 }}>
           <ResponsiveContainer width="100%" height="100%">
@@ -1463,6 +1471,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
   onAddInvestment?: (label: string, amount: number) => void;
 }) {
   const m = months[currentIdx];
+  const xpPort = useExpand();
   if (!m) return null;
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const sav = m.savings;
@@ -1595,6 +1604,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
       {/* Charts */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
         <Card>
+          <ExpandBtn onClick={xpPort.toggle} />
           <SLabel>Evolution portefeuille par mois</SLabel>
           <ResponsiveContainer width="100%" height={220} key="port">
             <ComposedChart data={portfolioChart}>
