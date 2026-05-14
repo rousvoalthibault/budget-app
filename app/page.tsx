@@ -1494,6 +1494,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
               <span style={{ flex: 1, fontSize: 13, color: e.validated ? S.text : S.muted, fontWeight: 600 }}>{e.label}</span>
               <span style={{ fontFamily: S.heading, fontSize: 14, fontWeight: 700, color: S.accent }}>{fmt(e.amount)}</span>
               <button onClick={() => onValidateExpense && onValidateExpense(e.label, !e.validated)} style={{ width: 28, height: 28, borderRadius: 7, border: `1.5px solid ${e.validated ? S.accent : S.muted}`, background: e.validated ? S.accent : "transparent", color: e.validated ? "#fff" : S.muted, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, cursor: "pointer" }}><Check size={12} /></button>
+              <button onClick={() => { fetch(`/api/budget/month/${m.month_key}/expense/delete?label=${encodeURIComponent(e.label)}`, { method: "DELETE", headers: (() => { const t = typeof window !== "undefined" ? localStorage.getItem("budget_token") : null; return t ? { "x-user-token": t } : {}; })() }).then(() => window.location.reload()); }} style={{ width: 22, height: 22, border: "none", background: "transparent", color: S.muted, cursor: "pointer", opacity: 0.4, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }} title="Supprimer"><Trash2 size={10} /></button>
             </div>
           ))}
         </div>
