@@ -1082,7 +1082,7 @@ const ChartTip = ({ active, payload, label }: { active?: boolean; payload?: Arra
 function ProjectionTab({ forecast: f }: { forecast: Forecast }) {
   const cmi = new Date().getMonth();
   const NAMES27 = ["Janvier 2027","Fevrier 2027","Mars 2027","Avril 2027","Mai 2027","Juin 2027","Juillet 2027","Aout 2027","Septembre 2027","Octobre 2027","Novembre 2027","Decembre 2027"];
-  const fromCur = f.months.slice(cmi);
+  const fromCur = f.months;
   const need = Math.max(0, 12 - fromCur.length);
   const lastM = f.months[f.months.length - 1] || f.months[0];
   type EM = typeof fromCur[number] & { is_projected?: boolean };
@@ -1599,6 +1599,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
