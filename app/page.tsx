@@ -1557,19 +1557,6 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
             </ComposedChart>
           </ResponsiveContainer>
         </Card>
-        <Card>
-          <SLabel>Economies mensuelles</SLabel>
-          <ResponsiveContainer width="100%" height={220}>
-            <ComposedChart data={savingsChart}>
-              <CartesianGrid stroke="rgba(0,0,0,0.05)" />
-              <XAxis dataKey="name" tick={{ fill: S.muted, fontSize: 11, fontFamily: S.font }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: S.muted, fontSize: 10, fontFamily: S.font }} axisLine={false} tickLine={false} width={32} />
-              <Tooltip content={<ChartTip />} />
-              <Bar dataKey="Objectif" fill="rgba(0,0,0,0.08)" radius={[3, 3, 0, 0]} maxBarSize={16} />
-              <Bar dataKey="Réalisé" fill={S.success} radius={[3, 3, 0, 0]} maxBarSize={16} />
-            </ComposedChart>
-          </ResponsiveContainer>
-        </Card>
       </div>
 
       {/* Monthly recap */}
@@ -1600,6 +1587,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
