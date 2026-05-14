@@ -1163,7 +1163,7 @@ function ProjectionTab({ forecast: f, prevCumul = 0 }: { forecast: Forecast; pre
         <SLabel>Detail 12 mois avec solde cumule</SLabel>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: S.font, fontSize: 13 }}>
-            <thead><tr>{["Mois","Revenu","Dépenses","Economies","Solde mensuel","Solde cumulé","Statut"].map(h => <th key={h} style={{ padding: "8px 14px", textAlign: "left", color: S.muted, fontWeight: 600, fontSize: 11, borderBottom: `2px solid ${S.border}` }}>{h}</th>)}</tr></thead>
+            <thead><tr>{["Mois","Revenus","Dépenses","Épargne","Solde","Cumulé","Statut"].map(h => <th key={h} style={{ padding: "8px 14px", textAlign: "left", color: S.muted, fontWeight: 600, fontSize: 11, borderBottom: `2px solid ${S.border}` }}>{h}</th>)}</tr></thead>
             <tbody>{(() => { let rc = prevCumul; return rolling.map(mo => { rc += mo.balance; const ac = mo.alert_type === "danger" ? S.danger : mo.alert_type === "warning" ? S.warning : S.success; const ip = (mo as EM).is_projected; return (
               <tr key={mo.month_key} className="row-h" style={{ borderBottom: `1px solid ${S.border}`, opacity: ip ? 0.7 : 1 }}>
                 <td style={{ padding: "9px 14px", fontFamily: S.heading, fontSize: 16, color: ip ? S.muted : S.text, fontWeight: 600 }}>{mo.month_name}{ip && <span style={{ color: S.muted, fontSize: 10, marginLeft: 4 }}>(proj.)</span>}</td>
