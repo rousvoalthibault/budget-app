@@ -10,7 +10,7 @@ import {
   CreditCard, ShoppingBag, ShoppingCart, Car, Train, Zap, Gift,
   Plane, Briefcase, Bot, Activity, PiggyBank, BarChart2, Bitcoin,
   UtensilsCrossed, ArrowLeft, ArrowRight, AlertTriangle, Check,
-  RefreshCw, Pencil, Wallet, Plus, Trash2, X, Calendar, Bell,
+  RefreshCw, Pencil, Wallet, Plus, Trash2, X, Calendar, Bell, Maximize2,
 } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -1611,6 +1611,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
     </div>
   );
 }
+
 
 
 
