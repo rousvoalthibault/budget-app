@@ -1186,7 +1186,7 @@ function ProjectionTab({ forecast: f, prevCumul = 0 }: { forecast: Forecast; pre
 // ── Historique ────────────────────────────────────────────────────────────────
 function HistoriqueTab({ months }: { months: Month[] }) {
   let cumul = 0;
-  const rows = months.map(m => { const inc = m.income_salary + m.income_other + ((m as unknown as Record<string,number>).income_rente ?? 0) + ((m as unknown as Record<string,number>).income_epargne ?? 0) + ((m as unknown as Record<string,number>).income_actions ?? 0) + ((m as unknown as Record<string,number>).income_virements ?? 0); const expItems = m.expenses.filter(e => e.category !== "investment").reduce((s, e) => s + e.amount, 0); const budgetEnv = Object.values(m.budget_allocation as unknown as Record<string, number>).reduce((s, v) => s + v, 0); const exp = expItems + budgetEnv; const sav = m.savings?.target_monthly ?? 140; const bal = inc - exp - sav; cumul += bal; return { ...m, inc, exp, sav, bal, cumul, vc: m.expenses.filter(e => e.validated).length, tc: m.expenses.length }; });
+  const rows = months.map(m => { const inc = m.income_salary + m.income_other + ((m as unknown as Record<string,number>).income_rente ?? 0) + ((m as unknown as Record<string,number>).income_epargne ?? 0) + ((m as unknown as Record<string,number>).income_actions ?? 0) + ((m as unknown as Record<string,number>).income_virements ?? 0); const expItems = m.expenses.filter(e => e.category !== "investment").reduce((s, e) => s + e.amount, 0); const budgetEnv = Object.values(m.budget_allocation as unknown as Record<string, number>).reduce((s, v) => s + v, 0); const exp = expItems + budgetEnv; const investSum = m.expenses.filter(e => e.category === "investment").reduce((s, e) => s + e.amount, 0); const sav = (m.savings?.target_monthly ?? 140) + investSum; const bal = inc - exp - sav; cumul += bal; return { ...m, inc, exp, sav, bal, cumul, vc: m.expenses.filter(e => e.validated).length, tc: m.expenses.length }; });
   const ti = rows.reduce((s, r) => s + r.inc, 0); const te = rows.reduce((s, r) => s + r.exp, 0); const fc = rows.length > 0 ? rows[rows.length-1].cumul : 0;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -1199,7 +1199,7 @@ function HistoriqueTab({ months }: { months: Month[] }) {
         <SLabel>Historique detaille 2026 — mois par mois avec solde cumule</SLabel>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: S.font, fontSize: 13 }}>
-            <thead><tr>{["Mois", "Revenu", "Dépenses", "Economies", "Solde mensuel", "Solde cumulé", "Validation"].map(h => <th key={h} style={{ padding: "10px 14px", textAlign: "left", color: S.muted, fontWeight: 600, fontSize: 11, borderBottom: `2px solid ${S.border}`, textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>{h}</th>)}</tr></thead>
+            <thead><tr>{["Mois","Revenus","Dépenses","Épargne","Solde","Cumulé","Valid."].map(h => <th key={h} style={{ padding: "10px 14px", textAlign: "left", color: S.muted, fontWeight: 600, fontSize: 11, borderBottom: `2px solid ${S.border}`, textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>{h}</th>)}</tr></thead>
             <tbody>{rows.map(r => {
               const bc = r.bal >= 0 ? S.success : S.danger; const cc = r.cumul >= 0 ? S.success : S.danger; const pv = r.tc > 0 ? Math.round((r.vc/r.tc)*100) : 0;
               return (<tr key={r.month_key} className="row-h" style={{ borderBottom: `1px solid ${S.border}` }}>
