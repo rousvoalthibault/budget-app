@@ -39,7 +39,7 @@ interface Alert { month_key: string; month_name: string; projected_balance: numb
 interface Forecast { months: ForecastMonth[]; alerts: Alert[]; total_income: number; total_expenses: number; total_savings: number; }
 
 // ── Design ────────────────────────────────────────────────────────────────────
-const S = {
+const LIGHT = {
   bg: "#f8fafc", surface: "#ffffff", surface2: "#f1f5f9",
   border: "rgba(0,0,0,0.07)", borderLight: "rgba(0,0,0,0.12)",
   primary: "#2563EB", accent: "#F97316",
@@ -47,6 +47,15 @@ const S = {
   text: "#0f172a", muted: "#64748b",
   font: "Outfit,sans-serif", heading: "Outfit,sans-serif",
 };
+const DARK = {
+  bg: "#0f1117", surface: "#1a1c25", surface2: "#232630",
+  border: "rgba(255,255,255,0.08)", borderLight: "rgba(255,255,255,0.12)",
+  primary: "#60a5fa", accent: "#fb923c",
+  success: "#4ade80", danger: "#f87171", warning: "#fbbf24",
+  text: "#e8e9ed", muted: "#8b8fa3",
+  font: "Outfit,sans-serif", heading: "Outfit,sans-serif",
+};
+let S = LIGHT;
 
 const ICONS: Record<string, React.ElementType> = {
   Home, Shield, TrendingUp, Wifi, Tv, Smartphone, CreditCard, ShoppingBag,
@@ -125,6 +134,8 @@ function EditableAmt({ value, onChange, color, size = "md" }: { value: number; o
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function BudgetApp() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [darkMode, setDarkMode] = useState(false);
+  S = darkMode ? DARK : LIGHT;
   const [tab, setTab] = useState<"dashboard" | "depenses" | "projection" | "historique" | "salaires" | "economies">("dashboard");
   const [months, setMonths] = useState<Month[]>([]);
   const [forecast, setForecast] = useState<Forecast | null>(null);
@@ -483,6 +494,7 @@ export default function BudgetApp() {
         <nav style={{ display: "flex", flexDirection: "column", gap: 2, flex: 1 }}>
           {TABS.map(t => { const Icon = t.icon; const active = tab === t.id; return (<button key={t.id} onClick={() => setTab(t.id)} title={t.label} style={{ display: "flex", alignItems: "center", gap: 12, padding: sidebarOpen ? "10px 12px" : "10px 0", justifyContent: sidebarOpen ? "flex-start" : "center", fontSize: 13, fontWeight: active ? 700 : 500, color: active ? S.primary : S.muted, background: active ? `${S.primary}12` : "transparent", border: "none", borderRadius: 10, cursor: "pointer", fontFamily: S.font, transition: "all 0.15s", width: "100%" }}><Icon size={18} />{sidebarOpen && <span>{t.label}</span>}</button>); })}
         </nav>
+        <button onClick={() => setDarkMode(!darkMode)} style={{ marginTop: 8, background: "transparent", border: `1px solid ${S.border}`, color: S.muted, borderRadius: 8, padding: sidebarOpen ? "8px 12px" : "8px 0", display: "flex", alignItems: "center", justifyContent: sidebarOpen ? "flex-start" : "center", gap: 8, width: "100%", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>{darkMode ? "☀" : "☽"}{sidebarOpen && <span>{darkMode ? "Mode clair" : "Mode sombre"}</span>}</button>
       </aside>
       <div style={{ marginLeft: sidebarOpen ? 220 : 60, transition: "margin-left 0.2s ease", flex: 1 }}>
       <header style={{ background: S.surface, borderBottom: `1px solid ${S.border}`, display: "flex", alignItems: "stretch", position: "sticky", top: 0, zIndex: 40 }}>
