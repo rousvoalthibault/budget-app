@@ -591,7 +591,7 @@ function DashboardTab({ month: m, months, idx, netBalance, totalExpenses, valida
         ].map((k, i, arr) => (
           <div key={k.label} title={(k as {tip?:string}).tip || ""} style={{ flex: 1, padding: "14px 14px", borderRight: i < arr.length - 1 ? `1px solid ${S.border}` : "none", textAlign: "center" }}>
             <div style={{ width: 30, height: 30, borderRadius: 8, background: `${k.color}15`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 6px", fontSize: 13, color: k.color }}>{k.icon}</div>
-            <div style={{ fontSize: 10, color: S.muted, textTransform: "uppercase" as const, fontWeight: 600, letterSpacing: 0.5 }}>{k.label}</div>
+            <div style={{ fontSize: 10, color: S.muted, textTransform: "uppercase" as const, fontWeight: 600, letterSpacing: 0.5, position: "relative", display: "flex", alignItems: "center", gap: 4, justifyContent: "center" }}>{k.label}{(k as {tip?:string}).tip && <span className="kpi-tip" style={{ cursor: "help", opacity: 0.4 }} data-tip={(k as {tip?:string}).tip}>ⓘ</span>}</div>
             <div style={{ fontFamily: S.heading, fontSize: 20, fontWeight: 800, color: k.color, margin: "2px 0" }}>{fmt(k.value)}</div>
             {k.sub && <div style={{ fontSize: 10, color: S.muted }}>{k.sub}</div>}
           </div>
