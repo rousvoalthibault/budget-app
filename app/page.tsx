@@ -164,6 +164,7 @@ export default function BudgetApp() {
   const [obNewLabel, setObNewLabel] = useState("");
   const [obNewAmount, setObNewAmount] = useState("");
   const [showAlerts, setShowAlerts] = useState(false);
+  const [savingsGoals, setSavingsGoals] = useState<{id:string;name:string;target:number;current:number;target_date:string;color:string;validated_months:string[]}[]>([]);
   const [fullChart, setFullChart] = useState<string | null>(null);
   const COMMON_EXPENSES = [{l:"Loyer",c:"fixed"},{l:"Electricite",c:"fixed"},{l:"Internet / Telecom",c:"fixed"},{l:"Assurance",c:"fixed"},{l:"Abonnements (Netflix, Spotify...)",c:"fixed"},{l:"Transports",c:"variable"},{l:"Courses alimentaires",c:"variable"}];
 
@@ -314,9 +315,10 @@ export default function BudgetApp() {
   }
 
   const m = months[idx];
+  const totalGoalMonthly = savingsGoals.reduce((s, g) => { const mo = Math.max(1, Math.ceil((new Date(g.target_date + "-01").getTime() - Date.now()) / (30.44*24*60*60*1000))); return s + Math.round((g.target - g.current) / mo); }, 0);
   const validatedBudget = m ? Object.entries(m.budget_validated || {}).filter(([, v]) => v).reduce((sum, [k]) => sum + ((m.budget_allocation as unknown as Record<string, number>)[k] || 0), 0) : 0;
   const totalExp = m ? m.expenses.filter(e => e.category !== "investment").reduce((s, e) => s + e.amount, 0) + validatedBudget : 0;
-  const netBal = m ? m.income_salary + m.income_other + ((m as unknown as Record<string,number>).income_rente ?? 0) + ((m as unknown as Record<string,number>).income_epargne ?? 0) + ((m as unknown as Record<string,number>).income_actions ?? 0) + ((m as unknown as Record<string,number>).income_virements ?? 0) - totalExp - (m.savings?.target_monthly ?? 140) - m.expenses.filter((e: Expense) => e.category === "investment").reduce((s: number, e: Expense) => s + e.amount, 0) : 0;
+  const netBal = m ? m.income_salary + m.income_other + ((m as unknown as Record<string,number>).income_rente ?? 0) + ((m as unknown as Record<string,number>).income_epargne ?? 0) + ((m as unknown as Record<string,number>).income_actions ?? 0) + ((m as unknown as Record<string,number>).income_virements ?? 0) - totalExp - (m.savings?.target_monthly ?? 140) - m.expenses.filter((e: Expense) => e.category === "investment").reduce((s: number, e: Expense) => s + e.amount, 0) - totalGoalMonthly : 0;
   const validatedCnt = m ? m.expenses.filter(e => e.validated).length + Object.values(m.budget_validated || {}).filter(Boolean).length : 0;
   const totalItems = m ? m.expenses.length + Object.keys(m.budget_allocation).length : 0;
 
@@ -550,8 +552,8 @@ export default function BudgetApp() {
             onDeleteExpense={(label) => deleteExpense(m.month_key, label)}
             saving={saving} isAdding={saving === "adding"} />
         )}
-        {tab === "projection" && forecast && <ProjectionTab forecast={forecast} prevCumul={(() => { let c = 0; const curMk = months[idx]?.month_key || ""; for (const mo of months) { if (mo.month_key >= curMk) break; const inc = mo.income_salary + mo.income_other; const exp = mo.expenses.filter(e => e.category !== "investment").reduce((s, e) => s + e.amount, 0) + Object.values(mo.budget_allocation as unknown as Record<string, number>).reduce((s, v) => s + v, 0); c += inc - exp - (mo.savings?.target_monthly ?? 0); } return c; })()} />}
-        {tab === "historique" && months.length > 0 && <HistoriqueTab months={months} />}
+        {tab === "projection" && forecast && <ProjectionTab forecast={forecast} goalMonthly={totalGoalMonthly} prevCumul={(() => { let c = 0; const curMk = months[idx]?.month_key || ""; for (const mo of months) { if (mo.month_key >= curMk) break; const inc = mo.income_salary + mo.income_other; const exp = mo.expenses.filter(e => e.category !== "investment").reduce((s, e) => s + e.amount, 0) + Object.values(mo.budget_allocation as unknown as Record<string, number>).reduce((s, v) => s + v, 0); c += inc - exp - (mo.savings?.target_monthly ?? 0); } return c; })()} />}
+        {tab === "historique" && months.length > 0 && <HistoriqueTab months={months} goalMonthly={totalGoalMonthly} />}
         {tab === "salaires" && <SalairesTab showToast={showToast} />}
         {tab === "economies" && months.length > 0 && (
           <EconomiesTab months={months} currentIdx={idx}
@@ -587,7 +589,7 @@ function DashboardTab({ month: m, months, idx, netBalance, totalExpenses, valida
           { label: "Dépenses", tip: "Charges fixes + variables + enveloppes budget (hors investissements)", value: totalExpenses, color: S.danger, icon: "↓", sub: validatedBudget > 0 ? `dont ${fmt(validatedBudget)} env.` : undefined },
           { label: "Solde net", value: netBalance, color: balColor, icon: "◎", tip: "Revenus - Dépenses - Épargne totale", sub: undefined },
           { label: "Cumulé YTD", value: (() => { let c2 = 0; for (let i2 = 0; i2 <= idx; i2++) { const m2 = months[i2]; c2 += m2.income_salary + m2.income_other + ((m2 as unknown as Record<string,number>).income_rente ?? 0) + ((m2 as unknown as Record<string,number>).income_epargne ?? 0) + ((m2 as unknown as Record<string,number>).income_actions ?? 0) + ((m2 as unknown as Record<string,number>).income_virements ?? 0) - m2.expenses.filter((e2: Expense) => e2.category !== "investment").reduce((s2: number, e2: Expense) => s2 + e2.amount, 0) - Object.values(m2.budget_allocation as unknown as Record<string,number>).reduce((s2: number, v2: number) => s2 + v2, 0) - (m2.savings?.target_monthly ?? 140) - m2.expenses.filter((e2: Expense) => e2.category === "investment").reduce((s2: number, e2: Expense) => s2 + e2.amount, 0); } return Math.round(c2); })(), color: S.primary, icon: "↗", tip: "Somme de vos soldes mensuels depuis Janvier", sub: "Depuis janvier" },
-          { label: "Épargne", value: (m.savings?.target_monthly ?? 140) + m.expenses.filter((e: Expense) => e.category === "investment").reduce((s: number, e: Expense) => s + e.amount, 0), color: S.accent, icon: "★", tip: "Objectif épargne + investissements mensuels", sub: `Cumul: ${fmt((m.savings?.cumulative_target ?? 0) + months.slice(0, idx + 1).reduce((s: number, mo: Month) => s + mo.expenses.filter((e: Expense) => e.category === "investment").reduce((s2: number, e2: Expense) => s2 + e2.amount, 0), 0))}` },
+          { label: "Épargne", value: (m.savings?.target_monthly ?? 140) + m.expenses.filter((e: Expense) => e.category === "investment").reduce((s: number, e: Expense) => s + e.amount, 0) , color: S.accent, icon: "★", tip: "Objectif épargne + investissements mensuels", sub: `Cumul: ${fmt((m.savings?.cumulative_target ?? 0) + months.slice(0, idx + 1).reduce((s: number, mo: Month) => s + mo.expenses.filter((e: Expense) => e.category === "investment").reduce((s2: number, e2: Expense) => s2 + e2.amount, 0), 0))}` },
         ].map((k, i, arr) => (
           <div key={k.label} title={(k as {tip?:string}).tip || ""} style={{ flex: 1, padding: "14px 14px", borderRight: i < arr.length - 1 ? `1px solid ${S.border}` : "none", textAlign: "center" }}>
             <div style={{ width: 30, height: 30, borderRadius: 8, background: `${k.color}15`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 6px", fontSize: 13, color: k.color }}>{k.icon}</div>
@@ -1125,7 +1127,7 @@ const ChartTip = ({ active, payload, label }: { active?: boolean; payload?: Arra
 };
 
 
-function ProjectionTab({ forecast: f, prevCumul = 0 }: { forecast: Forecast; prevCumul?: number }) {
+function ProjectionTab({ forecast: f, prevCumul = 0, goalMonthly = 0 }: { forecast: Forecast; prevCumul?: number; goalMonthly?: number }) {
   const [expandedChart, setExpandedChart] = useState(false);
   const cmi = new Date().getMonth();
   const NAMES27 = ["Janvier 2027","Fevrier 2027","Mars 2027","Avril 2027","Mai 2027","Juin 2027","Juillet 2027","Aout 2027","Septembre 2027","Octobre 2027","Novembre 2027","Decembre 2027"];
@@ -1198,7 +1200,7 @@ function ProjectionTab({ forecast: f, prevCumul = 0 }: { forecast: Forecast; pre
                 <td style={{ padding: "9px 14px", fontFamily: S.heading, fontSize: 16, color: ip ? S.muted : S.text, fontWeight: 600 }}>{mo.month_name}{ip && <span style={{ color: S.muted, fontSize: 10, marginLeft: 4 }}>(proj.)</span>}</td>
                 <td style={{ padding: "9px 14px", color: S.success, fontWeight: 600 }}>{fmt(mo.income)}</td>
                 <td style={{ padding: "9px 14px", color: S.danger, fontWeight: 600 }}>{fmt(mo.expenses)}</td>
-                <td style={{ padding: "9px 14px", color: S.muted }}>{fmt(mo.savings_target)}</td>
+                <td style={{ padding: "9px 14px", color: S.muted }}>{fmt(mo.savings_target )}</td>
                 <td style={{ padding: "9px 14px", color: ac, fontWeight: 600 }}>{fmt(mo.balance)}</td>
                 <td style={{ padding: "9px 14px", fontFamily: S.heading, fontSize: 17, fontWeight: 800, color: rc >= 0 ? S.success : S.danger }}>{fmt(rc)}</td>
                 <td style={{ padding: "9px 14px" }}><span style={{ background: `${ac}15`, color: ac, border: `1px solid ${ac}40`, borderRadius: 6, padding: "3px 10px", fontSize: 11, fontWeight: 700 }}>{mo.alert_type === "danger" ? "NEGATIF" : mo.alert_type === "warning" ? "SERRE" : "OK"}</span></td>
@@ -1213,9 +1215,9 @@ function ProjectionTab({ forecast: f, prevCumul = 0 }: { forecast: Forecast; pre
 
 
 // ── Historique ────────────────────────────────────────────────────────────────
-function HistoriqueTab({ months }: { months: Month[] }) {
+function HistoriqueTab({ months, goalMonthly = 0 }: { months: Month[]; goalMonthly?: number }) {
   let cumul = 0;
-  const rows = months.map(m => { const inc = m.income_salary + m.income_other + ((m as unknown as Record<string,number>).income_rente ?? 0) + ((m as unknown as Record<string,number>).income_epargne ?? 0) + ((m as unknown as Record<string,number>).income_actions ?? 0) + ((m as unknown as Record<string,number>).income_virements ?? 0); const expItems = m.expenses.filter(e => e.category !== "investment").reduce((s, e) => s + e.amount, 0); const budgetEnv = Object.values(m.budget_allocation as unknown as Record<string, number>).reduce((s, v) => s + v, 0); const exp = expItems + budgetEnv; const investSum = m.expenses.filter(e => e.category === "investment").reduce((s, e) => s + e.amount, 0); const sav = (m.savings?.target_monthly ?? 140) + investSum; const bal = inc - exp - sav; cumul += bal; return { ...m, inc, exp, sav, bal, cumul, vc: m.expenses.filter(e => e.validated).length, tc: m.expenses.length }; });
+  const rows = months.map(m => { const inc = m.income_salary + m.income_other + ((m as unknown as Record<string,number>).income_rente ?? 0) + ((m as unknown as Record<string,number>).income_epargne ?? 0) + ((m as unknown as Record<string,number>).income_actions ?? 0) + ((m as unknown as Record<string,number>).income_virements ?? 0); const expItems = m.expenses.filter(e => e.category !== "investment").reduce((s, e) => s + e.amount, 0); const budgetEnv = Object.values(m.budget_allocation as unknown as Record<string, number>).reduce((s, v) => s + v, 0); const exp = expItems + budgetEnv; const investSum = m.expenses.filter(e => e.category === "investment").reduce((s, e) => s + e.amount, 0); const sav = (m.savings?.target_monthly ?? 140) + investSum ; const bal = inc - exp - sav; cumul += bal; return { ...m, inc, exp, sav, bal, cumul, vc: m.expenses.filter(e => e.validated).length, tc: m.expenses.length }; });
   const ti = rows.reduce((s, r) => s + r.inc, 0); const te = rows.reduce((s, r) => s + r.exp, 0); const fc = rows.length > 0 ? rows[rows.length-1].cumul : 0;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
