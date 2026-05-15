@@ -604,7 +604,7 @@ function DashboardTab({ month: m, months, idx, netBalance, totalExpenses, valida
           </div>
         </div>
       )}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><SLabel>Progression validation</SLabel><button onClick={() => setShowSwipeTutorial(true)} style={{ width: 22, height: 22, borderRadius: 6, border: `1px solid ${S.border}`, background: "transparent", color: S.muted, fontSize: 11, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>?</button></div>
+      <SLabel>Progression validation</SLabel>
           <span style={{ color: validatedCount === totalCount ? S.success : S.muted, fontSize: 13, fontWeight: 700 }}>{validatedCount === totalCount ? "Tout valide !" : `${validatedCount} / ${totalCount}`}</span>
         </div>
         <div style={{ background: S.surface2, borderRadius: 999, height: 10, overflow: "hidden" }}>
@@ -625,6 +625,7 @@ function DashboardTab({ month: m, months, idx, netBalance, totalExpenses, valida
         })}
       </Card>
 
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}><span style={{ fontFamily: S.heading, fontSize: 14, fontWeight: 700 }}>Valider ses dépenses</span><button onClick={() => setShowSwipeTutorial(true)} style={{ width: 24, height: 24, borderRadius: 6, border: `1px solid ${S.border}`, background: "transparent", color: S.muted, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>?</button></div>
       <SwipeValidator expenses={m.expenses} onValidate={onValidate} saving={saving} />
     </div>
   );
