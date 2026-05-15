@@ -390,10 +390,32 @@ export default function BudgetApp() {
   );
 
   if (loading) return (
-    <div style={{ background: S.bg, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16, fontFamily: S.font }}>
-      <div style={{ width: 48, height: 48, border: `3px solid ${S.primary}`, borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-      <p style={{ color: S.muted }}>Chargement...</p>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    <div style={{ background: S.bg, minHeight: "100vh", fontFamily: S.font, color: S.text }}>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}} @keyframes shimmer{0%{background-position:-200px 0}100%{background-position:200px 0}}`}</style>
+      <div style={{ display: "flex" }}>
+        {/* Skeleton sidebar */}
+        <div style={{ width: 64, minHeight: "100vh", background: S.surface, borderRight: `1px solid ${S.border}`, padding: "16px 0", display: "flex", flexDirection: "column", alignItems: "center", gap: 20 }}>
+          <div style={{ width: 32, height: 32, borderRadius: 8, background: `linear-gradient(90deg, ${S.surface2} 25%, ${S.border} 50%, ${S.surface2} 75%)`, backgroundSize: "400px 100%", animation: "shimmer 1.5s infinite" }} />
+          {[...Array(6)].map((_, i) => <div key={i} style={{ width: 28, height: 28, borderRadius: 8, background: `linear-gradient(90deg, ${S.surface2} 25%, ${S.border} 50%, ${S.surface2} 75%)`, backgroundSize: "400px 100%", animation: `shimmer 1.5s infinite ${i * 0.1}s` }} />)}
+        </div>
+        <div style={{ flex: 1, padding: 24, maxWidth: 1200, margin: "0 auto" }}>
+          {/* Skeleton header */}
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 24 }}>
+            <div style={{ width: 180, height: 20, borderRadius: 6, background: `linear-gradient(90deg, ${S.surface2} 25%, ${S.border} 50%, ${S.surface2} 75%)`, backgroundSize: "400px 100%", animation: "shimmer 1.5s infinite" }} />
+            <div style={{ width: 140, height: 36, borderRadius: 8, background: `linear-gradient(90deg, ${S.surface2} 25%, ${S.border} 50%, ${S.surface2} 75%)`, backgroundSize: "400px 100%", animation: "shimmer 1.5s infinite 0.2s" }} />
+          </div>
+          {/* Skeleton KPI strip */}
+          <div style={{ display: "flex", gap: 0, borderRadius: 14, border: `1px solid ${S.border}`, overflow: "hidden", marginBottom: 20 }}>
+            {[...Array(5)].map((_, i) => <div key={i} style={{ flex: 1, padding: "18px 14px", borderRight: i < 4 ? `1px solid ${S.border}` : "none", textAlign: "center" }}>
+              <div style={{ width: 30, height: 30, borderRadius: 8, margin: "0 auto 8px", background: `linear-gradient(90deg, ${S.surface2} 25%, ${S.border} 50%, ${S.surface2} 75%)`, backgroundSize: "400px 100%", animation: `shimmer 1.5s infinite ${i * 0.15}s` }} />
+              <div style={{ width: 50, height: 10, borderRadius: 4, margin: "0 auto 6px", background: `linear-gradient(90deg, ${S.surface2} 25%, ${S.border} 50%, ${S.surface2} 75%)`, backgroundSize: "400px 100%", animation: `shimmer 1.5s infinite ${i * 0.15 + 0.1}s` }} />
+              <div style={{ width: 70, height: 18, borderRadius: 6, margin: "0 auto", background: `linear-gradient(90deg, ${S.surface2} 25%, ${S.border} 50%, ${S.surface2} 75%)`, backgroundSize: "400px 100%", animation: `shimmer 1.5s infinite ${i * 0.15 + 0.2}s` }} />
+            </div>)}
+          </div>
+          {/* Skeleton cards */}
+          {[...Array(3)].map((_, i) => <div key={i} style={{ height: 100, borderRadius: 14, border: `1px solid ${S.border}`, marginBottom: 16, background: `linear-gradient(90deg, ${S.surface2} 25%, ${S.border} 50%, ${S.surface2} 75%)`, backgroundSize: "400px 100%", animation: `shimmer 1.5s infinite ${i * 0.2}s` }} />)}
+        </div>
+      </div>
     </div>
   );
 
@@ -411,17 +433,34 @@ export default function BudgetApp() {
         .row-h:hover .del-btn{opacity:1!important}
         .row-h{transition:background 0.15s}
         .del-btn{opacity:0;transition:opacity 0.15s}
-        .val-btn:hover{opacity:0.85!important}
-        .val-btn{transition:all 0.2s}
+        .val-btn:hover{opacity:0.85!important;transform:scale(1.05)}
+        .val-btn:active{transform:scale(0.92)}
+        .val-btn{transition:all 0.15s cubic-bezier(0.4,0,0.2,1)}
         input:focus{outline:none!important}
         select{cursor:pointer}
-        button{cursor:pointer}
+        button{cursor:pointer;transition:transform 0.1s}
+        button:active{transform:scale(0.96)}
+        @keyframes shimmer{0%{background-position:-200px 0}100%{background-position:200px 0}}
+        @keyframes bounceCheck{0%{transform:scale(1)}30%{transform:scale(1.25)}60%{transform:scale(0.9)}100%{transform:scale(1)}}
+        @keyframes slideInToast{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+        @keyframes toastProgress{from{width:100%}to{width:0%}}
+        @keyframes fadeUpStagger{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+        .check-bounce{animation:bounceCheck 0.35s cubic-bezier(0.4,0,0.2,1)}
+        .row-h:hover .edit-hint{opacity:0.6!important}
+        .edit-hint{opacity:0;transition:opacity 0.2s}
+        .card-h:hover{border-color:rgba(255,255,255,0.15)!important;transform:translateY(-1px)}
+        .card-h{transition:border-color 0.2s, transform 0.2s, box-shadow 0.2s}
+        .card-h:hover{box-shadow:0 4px 12px rgba(0,0,0,0.15)}
+        .refresh-spin{animation:spin 0.8s linear infinite}
       `}</style>
 
       {toast && (
-        <div style={{ position: "fixed", bottom: 28, right: 28, zIndex: 9999, background: toast.ok ? S.surface : "#2a1010", border: `1px solid ${toast.ok ? S.accent : S.danger}`, borderRadius: 12, padding: "10px 20px", fontFamily: S.font, fontSize: 14, animation: "toastIn 0.3s ease", boxShadow: "0 8px 32px rgba(0,0,0,0.6)", display: "flex", alignItems: "center", gap: 8 }}>
-          {toast.ok ? <Check size={14} color={S.success} /> : <AlertTriangle size={14} color={S.danger} />}
-          {toast.msg}
+        <div style={{ position: "fixed", top: 20, right: 20, zIndex: 9999, background: toast.ok ? S.surface : "#2a1010", border: `1px solid ${toast.ok ? S.accent : S.danger}`, borderRadius: 12, padding: "12px 20px 8px", fontFamily: S.font, fontSize: 14, animation: "slideInToast 0.3s ease", boxShadow: "0 8px 32px rgba(0,0,0,0.5)", minWidth: 200, overflow: "hidden" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+            {toast.ok ? <Check size={14} color={S.success} /> : <AlertTriangle size={14} color={S.danger} />}
+            <span style={{ fontWeight: 600 }}>{toast.msg}</span>
+          </div>
+          <div style={{ height: 2, borderRadius: 1, background: `${toast.ok ? S.accent : S.danger}30`, marginTop: 4, overflow: "hidden" }}><div style={{ height: "100%", background: toast.ok ? S.accent : S.danger, animation: "toastProgress 3s linear forwards" }} /></div>
         </div>
       )}
 
@@ -542,7 +581,7 @@ export default function BudgetApp() {
       </header>
 
       {/* ── Content ────────────────────────────────────────────────── */}
-      <main key={tab} style={{ padding: "24px", maxWidth: 1200, margin: "0 auto", animation: "fadeUp 0.25s ease" }}>
+      <main key={tab} style={{ padding: "24px", maxWidth: 1200, margin: "0 auto", animation: "fadeUpStagger 0.35s cubic-bezier(0.4,0,0.2,1)" }}>
         {tab === "dashboard" && m && (
           <DashboardTab month={m} months={months} idx={idx} netBalance={netBal} totalExpenses={totalExp} validatedBudget={validatedBudget} validatedCount={validatedCnt} totalCount={totalItems} 
             onIncomeChange={(f, v) => patchIncome(m.month_key, f, v)}
