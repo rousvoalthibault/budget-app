@@ -214,6 +214,7 @@ export default function BudgetApp() {
       const mths: Month[] = md.months || [];
       setMonths(mths); setForecast(fd);
       setIdx(i => Math.min(i, mths.length - 1));
+      fetch("/api/budget/savings-goals", { headers: getAuthHeaders() }).then(r => r.json()).then(d => setSavingsGoals(d.goals || [])).catch(() => {});
     } catch { showToast("Erreur de chargement", false); }
     finally { setLoading(false); }
   }, []);
@@ -226,6 +227,7 @@ export default function BudgetApp() {
         const md = await mr.json(); const fd = await fr.json();
         const mths: Month[] = md.months || [];
         setMonths(mths); setForecast(fd);
+        fetch("/api/budget/savings-goals", { headers: getAuthHeaders() }).then(r => r.json()).then(d => setSavingsGoals(d.goals || [])).catch(() => {});
         // Only set idx to current month on first load, not year switches
       } catch { showToast("Erreur de chargement", false); }
       finally { setLoading(false); }
@@ -318,6 +320,7 @@ export default function BudgetApp() {
 
   const m = months[idx];
   const totalGoalMonthly = savingsGoals.reduce((s, g) => { const mo = Math.max(1, Math.ceil((new Date(g.target_date + "-01").getTime() - Date.now()) / (30.44*24*60*60*1000))); return s + Math.round((g.target - g.current) / mo); }, 0);
+  const goalRealise = m ? savingsGoals.filter(g => (g.validated_months || []).some((vm: any) => (typeof vm === "string" ? vm : vm.mk) === m.month_key)).reduce((s, g) => { const mo = Math.max(1, Math.ceil((new Date(g.target_date + "-01").getTime() - Date.now()) / (30.44*24*60*60*1000))); return s + Math.round((g.target - g.current) / mo); }, 0) : 0;
   const validatedBudget = m ? Object.entries(m.budget_validated || {}).filter(([, v]) => v).reduce((sum, [k]) => sum + ((m.budget_allocation as unknown as Record<string, number>)[k] || 0), 0) : 0;
   const totalExp = m ? m.expenses.filter(e => e.category !== "investment").reduce((s, e) => s + e.amount, 0) + validatedBudget : 0;
   const netBal = m ? m.income_salary + m.income_other + ((m as unknown as Record<string,number>).income_rente ?? 0) + ((m as unknown as Record<string,number>).income_epargne ?? 0) + ((m as unknown as Record<string,number>).income_actions ?? 0) + ((m as unknown as Record<string,number>).income_virements ?? 0) - totalExp - (m.savings?.target_monthly ?? 140) - m.expenses.filter((e: Expense) => e.category === "investment").reduce((s: number, e: Expense) => s + e.amount, 0) - totalGoalMonthly : 0;
@@ -540,7 +543,7 @@ export default function BudgetApp() {
       {/* ── Content ────────────────────────────────────────────────── */}
       <main key={tab} style={{ padding: "24px", maxWidth: 1200, margin: "0 auto", animation: "fadeUp 0.25s ease" }}>
         {tab === "dashboard" && m && (
-          <DashboardTab month={m} months={months} idx={idx} netBalance={netBal} totalExpenses={totalExp} validatedBudget={validatedBudget} validatedCount={validatedCnt} totalCount={totalItems} goalMonthly={totalGoalMonthly}
+          <DashboardTab month={m} months={months} idx={idx} netBalance={netBal} totalExpenses={totalExp} validatedBudget={validatedBudget} validatedCount={validatedCnt} totalCount={totalItems} goalRealise={goalRealise}
             onIncomeChange={(f, v) => patchIncome(m.month_key, f, v)}
             onValidate={(l, v) => patchExpense(m.month_key, l, { validated: v })} saving={saving} />
         )}
@@ -570,8 +573,8 @@ export default function BudgetApp() {
 }
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
-function DashboardTab({ month: m, months, idx, netBalance, totalExpenses, validatedBudget, validatedCount, totalCount, goalMonthly, onIncomeChange, onValidate, saving }: {
-  month: Month; months: Month[]; idx: number; netBalance: number; totalExpenses: number; validatedBudget: number; validatedCount: number; totalCount: number; goalMonthly: number;
+function DashboardTab({ month: m, months, idx, netBalance, totalExpenses, validatedBudget, validatedCount, totalCount, goalRealise, onIncomeChange, onValidate, saving }: {
+  month: Month; months: Month[]; idx: number; netBalance: number; totalExpenses: number; validatedBudget: number; validatedCount: number; totalCount: number; goalRealise: number;
   onIncomeChange: (f: "income_salary" | "income_other", v: number) => void;
   onValidate: (label: string, v: boolean) => void; saving: string | null;
 }) {
@@ -591,7 +594,7 @@ function DashboardTab({ month: m, months, idx, netBalance, totalExpenses, valida
           { label: "Dépenses", tip: "Charges fixes + variables + enveloppes budget (hors investissements)", value: totalExpenses, color: S.danger, icon: "↓", sub: validatedBudget > 0 ? `dont ${fmt(validatedBudget)} env.` : undefined },
           { label: "Solde net", value: netBalance, color: balColor, icon: "◎", tip: "Revenus - Dépenses - Épargne totale", sub: undefined },
           { label: "Cumulé YTD", value: (() => { let c2 = 0; for (let i2 = 0; i2 <= idx; i2++) { const m2 = months[i2]; c2 += m2.income_salary + m2.income_other + ((m2 as unknown as Record<string,number>).income_rente ?? 0) + ((m2 as unknown as Record<string,number>).income_epargne ?? 0) + ((m2 as unknown as Record<string,number>).income_actions ?? 0) + ((m2 as unknown as Record<string,number>).income_virements ?? 0) - m2.expenses.filter((e2: Expense) => e2.category !== "investment").reduce((s2: number, e2: Expense) => s2 + e2.amount, 0) - Object.values(m2.budget_allocation as unknown as Record<string,number>).reduce((s2: number, v2: number) => s2 + v2, 0) - (m2.savings?.target_monthly ?? 140) - m2.expenses.filter((e2: Expense) => e2.category === "investment").reduce((s2: number, e2: Expense) => s2 + e2.amount, 0); } return Math.round(c2); })(), color: S.primary, icon: "↗", tip: "Somme de vos soldes mensuels depuis Janvier", sub: "Depuis janvier" },
-          { label: "Épargne", value: (m.savings?.target_monthly ?? 140) + m.expenses.filter((e: Expense) => e.category === "investment").reduce((s: number, e: Expense) => s + e.amount, 0) + goalMonthly, color: S.accent, icon: "★", tip: "Épargne cible + investissements + objectifs mensuels", sub: `Cumul: ${fmt((m.savings?.cumulative_target ?? 0) + months.slice(0, idx + 1).reduce((s: number, mo: Month) => s + mo.expenses.filter((e: Expense) => e.category === "investment").reduce((s2: number, e2: Expense) => s2 + e2.amount, 0), 0))}` },
+          { label: "Épargne", value: m.expenses.filter((e: Expense) => e.category === "investment").reduce((s: number, e: Expense) => s + e.amount, 0) + goalRealise, color: S.accent, icon: "★", tip: "Investissements mensuels + objectifs validés", sub: `Cumul: ${fmt((m.savings?.cumulative_target ?? 0) + months.slice(0, idx + 1).reduce((s: number, mo: Month) => s + mo.expenses.filter((e: Expense) => e.category === "investment").reduce((s2: number, e2: Expense) => s2 + e2.amount, 0), 0))}` },
         ].map((k, i, arr) => (
           <div key={k.label} title={(k as {tip?:string}).tip || ""} style={{ flex: 1, padding: "14px 14px", borderRight: i < arr.length - 1 ? `1px solid ${S.border}` : "none", textAlign: "center" }}>
             <div style={{ width: 30, height: 30, borderRadius: 8, background: `${k.color}15`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 6px", fontSize: 13, color: k.color }}>{k.icon}</div>
@@ -1559,7 +1562,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
         <div style={{ display: "flex", gap: 12, padding: 12, background: S.surface2, borderRadius: 10, marginBottom: 14 }}>
           <div style={{ flex: 1, textAlign: "center" }}><div style={{ fontSize: 9, color: S.muted, textTransform: "uppercase" as const }}>Obj. / mois</div><div style={{ fontFamily: S.heading, fontSize: 18, fontWeight: 800, color: S.accent }}>{fmt(goals.length > 0 ? goals.reduce((s, g) => { const months = Math.max(1, Math.ceil((new Date(g.target_date + "-01").getTime() - Date.now()) / (30.44*24*60*60*1000))); return s + Math.round((g.target - g.current) / months); }, 0) : 0)}</div></div>
           <div style={{ width: 1, background: S.border }}></div>
-          <div style={{ flex: 1, textAlign: "center" }}><div style={{ fontSize: 9, color: S.muted, textTransform: "uppercase" as const }}>Réalisé</div><div style={{ fontFamily: S.heading, fontSize: 18, fontWeight: 800, color: S.success }}>{fmt((m.savings?.target_monthly ?? 140) + m.expenses.filter((e: Expense) => e.category === "investment").reduce((s: number, e: Expense) => s + e.amount, 0) + goals.reduce((s, g) => { const mo = Math.max(1, Math.ceil((new Date(g.target_date + "-01").getTime() - Date.now()) / (30.44*24*60*60*1000))); return s + Math.round((g.target - g.current) / mo); }, 0))}</div></div>
+          <div style={{ flex: 1, textAlign: "center" }}><div style={{ fontSize: 9, color: S.muted, textTransform: "uppercase" as const }}>Réalisé</div><div style={{ fontFamily: S.heading, fontSize: 18, fontWeight: 800, color: S.success }}>{fmt(goals.filter(g => (g.validated_months || []).some((vm: any) => (typeof vm === "string" ? vm : vm.mk) === m.month_key)).reduce((s, g) => { const mo = Math.max(1, Math.ceil((new Date(g.target_date + "-01").getTime() - Date.now()) / (30.44*24*60*60*1000))); return s + Math.round((g.target - g.current) / mo); }, 0))}</div></div>
           <div style={{ width: 1, background: S.border }}></div>
           <div style={{ flex: 1, textAlign: "center" }}><div style={{ fontSize: 9, color: S.muted, textTransform: "uppercase" as const }}>Annuel</div><div style={{ fontFamily: S.heading, fontSize: 18, fontWeight: 800, color: S.primary }}>{fmt((goals.length > 0 ? goals.reduce((s, g) => { const mo = Math.max(1, Math.ceil((new Date(g.target_date + "-01").getTime() - Date.now()) / (30.44*24*60*60*1000))); return s + Math.round((g.target - g.current) / mo); }, 0) : 0) * 12)}</div></div>
           <div style={{ width: 1, background: S.border }}></div>
