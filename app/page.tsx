@@ -134,6 +134,13 @@ function EditableAmt({ value, onChange, color, size = "md" }: { value: number; o
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function BudgetApp() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth <= 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
   const [darkMode, setDarkMode] = useState(false);
   S = darkMode ? DARK : LIGHT;
   const [tab, setTab] = useState<"dashboard" | "depenses" | "projection" | "historique" | "salaires" | "economies">("dashboard");
@@ -558,7 +565,7 @@ export default function BudgetApp() {
 
       {/* ── Header ─────────────────────────────────────────────────── */}
       
-      <aside className="desktop-sidebar" style={{ width: sidebarOpen ? 220 : 60, minHeight: "100vh", background: S.surface, borderRight: `1px solid ${S.border}`, transition: "width 0.2s ease", flexShrink: 0, display: "flex", flexDirection: "column", padding: "12px 8px", position: "fixed", left: 0, top: 0, zIndex: 50 }}>
+      <aside className="desktop-sidebar" style={{ display: isMobile ? "none" : "flex", width: sidebarOpen ? 220 : 60, minHeight: "100vh", background: S.surface, borderRight: `1px solid ${S.border}`, transition: "width 0.2s ease", flexShrink: 0, display: "flex", flexDirection: "column", padding: "12px 8px", position: "fixed", left: 0, top: 0, zIndex: 50 }}>
         <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ background: "transparent", border: "none", color: S.text, width: 40, height: 40, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", marginBottom: 8 }}><Menu size={20} /></button>
         {sidebarOpen && <div style={{ fontFamily: S.heading, fontSize: 17, fontWeight: 800, color: S.primary, padding: "0 10px", marginBottom: 20 }}>BudgetApp</div>}
         <nav style={{ display: "flex", flexDirection: "column", gap: 2, flex: 1 }}>
@@ -566,13 +573,13 @@ export default function BudgetApp() {
         </nav>
         <button onClick={() => setDarkMode(!darkMode)} style={{ marginTop: 8, background: "transparent", border: `1px solid ${S.border}`, color: S.muted, borderRadius: 8, padding: sidebarOpen ? "8px 12px" : "8px 0", display: "flex", alignItems: "center", justifyContent: sidebarOpen ? "flex-start" : "center", gap: 8, width: "100%", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>{darkMode ? "☀" : "☽"}{sidebarOpen && <span>{darkMode ? "Mode clair" : "Mode sombre"}</span>}</button>
       </aside>
-      <div className="main-content" style={{ marginLeft: sidebarOpen ? 220 : 60, transition: "margin-left 0.2s ease", flex: 1 }}>
+      <div className="main-content" style={{ marginLeft: isMobile ? 0 : (sidebarOpen ? 220 : 60), transition: "margin-left 0.2s ease", flex: 1 }}>
       <header className="app-header" style={{ background: S.surface, borderBottom: `1px solid ${S.border}`, display: "flex", alignItems: "stretch", position: "sticky", top: 0, zIndex: 40 }}>
-        {/* Brand */}
-        <div className="header-brand" style={{ padding: "12px 20px", display: "flex", alignItems: "center", gap: 10, borderRight: `1px solid ${S.border}` }}>
+        {/* Brand - hidden on mobile */}
+        {!isMobile && <div className="header-brand" style={{ padding: "12px 20px", display: "flex", alignItems: "center", gap: 10, borderRight: `1px solid ${S.border}` }}>
           <h1 style={{ fontFamily: S.heading, fontSize: 17, fontWeight: 800, color: S.text, margin: 0 }}>Budget Personnel</h1>
           <span style={{ fontSize: 11, color: S.muted }}>{getDateFR()}</span>
-        </div>
+        </div>}
         {/* Month navigation - center */}
         {m && <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
           <button onClick={() => { if (idx === 0 && selectedYear > 2026) { const ny = selectedYear - 1; setSelectedYear(ny); setIdx(11); fetch(`/api/budget/months?year=${ny}`, { headers: getAuthHeaders() }).then(r => r.json()).then(md => setMonths(md.months || [])); } else { setIdx(i => Math.max(0, i - 1)); } }} disabled={idx === 0 && selectedYear <= 2026} style={{ width: 28, height: 28, borderRadius: 6, border: `1px solid ${S.border}`, background: S.bg, color: S.muted, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><ArrowLeft size={13} /></button>
