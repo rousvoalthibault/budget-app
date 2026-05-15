@@ -588,6 +588,20 @@ function DashboardTab({ month: m, months, idx, netBalance, totalExpenses, valida
 
       <AiAnalysis month={m} months={months} idx={idx} />
 
+
+      <Card>
+        <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase" as const, color: S.muted, letterSpacing: 1, marginBottom: 12 }}>Répartition des dépenses</div>
+        {[{n:"Fixes",v:fixed.reduce((s:number,e:Expense)=>s+e.amount,0),c:S.primary},{n:"Variables",v:variable.reduce((s:number,e:Expense)=>s+e.amount,0),c:S.warning},{n:"Enveloppes",v:Object.values(m.budget_allocation as unknown as Record<string,number>).reduce((s:number,v:number)=>s+v,0),c:S.muted},{n:"Épargne",v:(m.savings?.target_monthly ?? 0) + m.expenses.filter((e:Expense)=>e.category==="investment").reduce((s:number,e:Expense)=>s+e.amount,0),c:S.accent}].map(cat => {
+          const total2 = fixed.reduce((s:number,e:Expense)=>s+e.amount,0) + variable.reduce((s:number,e:Expense)=>s+e.amount,0) + Object.values(m.budget_allocation as unknown as Record<string,number>).reduce((s:number,v:number)=>s+v,0);
+          const pct = total2 > 0 ? Math.round((cat.v / total2) * 100) : 0;
+          return (<div key={cat.n} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
+            <span style={{ width: 90, fontSize: 12, fontWeight: 600, color: S.muted }}>{cat.n}</span>
+            <div style={{ flex: 1, height: 20, background: `${S.border}40`, borderRadius: 6, overflow: "hidden" }}><div style={{ height: "100%", width: `${pct}%`, background: cat.c, borderRadius: 6, display: "flex", alignItems: "center", paddingLeft: 8, fontSize: 10, fontWeight: 700, color: "#fff", transition: "width 0.3s" }}>{pct > 10 ? `${pct}%` : ""}</div></div>
+            <span style={{ width: 80, textAlign: "right" as const, fontSize: 13, fontWeight: 700, color: cat.c }}>{fmt(cat.v)}</span>
+          </div>);
+        })}
+      </Card>
+
       <Card>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                 {showSwipeTutorial && (
@@ -610,19 +624,6 @@ function DashboardTab({ month: m, months, idx, netBalance, totalExpenses, valida
         <div style={{ background: S.surface2, borderRadius: 999, height: 10, overflow: "hidden" }}>
           <div style={{ background: `linear-gradient(90deg, ${S.success}, ${S.accent})`, height: "100%", width: `${totalCount > 0 ? (validatedCount / totalCount) * 100 : 0}%`, borderRadius: 999, transition: "width 0.6s ease" }} />
         </div>
-      </Card>
-
-      <Card>
-        <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase" as const, color: S.muted, letterSpacing: 1, marginBottom: 12 }}>Répartition des dépenses</div>
-        {[{n:"Fixes",v:fixed.reduce((s:number,e:Expense)=>s+e.amount,0),c:S.primary},{n:"Variables",v:variable.reduce((s:number,e:Expense)=>s+e.amount,0),c:S.warning},{n:"Enveloppes",v:Object.values(m.budget_allocation as unknown as Record<string,number>).reduce((s:number,v:number)=>s+v,0),c:S.muted},{n:"Épargne",v:(m.savings?.target_monthly ?? 0) + m.expenses.filter((e:Expense)=>e.category==="investment").reduce((s:number,e:Expense)=>s+e.amount,0),c:S.accent}].map(cat => {
-          const total2 = fixed.reduce((s:number,e:Expense)=>s+e.amount,0) + variable.reduce((s:number,e:Expense)=>s+e.amount,0) + Object.values(m.budget_allocation as unknown as Record<string,number>).reduce((s:number,v:number)=>s+v,0);
-          const pct = total2 > 0 ? Math.round((cat.v / total2) * 100) : 0;
-          return (<div key={cat.n} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
-            <span style={{ width: 90, fontSize: 12, fontWeight: 600, color: S.muted }}>{cat.n}</span>
-            <div style={{ flex: 1, height: 20, background: `${S.border}40`, borderRadius: 6, overflow: "hidden" }}><div style={{ height: "100%", width: `${pct}%`, background: cat.c, borderRadius: 6, display: "flex", alignItems: "center", paddingLeft: 8, fontSize: 10, fontWeight: 700, color: "#fff", transition: "width 0.3s" }}>{pct > 10 ? `${pct}%` : ""}</div></div>
-            <span style={{ width: 80, textAlign: "right" as const, fontSize: 13, fontWeight: 700, color: cat.c }}>{fmt(cat.v)}</span>
-          </div>);
-        })}
       </Card>
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}><span style={{ fontFamily: S.heading, fontSize: 14, fontWeight: 700 }}>Valider ses dépenses</span><button onClick={() => setShowSwipeTutorial(true)} style={{ width: 24, height: 24, borderRadius: 6, border: `1px solid ${S.border}`, background: "transparent", color: S.muted, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>?</button></div>
