@@ -559,7 +559,7 @@ function DashboardTab({ month: m, months, idx, netBalance, totalExpenses, valida
   onIncomeChange: (f: "income_salary" | "income_other", v: number) => void;
   onValidate: (label: string, v: boolean) => void; saving: string | null;
 }) {
-  const [showSwipeTutorial, setShowSwipeTutorial] = useState(true);
+  const [showSwipeTutorial, setShowSwipeTutorial] = useState(false);
   const income = m.income_salary + m.income_other + ((m as unknown as Record<string,number>).income_rente ?? 0) + ((m as unknown as Record<string,number>).income_epargne ?? 0) + ((m as unknown as Record<string,number>).income_actions ?? 0) + ((m as unknown as Record<string,number>).income_virements ?? 0);
   const balColor = netBalance >= 0 ? S.success : S.danger;
   const fixed = m.expenses.filter(e => e.category === "fixed");
@@ -604,7 +604,7 @@ function DashboardTab({ month: m, months, idx, netBalance, totalExpenses, valida
           </div>
         </div>
       )}
-      <SLabel>Progression validation</SLabel>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><SLabel>Progression validation</SLabel><button onClick={() => setShowSwipeTutorial(true)} style={{ width: 22, height: 22, borderRadius: 6, border: `1px solid ${S.border}`, background: "transparent", color: S.muted, fontSize: 11, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>?</button></div>
           <span style={{ color: validatedCount === totalCount ? S.success : S.muted, fontSize: 13, fontWeight: 700 }}>{validatedCount === totalCount ? "Tout valide !" : `${validatedCount} / ${totalCount}`}</span>
         </div>
         <div style={{ background: S.surface2, borderRadius: 999, height: 10, overflow: "hidden" }}>
