@@ -581,7 +581,7 @@ export default function BudgetApp() {
           <span style={{ fontSize: 11, color: S.muted }}>{getDateFR()}</span>
         </div>}
         {/* Month navigation - center */}
-        {m && <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
+        {m && <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: isMobile ? "flex-start" : "center", gap: 10 }}>
           <button onClick={() => { if (idx === 0 && selectedYear > 2026) { const ny = selectedYear - 1; setSelectedYear(ny); setIdx(11); fetch(`/api/budget/months?year=${ny}`, { headers: getAuthHeaders() }).then(r => r.json()).then(md => setMonths(md.months || [])); } else { setIdx(i => Math.max(0, i - 1)); } }} disabled={idx === 0 && selectedYear <= 2026} style={{ width: 28, height: 28, borderRadius: 6, border: `1px solid ${S.border}`, background: S.bg, color: S.muted, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><ArrowLeft size={13} /></button>
           <select
             value={`${selectedYear}-${String(idx + 1).padStart(2, "0")}`}
@@ -1619,7 +1619,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
               <span style={{ flex: 1, fontSize: 13, color: e.validated ? S.text : S.muted, fontWeight: 600 }}>{e.label}</span>
               <span style={{ fontFamily: S.heading, fontSize: 14, fontWeight: 700, color: S.accent }}>{fmt(e.amount)}</span>
               <button onClick={() => onValidateExpense && onValidateExpense(e.label, !e.validated)} style={{ width: 28, height: 28, borderRadius: 7, border: `1.5px solid ${e.validated ? S.accent : S.muted}`, background: e.validated ? S.accent : "transparent", color: e.validated ? "#fff" : S.muted, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, cursor: "pointer" }}><Check size={12} /></button>
-              <button onClick={() => { const h = getAuthHeaders(); fetch(`/api/budget/month/${m.month_key}/expense?label=` + encodeURIComponent(e.label), { method: "DELETE", headers: h }).then(() => window.location.reload()); }} style={{ width: 22, height: 22, border: "none", background: "transparent", color: S.muted, cursor: "pointer", opacity: 0.4, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }} title="Supprimer"><Trash2 size={10} /></button>
+              <button onClick={() => { const h = getAuthHeaders(); fetch(`/api/budget/month/${m.month_key}/expense?label=` + encodeURIComponent(e.label), { method: "DELETE", headers: h }).then(() => window.location.reload()); }} style={{ width: 22, height: 22, border: "none", background: "transparent", color: S.muted, cursor: "pointer", opacity: 0.4, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }} title="Supprimer"><Trash2 size={10} /></button>}
             </div>
           ))}
         </div>
@@ -1683,7 +1683,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
                         <div style={{ textAlign: "right" }}><EditableAmt value={inv} onChange={v => onSavingsChange(m.month_key, { [p.key]: v } as unknown as Partial<Savings>)} color={cat.color} size="sm" /></div>
                         <div style={{ textAlign: "right" }}><EditableAmt value={val} onChange={v => onPortfolioValuesChange(m.month_key, { [p.key as string]: v })} color={val > 0 ? S.success : S.muted} size="sm" /></div>
                         {!isMobile && <div style={{ textAlign: "right", fontFamily: S.heading, fontSize: 13, fontWeight: 700, color: val > 0 ? (diff >= 0 ? S.success : S.danger) : S.muted }}>{val > 0 ? `${diff >= 0 ? "+" : ""}${fmt(diff)}` : "—"}</div>}
-                        <button onClick={() => { onSavingsChange(m.month_key, { [p.key]: undefined } as unknown as Partial<Savings>); }} style={{ width: 20, height: 20, border: "none", background: "transparent", color: S.muted, cursor: "pointer", opacity: 0.4, display: "flex", alignItems: "center", justifyContent: "center" }} title="Supprimer"><Trash2 size={10} /></button>
+                        {!isMobile && <button onClick={() => { onSavingsChange(m.month_key, { [p.key]: undefined } as unknown as Partial<Savings>); }} style={{ width: 20, height: 20, border: "none", background: "transparent", color: S.muted, cursor: "pointer", opacity: 0.4, display: "flex", alignItems: "center", justifyContent: "center" }} title="Supprimer"><Trash2 size={10} /></button>
                       </div>
                     );
                   })}
