@@ -544,7 +544,7 @@ export default function BudgetApp() {
       {/* ── Content ────────────────────────────────────────────────── */}
       <main key={tab} style={{ padding: "24px", maxWidth: 1200, margin: "0 auto", animation: "fadeUp 0.25s ease" }}>
         {tab === "dashboard" && m && (
-          <DashboardTab month={m} months={months} idx={idx} netBalance={netBal} totalExpenses={totalExp} validatedBudget={validatedBudget} validatedCount={validatedCnt} totalCount={totalItems} goalRealise={goalRealise} goalCumulRealise={goalCumulRealise}
+          <DashboardTab month={m} months={months} idx={idx} netBalance={netBal} totalExpenses={totalExp} validatedBudget={validatedBudget} validatedCount={validatedCnt} totalCount={totalItems} 
             onIncomeChange={(f, v) => patchIncome(m.month_key, f, v)}
             onValidate={(l, v) => patchExpense(m.month_key, l, { validated: v })} saving={saving} />
         )}
@@ -574,8 +574,8 @@ export default function BudgetApp() {
 }
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
-function DashboardTab({ month: m, months, idx, netBalance, totalExpenses, validatedBudget, validatedCount, totalCount, goalRealise, goalCumulRealise, onIncomeChange, onValidate, saving }: {
-  month: Month; months: Month[]; idx: number; netBalance: number; totalExpenses: number; validatedBudget: number; validatedCount: number; totalCount: number; goalRealise: number; goalCumulRealise: number;
+function DashboardTab({ month: m, months, idx, netBalance, totalExpenses, validatedBudget, validatedCount, totalCount, onIncomeChange, onValidate, saving }: {
+  month: Month; months: Month[]; idx: number; netBalance: number; totalExpenses: number; validatedBudget: number; validatedCount: number; totalCount: number;
   onIncomeChange: (f: "income_salary" | "income_other", v: number) => void;
   onValidate: (label: string, v: boolean) => void; saving: string | null;
 }) {
@@ -595,7 +595,7 @@ function DashboardTab({ month: m, months, idx, netBalance, totalExpenses, valida
           { label: "Dépenses", tip: "Charges fixes + variables + enveloppes budget (hors investissements)", value: totalExpenses, color: S.danger, icon: "↓", sub: validatedBudget > 0 ? `dont ${fmt(validatedBudget)} env.` : undefined },
           { label: "Solde net", value: netBalance, color: balColor, icon: "◎", tip: "Revenus - Dépenses - Épargne totale", sub: undefined },
           { label: "Cumulé YTD", value: (() => { let c2 = 0; for (let i2 = 0; i2 <= idx; i2++) { const m2 = months[i2]; c2 += m2.income_salary + m2.income_other + ((m2 as unknown as Record<string,number>).income_rente ?? 0) + ((m2 as unknown as Record<string,number>).income_epargne ?? 0) + ((m2 as unknown as Record<string,number>).income_actions ?? 0) + ((m2 as unknown as Record<string,number>).income_virements ?? 0) - m2.expenses.filter((e2: Expense) => e2.category !== "investment").reduce((s2: number, e2: Expense) => s2 + e2.amount, 0) - Object.values(m2.budget_allocation as unknown as Record<string,number>).reduce((s2: number, v2: number) => s2 + v2, 0) - (m2.savings?.target_monthly ?? 140) - m2.expenses.filter((e2: Expense) => e2.category === "investment").reduce((s2: number, e2: Expense) => s2 + e2.amount, 0); } return Math.round(c2); })(), color: S.primary, icon: "↗", tip: "Somme de vos soldes mensuels depuis Janvier", sub: "Depuis janvier" },
-          { label: "Épargne", value: m.expenses.filter((e: Expense) => e.category === "investment").reduce((s: number, e: Expense) => s + e.amount, 0) + goalRealise, color: S.accent, icon: "★", tip: "Investissements mensuels + objectifs validés", sub: `Cumul: ${fmt(months.slice(0, idx + 1).reduce((s: number, mo: Month) => s + mo.expenses.filter((e: Expense) => e.category === "investment").reduce((s2: number, e2: Expense) => s2 + e2.amount, 0), 0) + goalCumulRealise)}` },
+          { label: "Épargne", value: m.expenses.filter((e: Expense) => e.category === "investment").reduce((s: number, e: Expense) => s + e.amount, 0), color: S.accent, icon: "★", tip: "Total investissements & épargne mensuels", sub: `Cumul: ${fmt(months.slice(0, idx + 1).reduce((s: number, mo: Month) => s + mo.expenses.filter((e: Expense) => e.category === "investment").reduce((s2: number, e2: Expense) => s2 + e2.amount, 0), 0))}` },
         ].map((k, i, arr) => (
           <div key={k.label} title={(k as {tip?:string}).tip || ""} style={{ flex: 1, padding: "14px 14px", borderRight: i < arr.length - 1 ? `1px solid ${S.border}` : "none", textAlign: "center" }}>
             <div style={{ width: 30, height: 30, borderRadius: 8, background: `${k.color}15`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 6px", fontSize: 13, color: k.color }}>{k.icon}</div>
@@ -1510,11 +1510,6 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
 }) {
   const m = months[currentIdx];
   const xpPort = useExpand();
-  const [goals, setGoals] = useState<{id:string;name:string;target:number;current:number;target_date:string;color:string;validated_months:string[]}[]>([]);
-  const [showGoalPopup, setShowGoalPopup] = useState(false);
-  const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
-  const [newGoal, setNewGoal] = useState({name:"",target:"",current:"",target_date:"",color:"#16a34a"});
-  useEffect(() => { fetch("/api/budget/savings-goals", { headers: getAuthHeaders() }).then(r => r.json()).then(d => setGoals(d.goals || [])).catch(() => {}); }, []);
   if (!m) return null;
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const sav = m.savings;
@@ -1553,63 +1548,6 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
         <button onClick={() => { const name = prompt("Nom de l'investissement :"); if (name) { const amt = parseFloat(prompt("Montant mensuel :") || "0"); if (amt > 0 && onAddInvestment) onAddInvestment(name, amt); } }} style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", fontSize: 12, fontWeight: 600, border: `1px dashed ${S.border}`, borderRadius: 8, background: "transparent", color: S.muted, cursor: "pointer", width: "100%", justifyContent: "center" }}><Plus size={12} /> Ajouter un investissement</button>
       </Card>
 
-      {/* Objectifs & Epargne */}
-      <Card style={{ borderColor: `${S.primary}20` }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: 1, color: S.muted }}>Objectifs & Épargne</div>
-          <button onClick={() => setShowGoalPopup(true)} style={{ fontSize: 11, padding: "4px 10px", border: `1px solid ${S.border}`, borderRadius: 6, background: "transparent", color: S.muted, cursor: "pointer" }}>+ Ajouter</button>
-        </div>
-        {/* Monthly KPIs */}
-        <div style={{ display: "flex", gap: 12, padding: 12, background: S.surface2, borderRadius: 10, marginBottom: 14 }}>
-          <div style={{ flex: 1, textAlign: "center" }}><div style={{ fontSize: 9, color: S.muted, textTransform: "uppercase" as const }}>Obj. / mois</div><div style={{ fontFamily: S.heading, fontSize: 18, fontWeight: 800, color: S.accent }}>{fmt(goals.length > 0 ? goals.reduce((s, g) => { const months = Math.max(1, Math.ceil((new Date(g.target_date + "-01").getTime() - Date.now()) / (30.44*24*60*60*1000))); return s + Math.round((g.target - g.current) / months); }, 0) : 0)}</div></div>
-          <div style={{ width: 1, background: S.border }}></div>
-          <div style={{ flex: 1, textAlign: "center" }}><div style={{ fontSize: 9, color: S.muted, textTransform: "uppercase" as const }}>Réalisé</div><div style={{ fontFamily: S.heading, fontSize: 18, fontWeight: 800, color: S.success }}>{fmt(goals.filter(g => (g.validated_months || []).some((vm: any) => (typeof vm === "string" ? vm : vm.mk) === m.month_key)).reduce((s, g) => { const mo = Math.max(1, Math.ceil((new Date(g.target_date + "-01").getTime() - Date.now()) / (30.44*24*60*60*1000))); return s + Math.round((g.target - g.current) / mo); }, 0))}</div></div>
-          <div style={{ width: 1, background: S.border }}></div>
-          <div style={{ flex: 1, textAlign: "center" }}><div style={{ fontSize: 9, color: S.muted, textTransform: "uppercase" as const }}>Annuel</div><div style={{ fontFamily: S.heading, fontSize: 18, fontWeight: 800, color: S.primary }}>{fmt((goals.length > 0 ? goals.reduce((s, g) => { const mo = Math.max(1, Math.ceil((new Date(g.target_date + "-01").getTime() - Date.now()) / (30.44*24*60*60*1000))); return s + Math.round((g.target - g.current) / mo); }, 0) : 0) * 12)}</div></div>
-          <div style={{ width: 1, background: S.border }}></div>
-          <div style={{ flex: 1, textAlign: "center" }}><div style={{ fontSize: 9, color: S.muted, textTransform: "uppercase" as const }}>Cumul</div><div style={{ fontFamily: S.heading, fontSize: 18, fontWeight: 800, color: S.success }}>{fmt(goals.reduce((s, g) => s + g.current, 0))}</div></div>
-        </div>
-        {/* Goal items with progress rings */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {goals.map(g => {
-            const pctG = g.target > 0 ? Math.round((g.current / g.target) * 100) : 0;
-            const circ = 2 * Math.PI * 22;
-            const offset = circ - (pctG / 100) * circ;
-            const monthsLeft = Math.max(1, Math.ceil((new Date(g.target_date + "-01").getTime() - Date.now()) / (30.44*24*60*60*1000)));
-            const monthlyTarget = Math.round((g.target - g.current) / monthsLeft);
-            const isValidated = g.validated_months?.some((vm: string | {mk?:string}) => typeof vm === "string" ? vm === m.month_key : vm.mk === m.month_key);
-            return (<div key={g.id} style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 14px", background: isValidated ? `${g.color}08` : S.surface2, borderRadius: 12, border: `1px solid ${isValidated ? g.color + "30" : S.border}` }}>
-              <svg width={52} height={52} viewBox="0 0 52 52"><circle cx="26" cy="26" r="22" fill="none" stroke={S.surface2} strokeWidth={4}/><circle cx="26" cy="26" r="22" fill="none" stroke={g.color} strokeWidth={4} strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round" transform="rotate(-90 26 26)"/><text x="26" y="29" textAnchor="middle" fontSize="11" fontWeight="800" fill={g.color} fontFamily="Outfit">{pctG}%</text></svg>
-              <div style={{ flex: 1 }}><div style={{ fontSize: 13, fontWeight: 700 }}>{g.name}</div><div style={{ fontSize: 10, color: S.muted }}>{monthsLeft} mois restants</div><div style={{ fontSize: 11, marginTop: 2 }}><span style={{ color: g.color, fontWeight: 700 }}>{fmt(g.current)}</span> / {fmt(g.target)}</div></div>
-              <div style={{ textAlign: "right" }}><div style={{ fontSize: 9, color: S.muted, textTransform: "uppercase" as const }}>Obj./mois</div><div style={{ fontFamily: S.heading, fontSize: 15, fontWeight: 800, color: g.color }}>{fmt(monthlyTarget)}</div><button onClick={async () => { const mk = m.month_key; // Optimistic update
-                    const newCurrent = isValidated ? Math.max(0, g.current - ((g.validated_months?.find((vm: any) => (vm.mk || vm) === mk) as any)?.amount || monthlyTarget)) : g.current + monthlyTarget;
-                    const newVM = isValidated ? (g.validated_months || []).filter((vm: any) => (vm.mk || vm) !== mk) : [...(g.validated_months || []), {mk, amount: monthlyTarget}];
-                    setGoals(prev => prev.map(gg => gg.id === g.id ? {...gg, current: newCurrent, validated_months: newVM as any} : gg));
-                    // Sync with server in background
-                    fetch(`/api/budget/savings-goals/${g.id}`, { method: "PATCH", headers: getAuthHeaders(), body: JSON.stringify(isValidated ? { unvalidate_month: mk, current: newCurrent } : { validate_month: mk, validate_amount: monthlyTarget, current: newCurrent }) }); }} style={{ marginTop: 4, width: 26, height: 26, borderRadius: 7, border: `1.5px solid ${isValidated ? g.color : S.muted}`, background: isValidated ? g.color : "transparent", color: isValidated ? "#fff" : S.muted, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", marginLeft: "auto", fontSize: 11 }}><Check size={12} /></button><button onClick={() => { const eg = goals.find(x => x.id === g.id); if (eg) { setNewGoal({ name: eg.name, target: String(eg.target), current: String(eg.current), target_date: eg.target_date, color: eg.color }); setEditingGoalId(eg.id); setShowGoalPopup(true); } }} style={{ width: 20, height: 20, border: "none", background: "transparent", color: S.muted, cursor: "pointer", opacity: 0.5, fontSize: 10 }}><Pencil size={10} /></button><button onClick={async () => { if (confirm("Supprimer cet objectif ?")) { await fetch(`/api/budget/savings-goals/${g.id}`, { method: "DELETE", headers: getAuthHeaders() }); const r = await fetch("/api/budget/savings-goals", { headers: getAuthHeaders() }); const d = await r.json(); setGoals(d.goals || []); } }} style={{ width: 20, height: 20, border: "none", background: "transparent", color: S.danger, cursor: "pointer", opacity: 0.5, display: "flex", alignItems: "center", justifyContent: "center" }} title="Supprimer"><Trash2 size={10} /></button></div>
-            </div>);
-          })}
-        </div>
-      </Card>
-
-      {/* Add goal popup */}
-      {showGoalPopup && (<div onClick={() => setShowGoalPopup(false)} style={{ position: "fixed", inset: 0, zIndex: 250, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-        <div onClick={e => e.stopPropagation()} style={{ background: S.surface, borderRadius: 14, width: 380, padding: 24, boxShadow: "0 12px 40px rgba(0,0,0,0.15)" }}>
-          <div style={{ fontFamily: S.heading, fontSize: 16, fontWeight: 700, marginBottom: 16 }}>{editingGoalId ? "Modifier l'objectif" : "Nouvel objectif"}</div>
-          <div style={{ marginBottom: 10 }}><label style={{ fontSize: 11, fontWeight: 600, color: S.muted, display: "block", marginBottom: 4 }}>Nom</label><input value={newGoal.name} onChange={e => setNewGoal({...newGoal, name: e.target.value})} placeholder="Ex: Voyage au Japon" style={{ width: "100%", padding: "9px 12px", fontSize: 14, border: `1px solid ${S.border}`, borderRadius: 8, background: S.bg, color: S.text, outline: "none" }} /></div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
-            <div><label style={{ fontSize: 11, fontWeight: 600, color: S.muted, display: "block", marginBottom: 4 }}>Cible (€)</label><input type="number" value={newGoal.target} onChange={e => setNewGoal({...newGoal, target: e.target.value})} placeholder="5000" style={{ width: "100%", padding: "9px 12px", fontSize: 14, border: `1px solid ${S.border}`, borderRadius: 8, background: S.bg, color: S.text, outline: "none" }} /></div>
-            <div><label style={{ fontSize: 11, fontWeight: 600, color: S.muted, display: "block", marginBottom: 4 }}>Déjà épargné (€)</label><input type="number" value={newGoal.current} onChange={e => setNewGoal({...newGoal, current: e.target.value})} placeholder="0" style={{ width: "100%", padding: "9px 12px", fontSize: 14, border: `1px solid ${S.border}`, borderRadius: 8, background: S.bg, color: S.text, outline: "none" }} /></div>
-          </div>
-          <div style={{ marginBottom: 10 }}><label style={{ fontSize: 11, fontWeight: 600, color: S.muted, display: "block", marginBottom: 4 }}>Date cible</label><input type="month" value={newGoal.target_date} onChange={e => setNewGoal({...newGoal, target_date: e.target.value})} style={{ width: "100%", padding: "9px 12px", fontSize: 14, border: `1px solid ${S.border}`, borderRadius: 8, background: S.bg, color: S.text, outline: "none" }} /></div>
-          <div style={{ marginBottom: 12 }}><label style={{ fontSize: 11, fontWeight: 600, color: S.muted, display: "block", marginBottom: 4 }}>Couleur</label><div style={{ display: "flex", gap: 6 }}>{["#16a34a","#3b82f6","#f59e0b","#8b5cf6","#ec4899","#06b6d4"].map(cl => <div key={cl} onClick={() => setNewGoal({...newGoal, color: cl})} style={{ width: 28, height: 28, borderRadius: 6, background: cl, cursor: "pointer", border: newGoal.color === cl ? "2px solid " + cl : "2px solid transparent" }} />)}</div></div>
-          {parseFloat(newGoal.target) > 0 && newGoal.target_date && <div style={{ background: `${S.success}10`, borderRadius: 8, padding: 10, marginBottom: 12 }}><div style={{ fontSize: 10, color: S.success, fontWeight: 600 }}>Aperçu</div><div style={{ fontSize: 13, fontWeight: 700, marginTop: 2 }}>Objectif mensuel : <span style={{ color: S.success, fontSize: 16 }}>{Math.round((parseFloat(newGoal.target) - parseFloat(newGoal.current || "0")) / Math.max(1, Math.ceil((new Date(newGoal.target_date + "-01").getTime() - Date.now()) / (30.44*24*60*60*1000))))} €/mois</span></div></div>}
-          <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={() => { setShowGoalPopup(false); setEditingGoalId(null); }} style={{ flex: 1, padding: 10, borderRadius: 8, border: `1px solid ${S.border}`, background: "transparent", color: S.muted, cursor: "pointer", fontSize: 13 }}>Annuler</button>
-            <button onClick={async () => { const r = editingGoalId ? await fetch(`/api/budget/savings-goals/${editingGoalId}`, { method: "PATCH", headers: getAuthHeaders(), body: JSON.stringify({ name: newGoal.name, target: parseFloat(newGoal.target) || 0, current: parseFloat(newGoal.current) || 0, target_date: newGoal.target_date, color: newGoal.color }) }) : await fetch("/api/budget/savings-goals", { method: "POST", headers: getAuthHeaders(), body: JSON.stringify({ name: newGoal.name, target: parseFloat(newGoal.target) || 0, current: parseFloat(newGoal.current) || 0, target_date: newGoal.target_date, color: newGoal.color }) }); if (r.ok) { const gr = await fetch("/api/budget/savings-goals", { headers: getAuthHeaders() }); const gd = await gr.json(); setGoals(gd.goals || []); setShowGoalPopup(false); setNewGoal({name:"",target:"",current:"",target_date:"",color:"#16a34a"}); setEditingGoalId(null); } }} style={{ flex: 2, padding: 10, borderRadius: 8, border: "none", background: S.primary, color: "#fff", cursor: "pointer", fontSize: 13, fontWeight: 700 }}>{editingGoalId ? "Modifier" : "Créer"}</button>
-          </div>
-        </div>
-      </div>)}
 
       {/* Totaux portefeuille */}
       {totalInvested > 0 && (
