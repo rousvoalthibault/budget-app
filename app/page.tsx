@@ -450,10 +450,10 @@ export default function BudgetApp() {
         @media(max-width:768px){
           .desktop-sidebar{display:none!important}
           .main-content{margin-left:0!important;padding-bottom:64px}
-          .app-header{flex-direction:column!important;padding:8px 12px!important;gap:6px;align-items:stretch!important}
+          .app-header{padding:6px 10px!important;gap:0;align-items:center!important}
           .header-brand{display:none!important}
           .header-brand h1{font-size:15px!important}
-          .header-tools{border-left:none!important;padding:0 4px!important;align-self:flex-end!important;order:-1}
+          .header-tools{border-left:none!important;padding:0!important;gap:3px!important}
           .kpi-strip{flex-wrap:wrap!important;border-radius:10px!important}
           .kpi-strip>div{min-width:30%!important;flex:1 1 30%!important;padding:10px 6px!important}
           .tab-content{padding:12px 10px!important}
@@ -581,15 +581,15 @@ export default function BudgetApp() {
           <span style={{ fontSize: 11, color: S.muted }}>{getDateFR()}</span>
         </div>}
         {/* Month navigation - center */}
-        {m && <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: isMobile ? "flex-start" : "center", gap: 10 }}>
-          <button onClick={() => { if (idx === 0 && selectedYear > 2026) { const ny = selectedYear - 1; setSelectedYear(ny); setIdx(11); fetch(`/api/budget/months?year=${ny}`, { headers: getAuthHeaders() }).then(r => r.json()).then(md => setMonths(md.months || [])); } else { setIdx(i => Math.max(0, i - 1)); } }} disabled={idx === 0 && selectedYear <= 2026} style={{ width: 28, height: 28, borderRadius: 6, border: `1px solid ${S.border}`, background: S.bg, color: S.muted, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><ArrowLeft size={13} /></button>
+        {m && <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: isMobile ? "flex-start" : "center", gap: isMobile ? 6 : 10 }}>
+          <button onClick={() => { if (idx === 0 && selectedYear > 2026) { const ny = selectedYear - 1; setSelectedYear(ny); setIdx(11); fetch(`/api/budget/months?year=${ny}`, { headers: getAuthHeaders() }).then(r => r.json()).then(md => setMonths(md.months || [])); } else { setIdx(i => Math.max(0, i - 1)); } }} disabled={idx === 0 && selectedYear <= 2026} style={{ width: isMobile ? 24 : 28, height: isMobile ? 24 : 28, borderRadius: 6, border: `1px solid ${S.border}`, background: S.bg, color: S.muted, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><ArrowLeft size={13} /></button>
           <select
             value={`${selectedYear}-${String(idx + 1).padStart(2, "0")}`}
             onChange={(e) => { const [y, mo] = e.target.value.split("-").map(Number); setSelectedYear(y); setIdx(mo - 1); fetch(`/api/budget/months?year=${y}`, { headers: getAuthHeaders() }).then(r => r.json()).then(md => setMonths(md.months || [])); }}
-            style={{ fontFamily: S.heading, fontSize: 14, fontWeight: 700, color: S.primary, background: `${S.accent}08`, border: `1px solid ${S.accent}30`, borderRadius: 8, padding: "7px 28px 7px 12px", cursor: "pointer", appearance: "none" as const, WebkitAppearance: "none" as const, textAlign: "center", outline: "none" }}>
+            style={{ fontFamily: S.heading, fontSize: 14, fontWeight: 700, color: S.primary, background: `${S.accent}08`, border: `1px solid ${S.accent}30`, borderRadius: 8, padding: isMobile ? "5px 20px 5px 10px" : "7px 28px 7px 12px", cursor: "pointer", appearance: "none" as const, WebkitAppearance: "none" as const, textAlign: "center", outline: "none" }}>
             {YEARS.map(y => { const MN = ["Janvier","Fevrier","Mars","Avril","Mai","Juin","Juillet","Aout","Septembre","Octobre","Novembre","Decembre"]; return MN.map((mn, mi) => (<option key={`${y}-${mi}`} value={`${y}-${String(mi+1).padStart(2,"0")}`}>{mn} {y}</option>)); })}
           </select>
-          <button onClick={() => { if (idx === months.length - 1 && selectedYear < 2036) { const ny = selectedYear + 1; setSelectedYear(ny); setIdx(0); fetch(`/api/budget/months?year=${ny}`, { headers: getAuthHeaders() }).then(r => r.json()).then(md => setMonths(md.months || [])); } else { setIdx(i => Math.min(months.length - 1, i + 1)); } }} disabled={idx === months.length - 1 && selectedYear >= 2036} style={{ width: 28, height: 28, borderRadius: 6, border: `1px solid ${S.border}`, background: S.bg, color: S.muted, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><ArrowRight size={13} /></button>
+          <button onClick={() => { if (idx === months.length - 1 && selectedYear < 2036) { const ny = selectedYear + 1; setSelectedYear(ny); setIdx(0); fetch(`/api/budget/months?year=${ny}`, { headers: getAuthHeaders() }).then(r => r.json()).then(md => setMonths(md.months || [])); } else { setIdx(i => Math.min(months.length - 1, i + 1)); } }} disabled={idx === months.length - 1 && selectedYear >= 2036} style={{ width: isMobile ? 24 : 28, height: isMobile ? 24 : 28, borderRadius: 6, border: `1px solid ${S.border}`, background: S.bg, color: S.muted, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><ArrowRight size={13} /></button>
           {!isMobile && <span style={{ fontSize: 10, color: S.muted, fontWeight: 600 }}>{validatedCnt}/{totalItems} valides</span>}
         </div>}
         {/* Tools */}
@@ -605,8 +605,8 @@ export default function BudgetApp() {
               {inAppAlerts.map((a, i) => (<div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start", padding: "7px 10px", borderRadius: 8, marginBottom: 2, background: a.type === "danger" ? `${S.danger}08` : a.type === "warning" ? `${S.warning}08` : "transparent" }}><AlertTriangle size={13} style={{ marginTop: 2, flexShrink: 0 }} color={a.type === "danger" ? S.danger : a.type === "warning" ? S.warning : S.accent} /><div><div style={{ fontSize: 11, fontWeight: 600, color: a.type === "danger" ? S.danger : a.type === "warning" ? S.warning : S.text }}>{a.title}</div><div style={{ fontSize: 10, color: S.muted, marginTop: 1 }}>{a.detail}</div></div></div>))}
             </div>}
           </div>}
-          <button onClick={logout} title="Deconnexion" style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${S.border}`, background: S.bg, color: S.muted, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg></button>
-          <button onClick={loadData} title="Actualiser" style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${S.border}`, background: S.bg, color: S.muted, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><RefreshCw size={12} /></button>
+          <button onClick={logout} title="Deconnexion" style={{ width: isMobile ? 26 : 30, height: isMobile ? 26 : 30, borderRadius: 8, border: `1px solid ${S.border}`, background: S.bg, color: S.muted, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg></button>
+          <button onClick={loadData} title="Actualiser" style={{ width: isMobile ? 26 : 30, height: isMobile ? 26 : 30, borderRadius: 8, border: `1px solid ${S.border}`, background: S.bg, color: S.muted, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><RefreshCw size={12} /></button>
         </div>
       </header>
 
