@@ -590,12 +590,12 @@ export default function BudgetApp() {
             {YEARS.map(y => { const MN = ["Janvier","Fevrier","Mars","Avril","Mai","Juin","Juillet","Aout","Septembre","Octobre","Novembre","Decembre"]; return MN.map((mn, mi) => (<option key={`${y}-${mi}`} value={`${y}-${String(mi+1).padStart(2,"0")}`}>{mn} {y}</option>)); })}
           </select>
           <button onClick={() => { if (idx === months.length - 1 && selectedYear < 2036) { const ny = selectedYear + 1; setSelectedYear(ny); setIdx(0); fetch(`/api/budget/months?year=${ny}`, { headers: getAuthHeaders() }).then(r => r.json()).then(md => setMonths(md.months || [])); } else { setIdx(i => Math.min(months.length - 1, i + 1)); } }} disabled={idx === months.length - 1 && selectedYear >= 2036} style={{ width: 28, height: 28, borderRadius: 6, border: `1px solid ${S.border}`, background: S.bg, color: S.muted, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><ArrowRight size={13} /></button>
-          <span style={{ fontSize: 10, color: S.muted, fontWeight: 600 }}>{validatedCnt}/{totalItems} valides</span>
+          {!isMobile && <span style={{ fontSize: 10, color: S.muted, fontWeight: 600 }}>{validatedCnt}/{totalItems} valides</span>}
         </div>}
         {/* Tools */}
         <div className="header-tools" style={{ display: "flex", alignItems: "center", gap: 5, padding: "0 14px", borderLeft: `1px solid ${S.border}` }}>
           <button onClick={() => setNeedsOnboarding(true)} title="Aide" style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${S.border}`, background: S.bg, color: S.muted, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 13, fontWeight: 700 }}>?</button>
-          <div style={{ position: "relative" }}>
+          {!isMobile && <div style={{ position: "relative" }}>
             <button onClick={() => setShowAlerts(!showAlerts)} title="Alertes" style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${showAlerts ? S.accent : S.border}`, background: showAlerts ? `${S.accent}10` : S.bg, color: inAppAlerts.length > 0 ? S.danger : S.muted, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><Bell size={13} />
               {inAppAlerts.length > 0 && <span style={{ position: "absolute", top: -3, right: -3, width: 14, height: 14, borderRadius: "50%", background: S.danger, color: "#fff", fontSize: 8, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", border: `2px solid ${S.surface}` }}>{inAppAlerts.length}</span>}
             </button>
@@ -604,7 +604,7 @@ export default function BudgetApp() {
               {inAppAlerts.length === 0 && <div style={{ padding: "16px 10px", textAlign: "center", color: S.muted, fontSize: 12 }}>Aucune alerte</div>}
               {inAppAlerts.map((a, i) => (<div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start", padding: "7px 10px", borderRadius: 8, marginBottom: 2, background: a.type === "danger" ? `${S.danger}08` : a.type === "warning" ? `${S.warning}08` : "transparent" }}><AlertTriangle size={13} style={{ marginTop: 2, flexShrink: 0 }} color={a.type === "danger" ? S.danger : a.type === "warning" ? S.warning : S.accent} /><div><div style={{ fontSize: 11, fontWeight: 600, color: a.type === "danger" ? S.danger : a.type === "warning" ? S.warning : S.text }}>{a.title}</div><div style={{ fontSize: 10, color: S.muted, marginTop: 1 }}>{a.detail}</div></div></div>))}
             </div>}
-          </div>
+          </div>}
           <button onClick={logout} title="Deconnexion" style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${S.border}`, background: S.bg, color: S.muted, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg></button>
           <button onClick={loadData} title="Actualiser" style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${S.border}`, background: S.bg, color: S.muted, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><RefreshCw size={12} /></button>
         </div>
@@ -613,7 +613,7 @@ export default function BudgetApp() {
       {/* ── Content ────────────────────────────────────────────────── */}
       <main key={tab} className="tab-content" style={{ padding: "24px", maxWidth: 1200, margin: "0 auto", animation: "fadeUpStagger 0.35s cubic-bezier(0.4,0,0.2,1)" }}>
         {tab === "dashboard" && m && (
-          <DashboardTab month={m} months={months} idx={idx} netBalance={netBal} totalExpenses={totalExp} validatedBudget={validatedBudget} validatedCount={validatedCnt} totalCount={totalItems} 
+          <DashboardTab month={m} months={months} idx={idx} isMobile={isMobile} netBalance={netBal} totalExpenses={totalExp} validatedBudget={validatedBudget} validatedCount={validatedCnt} totalCount={totalItems} 
             onIncomeChange={(f, v) => patchIncome(m.month_key, f, v)}
             onValidate={(l, v) => patchExpense(m.month_key, l, { validated: v })} saving={saving} />
         )}
@@ -652,8 +652,8 @@ export default function BudgetApp() {
 }
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
-function DashboardTab({ month: m, months, idx, netBalance, totalExpenses, validatedBudget, validatedCount, totalCount, onIncomeChange, onValidate, saving }: {
-  month: Month; months: Month[]; idx: number; netBalance: number; totalExpenses: number; validatedBudget: number; validatedCount: number; totalCount: number;
+function DashboardTab({ month: m, months, idx, netBalance, totalExpenses, validatedBudget, validatedCount, totalCount, onIncomeChange, onValidate, saving, isMobile }: {
+  month: Month; months: Month[]; idx: number; netBalance: number; totalExpenses: number; validatedBudget: number; validatedCount: number; totalCount: number; isMobile: boolean;
   onIncomeChange: (f: "income_salary" | "income_other", v: number) => void;
   onValidate: (label: string, v: boolean) => void; saving: string | null;
 }) {
@@ -695,7 +695,7 @@ function DashboardTab({ month: m, months, idx, netBalance, totalExpenses, valida
           return (<div key={cat.n} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
             <span style={{ width: 90, fontSize: 12, fontWeight: 600, color: S.muted }}>{cat.n}</span>
             <div style={{ flex: 1, height: 20, background: `${S.border}40`, borderRadius: 6, overflow: "hidden" }}><div style={{ height: "100%", width: `${pct}%`, background: cat.c, borderRadius: 6, display: "flex", alignItems: "center", paddingLeft: 8, fontSize: 10, fontWeight: 700, color: "#fff", transition: "width 0.3s" }}>{pct > 10 ? `${pct}%` : ""}</div></div>
-            <span style={{ width: 80, textAlign: "right" as const, fontSize: 13, fontWeight: 700, color: cat.c }}>{fmt(cat.v)}</span>
+            {!isMobile && <span style={{ width: 80, textAlign: "right" as const, fontSize: 13, fontWeight: 700, color: cat.c }}>{fmt(cat.v)}</span>}
           </div>);
         })}
       </Card>
