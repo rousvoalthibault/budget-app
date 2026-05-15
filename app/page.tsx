@@ -559,6 +559,7 @@ function DashboardTab({ month: m, months, idx, netBalance, totalExpenses, valida
   onIncomeChange: (f: "income_salary" | "income_other", v: number) => void;
   onValidate: (label: string, v: boolean) => void; saving: string | null;
 }) {
+  const [showSwipeTutorial, setShowSwipeTutorial] = useState(true);
   const income = m.income_salary + m.income_other + ((m as unknown as Record<string,number>).income_rente ?? 0) + ((m as unknown as Record<string,number>).income_epargne ?? 0) + ((m as unknown as Record<string,number>).income_actions ?? 0) + ((m as unknown as Record<string,number>).income_virements ?? 0);
   const balColor = netBalance >= 0 ? S.success : S.danger;
   const fixed = m.expenses.filter(e => e.category === "fixed");
@@ -589,7 +590,21 @@ function DashboardTab({ month: m, months, idx, netBalance, totalExpenses, valida
 
       <Card>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-          <SLabel>Progression validation</SLabel>
+                {showSwipeTutorial && (
+        <div onClick={() => setShowSwipeTutorial(false)} style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.6)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 20, cursor: "pointer" }}>
+          <div style={{ textAlign: "center", color: "#fff" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 40, marginBottom: 16 }}>
+              <div style={{ textAlign: "center" }}><div style={{ fontSize: 28 }}>←</div><div style={{ fontSize: 14, fontWeight: 600, color: "#f87171" }}>Rejeter</div></div>
+              <div style={{ width: 120, height: 70, background: "rgba(255,255,255,0.1)", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", border: "2px dashed rgba(255,255,255,0.3)", fontSize: 12, color: "rgba(255,255,255,0.5)" }}>Dépense</div>
+              <div style={{ textAlign: "center" }}><div style={{ fontSize: 28 }}>→</div><div style={{ fontSize: 14, fontWeight: 600, color: "#4ade80" }}>Valider</div></div>
+            </div>
+            <p style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Swipez pour valider vos dépenses</p>
+            <p style={{ fontSize: 12, opacity: 0.6 }}>Glissez à droite pour valider, à gauche pour rejeter</p>
+            <button onClick={(e) => { e.stopPropagation(); setShowSwipeTutorial(false); }} style={{ marginTop: 16, padding: "10px 28px", background: "#4ade80", color: "#000", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: "pointer" }}>J’ai compris !</button>
+          </div>
+        </div>
+      )}
+      <SLabel>Progression validation</SLabel>
           <span style={{ color: validatedCount === totalCount ? S.success : S.muted, fontSize: 13, fontWeight: 700 }}>{validatedCount === totalCount ? "Tout valide !" : `${validatedCount} / ${totalCount}`}</span>
         </div>
         <div style={{ background: S.surface2, borderRadius: 999, height: 10, overflow: "hidden" }}>
