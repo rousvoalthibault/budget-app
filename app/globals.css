@@ -57,3 +57,13 @@
 .kpi-tip { position: relative; }
 .kpi-tip::after { content: attr(data-tip); position: absolute; top: 120%; left: 50%; transform: translateX(-50%); background: #1e293b; color: #fff; font-size: 11px; padding: 6px 10px; border-radius: 6px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.15s; z-index: 100; font-weight: 400; text-transform: none; letter-spacing: 0; max-width: 200px; min-width: 160px; white-space: normal; text-align: center; }
 .kpi-tip:hover::after { opacity: 1; }
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Performance optimizations */
+* { -webkit-tap-highlight-color: transparent; }
+.row-h { will-change: transform; }
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+img, svg { content-visibility: auto; }

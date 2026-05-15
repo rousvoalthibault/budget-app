@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, ReferenceLine,
@@ -234,6 +234,8 @@ export default function BudgetApp() {
   }, []);
 
   async function patchExpense(mk: string, label: string, updates: Partial<Expense>) {
+    // Optimistic update
+    setMonths(prev => prev.map(m2 => m2.month_key === mk ? {...m2, expenses: m2.expenses.map(e => e.label === label ? {...e, ...updates} : e)} : m2));
     setSaving(label);
     try {
       const r = await fetch(`/api/budget/month/${mk}/expense`, { method: "PATCH", headers: getAuthHeaders(), body: JSON.stringify({ label, ...updates }) });
