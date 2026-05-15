@@ -420,7 +420,7 @@ export default function BudgetApp() {
   );
 
   return (
-    <div style={{ background: S.bg, minHeight: "100vh", color: S.text, fontFamily: S.font }}>
+    <div style={{ background: S.bg, minHeight: "100vh", color: S.text, fontFamily: S.font, "--mob-bg": S.surface, "--mob-border": S.border, "--mob-muted": S.muted, "--mob-accent": S.accent } as React.CSSProperties}>
       <style>{`
         *{box-sizing:border-box}
         @keyframes spin{to{transform:rotate(360deg)}}
@@ -439,6 +439,29 @@ export default function BudgetApp() {
         input:focus{outline:none!important}
         select{cursor:pointer}
         button{cursor:pointer;transition:transform 0.1s}
+        /* ===== MOBILE RESPONSIVE ===== */
+        @media(max-width:768px){
+          .desktop-sidebar{display:none!important}
+          .main-content{margin-left:0!important;padding-bottom:64px}
+          .app-header{flex-wrap:wrap;padding:8px 12px}
+          .header-brand{border-right:none!important;padding:6px 0!important;width:100%;justify-content:center!important}
+          .header-brand h1{font-size:15px!important}
+          .header-tools{border-left:none!important;padding:0!important;position:absolute;right:8px;top:8px}
+          .kpi-strip{flex-wrap:wrap!important;border-radius:10px!important}
+          .kpi-strip>div{min-width:30%!important;flex:1 1 30%!important;padding:10px 6px!important}
+          .tab-content{padding:12px 10px!important}
+          .mobile-tabbar{display:flex!important}
+          .expenses-grid{grid-template-columns:1fr!important}
+        }
+        @media(min-width:769px){
+          .mobile-tabbar{display:none!important}
+        }
+        .mobile-tabbar{position:fixed;bottom:0;left:0;right:0;z-index:60;background:var(--mob-bg,#fff);border-top:1px solid var(--mob-border,#e2e8f0);padding:4px 2px 8px;box-shadow:0 -2px 8px rgba(0,0,0,0.05);display:none}
+        .mob-tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:4px 0;background:none;border:none;cursor:pointer;font-family:inherit}
+        .mob-tab svg{width:18px;height:18px;color:var(--mob-muted,#94a3b8)}
+        .mob-tab span{font-size:8px;font-weight:600;color:var(--mob-muted,#94a3b8)}
+        .mob-tab.active svg{color:var(--mob-accent,#f97316)}
+        .mob-tab.active span{color:var(--mob-accent,#f97316);font-weight:700}
         button:active{transform:scale(0.96)}
         @keyframes shimmer{0%{background-position:-200px 0}100%{background-position:200px 0}}
         @keyframes bounceCheck{0%{transform:scale(1)}30%{transform:scale(1.25)}60%{transform:scale(0.9)}100%{transform:scale(1)}}
@@ -535,7 +558,7 @@ export default function BudgetApp() {
 
       {/* ── Header ─────────────────────────────────────────────────── */}
       
-      <aside style={{ width: sidebarOpen ? 220 : 60, minHeight: "100vh", background: S.surface, borderRight: `1px solid ${S.border}`, transition: "width 0.2s ease", flexShrink: 0, display: "flex", flexDirection: "column", padding: "12px 8px", position: "fixed", left: 0, top: 0, zIndex: 50 }}>
+      <aside className="desktop-sidebar" style={{ width: sidebarOpen ? 220 : 60, minHeight: "100vh", background: S.surface, borderRight: `1px solid ${S.border}`, transition: "width 0.2s ease", flexShrink: 0, display: "flex", flexDirection: "column", padding: "12px 8px", position: "fixed", left: 0, top: 0, zIndex: 50 }}>
         <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ background: "transparent", border: "none", color: S.text, width: 40, height: 40, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", marginBottom: 8 }}><Menu size={20} /></button>
         {sidebarOpen && <div style={{ fontFamily: S.heading, fontSize: 17, fontWeight: 800, color: S.primary, padding: "0 10px", marginBottom: 20 }}>BudgetApp</div>}
         <nav style={{ display: "flex", flexDirection: "column", gap: 2, flex: 1 }}>
@@ -543,10 +566,10 @@ export default function BudgetApp() {
         </nav>
         <button onClick={() => setDarkMode(!darkMode)} style={{ marginTop: 8, background: "transparent", border: `1px solid ${S.border}`, color: S.muted, borderRadius: 8, padding: sidebarOpen ? "8px 12px" : "8px 0", display: "flex", alignItems: "center", justifyContent: sidebarOpen ? "flex-start" : "center", gap: 8, width: "100%", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>{darkMode ? "☀" : "☽"}{sidebarOpen && <span>{darkMode ? "Mode clair" : "Mode sombre"}</span>}</button>
       </aside>
-      <div style={{ marginLeft: sidebarOpen ? 220 : 60, transition: "margin-left 0.2s ease", flex: 1 }}>
-      <header style={{ background: S.surface, borderBottom: `1px solid ${S.border}`, display: "flex", alignItems: "stretch", position: "sticky", top: 0, zIndex: 40 }}>
+      <div className="main-content" style={{ marginLeft: sidebarOpen ? 220 : 60, transition: "margin-left 0.2s ease", flex: 1 }}>
+      <header className="app-header" style={{ background: S.surface, borderBottom: `1px solid ${S.border}`, display: "flex", alignItems: "stretch", position: "sticky", top: 0, zIndex: 40 }}>
         {/* Brand */}
-        <div style={{ padding: "12px 20px", display: "flex", alignItems: "center", gap: 10, borderRight: `1px solid ${S.border}` }}>
+        <div className="header-brand" style={{ padding: "12px 20px", display: "flex", alignItems: "center", gap: 10, borderRight: `1px solid ${S.border}` }}>
           <h1 style={{ fontFamily: S.heading, fontSize: 17, fontWeight: 800, color: S.text, margin: 0 }}>Budget Personnel</h1>
           <span style={{ fontSize: 11, color: S.muted }}>{getDateFR()}</span>
         </div>
@@ -563,7 +586,7 @@ export default function BudgetApp() {
           <span style={{ fontSize: 10, color: S.muted, fontWeight: 600 }}>{validatedCnt}/{totalItems} valides</span>
         </div>}
         {/* Tools */}
-        <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "0 14px", borderLeft: `1px solid ${S.border}` }}>
+        <div className="header-tools" style={{ display: "flex", alignItems: "center", gap: 5, padding: "0 14px", borderLeft: `1px solid ${S.border}` }}>
           <button onClick={() => setNeedsOnboarding(true)} title="Aide" style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${S.border}`, background: S.bg, color: S.muted, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 13, fontWeight: 700 }}>?</button>
           <div style={{ position: "relative" }}>
             <button onClick={() => setShowAlerts(!showAlerts)} title="Alertes" style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${showAlerts ? S.accent : S.border}`, background: showAlerts ? `${S.accent}10` : S.bg, color: inAppAlerts.length > 0 ? S.danger : S.muted, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><Bell size={13} />
@@ -581,7 +604,7 @@ export default function BudgetApp() {
       </header>
 
       {/* ── Content ────────────────────────────────────────────────── */}
-      <main key={tab} style={{ padding: "24px", maxWidth: 1200, margin: "0 auto", animation: "fadeUpStagger 0.35s cubic-bezier(0.4,0,0.2,1)" }}>
+      <main key={tab} className="tab-content" style={{ padding: "24px", maxWidth: 1200, margin: "0 auto", animation: "fadeUpStagger 0.35s cubic-bezier(0.4,0,0.2,1)" }}>
         {tab === "dashboard" && m && (
           <DashboardTab month={m} months={months} idx={idx} netBalance={netBal} totalExpenses={totalExp} validatedBudget={validatedBudget} validatedCount={validatedCnt} totalCount={totalItems} 
             onIncomeChange={(f, v) => patchIncome(m.month_key, f, v)}
@@ -608,6 +631,15 @@ export default function BudgetApp() {
             onAddInvestment={(label, amount) => addExpense(months[idx].month_key, label, amount, "investment")} />
         )}
       </main>
+      {/* Mobile bottom tab bar */}
+      <nav className="mobile-tabbar">
+        {TABS.map(t => { const Icon = t.icon; return (
+          <button key={t.id} className={`mob-tab${tab === t.id ? " active" : ""}`} onClick={() => setTab(t.id)}>
+            <Icon size={18} />
+            <span>{t.label.length > 8 ? t.label.slice(0,7) + "." : t.label}</span>
+          </button>
+        ); })}
+      </nav>
     </div></div>
   );
 }
@@ -628,7 +660,7 @@ function DashboardTab({ month: m, months, idx, netBalance, totalExpenses, valida
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <div style={{ display: "flex", gap: 0, background: S.surface, borderRadius: 14, border: `1px solid ${S.border}`, overflow: "hidden" }}>
+      <div className="kpi-strip" style={{ display: "flex", gap: 0, background: S.surface, borderRadius: 14, border: `1px solid ${S.border}`, overflow: "hidden" }}>
         {[
           { label: "Revenus", value: income, color: S.success, icon: "€", sub: undefined, tip: "Total de tous vos revenus : salaire, rente, actions, virements, etc." },
           { label: "Dépenses", tip: "Charges fixes + variables + enveloppes budget (hors investissements)", value: totalExpenses, color: S.danger, icon: "↓", sub: validatedBudget > 0 ? `dont ${fmt(validatedBudget)} env.` : undefined },
@@ -1126,7 +1158,7 @@ function DepensesTab({ month: m, months, monthKey, onValidate, onAmountChange, o
         })()}
       </Card>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+      <div className="expenses-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
         {ColCard({ title: "Dépenses fixes", items: fixed, color: S.primary, catKey: "fixed" })}
         {ColCard({ title: "Dépenses variables", items: variable, color: S.warning, catKey: "variable" })}
       </div>
@@ -1454,7 +1486,7 @@ function TaxSimulator({ latestSalary }: { latestSalary: number }) {
   return (
     <Card>
       <SLabel>Simulateur fiscal 2026</SLabel>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
+      <div className="expenses-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
         <div>
           <label style={{ fontSize: 11, fontWeight: 700, color: S.muted, display: "block", marginBottom: 4, textTransform: "uppercase" as const }}>Salaire brut annuel</label>
           <input type="number" value={brutAnnuel} onChange={e => setBrutAnnuel(e.target.value)} style={{ width: "100%", padding: "10px 12px", fontSize: 16, fontFamily: S.heading, fontWeight: 700, border: `1px solid ${S.border}`, borderRadius: 8, background: S.bg, color: S.accent, outline: "none" }} />
