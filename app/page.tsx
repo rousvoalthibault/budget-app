@@ -450,10 +450,10 @@ export default function BudgetApp() {
         @media(max-width:768px){
           .desktop-sidebar{display:none!important}
           .main-content{margin-left:0!important;padding-bottom:64px}
-          .app-header{flex-wrap:wrap;padding:8px 12px}
+          .app-header{flex-direction:column!important;padding:8px 12px!important;gap:6px;align-items:stretch!important}
           .header-brand{display:none!important}
           .header-brand h1{font-size:15px!important}
-          .header-tools{border-left:none!important;padding:0!important;position:absolute;right:8px;top:8px}
+          .header-tools{border-left:none!important;padding:0 4px!important;align-self:flex-end!important;order:-1}
           .kpi-strip{flex-wrap:wrap!important;border-radius:10px!important}
           .kpi-strip>div{min-width:30%!important;flex:1 1 30%!important;padding:10px 6px!important}
           .tab-content{padding:12px 10px!important}
@@ -594,7 +594,7 @@ export default function BudgetApp() {
         </div>}
         {/* Tools */}
         <div className="header-tools" style={{ display: "flex", alignItems: "center", gap: 5, padding: "0 14px", borderLeft: `1px solid ${S.border}` }}>
-          <button onClick={() => setNeedsOnboarding(true)} title="Aide" style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${S.border}`, background: S.bg, color: S.muted, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 13, fontWeight: 700 }}>?</button>
+          <button onClick={() => setNeedsOnboarding(true)} title="Aide" style={{ display: isMobile ? "none" : "flex", width: 30, height: 30, borderRadius: 8, border: `1px solid ${S.border}`, background: S.bg, color: S.muted, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 13, fontWeight: 700 }}>?</button>
           {!isMobile && <div style={{ position: "relative" }}>
             <button onClick={() => setShowAlerts(!showAlerts)} title="Alertes" style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${showAlerts ? S.accent : S.border}`, background: showAlerts ? `${S.accent}10` : S.bg, color: inAppAlerts.length > 0 ? S.danger : S.muted, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><Bell size={13} />
               {inAppAlerts.length > 0 && <span style={{ position: "absolute", top: -3, right: -3, width: 14, height: 14, borderRadius: "50%", background: S.danger, color: "#fff", fontSize: 8, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", border: `2px solid ${S.surface}` }}>{inAppAlerts.length}</span>}
@@ -631,7 +631,7 @@ export default function BudgetApp() {
         {tab === "historique" && months.length > 0 && <HistoriqueTab months={months} goalMonthly={totalGoalMonthly} />}
         {tab === "salaires" && <SalairesTab showToast={showToast} />}
         {tab === "economies" && months.length > 0 && (
-          <EconomiesTab months={months} currentIdx={idx}
+          <EconomiesTab months={months} currentIdx={idx} isMobile={isMobile}
             onSavingsChange={(mk, u) => patchSavings(mk, u)}
             onPortfolioValuesChange={(mk, u) => patchPortfolioValues(mk, u)}
             onValidateExpense={(label, v) => patchExpense(months[idx].month_key, label, { validated: v })}
@@ -1579,12 +1579,12 @@ const PORTFOLIO_CATEGORIES: { label: string; color: string; items: { key: keyof 
   { label: "Retraite & Autres", color: "#d97706", items: [{ key: "per", label: "PER" }, { key: "perco", label: "PERCO" }, { key: "irishlife", label: "Irishlife" }, { key: "montres_objets_luxe", label: "Montres / Objets luxe" }, { key: "tontine", label: "Tontine" }] },
 ];
 
-function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesChange, onValidateExpense, onAddInvestment }: {
+function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesChange, onValidateExpense, onAddInvestment, isMobile }: {
   months: Month[]; currentIdx: number;
   onSavingsChange: (mk: string, u: Partial<Savings>) => void;
   onPortfolioValuesChange: (mk: string, u: Record<string, number>) => void;
   onValidateExpense?: (label: string, validated: boolean) => void;
-  onAddInvestment?: (label: string, amount: number) => void;
+  onAddInvestment?: (label: string, amount: number) => void; isMobile?: boolean;
 }) {
   const m = months[currentIdx];
   const xpPort = useExpand();
@@ -1651,8 +1651,8 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
             </div>
           )}
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 120px 120px 80px", gap: 8, padding: "0 12px 8px", borderBottom: `1px solid ${S.border}`, marginBottom: 12 }}>
-          {["Ligne", "Investi", "Valeur actuelle", "+/-"].map((h, i) => (
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 90px 90px" : "1fr 120px 120px 80px", gap: 8, padding: "0 12px 8px", borderBottom: `1px solid ${S.border}`, marginBottom: 12 }}>
+          {(isMobile ? ["Ligne", "Investi", "Valeur"] : ["Ligne", "Investi", "Valeur actuelle", "+/-"]).map((h, i) => (
             <span key={h} style={{ color: S.muted, fontSize: 11, fontWeight: 700, textAlign: i > 0 ? "right" : "left" }}>{h}</span>
           ))}
         </div>
@@ -1663,11 +1663,11 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
             const catDiff = catVal - catInv;
             return (
               <div key={cat.label} style={{ marginBottom: 14 }}>
-                <div onClick={() => setCollapsed(p => ({ ...p, [cat.label]: !p[cat.label] }))} style={{ display: "grid", gridTemplateColumns: "1fr 120px 120px 80px", gap: 8, padding: "8px 12px", background: `${cat.color}10`, borderRadius: 10, marginBottom: 5, borderLeft: `3px solid ${cat.color}`, cursor: "pointer" }}>
+                <div onClick={() => setCollapsed(p => ({ ...p, [cat.label]: !p[cat.label] }))} style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 90px 90px" : "1fr 120px 120px 80px", gap: 8, padding: "8px 12px", background: `${cat.color}10`, borderRadius: 10, marginBottom: 5, borderLeft: `3px solid ${cat.color}`, cursor: "pointer" }}>
                   <span style={{ fontFamily: S.heading, fontSize: 15, fontWeight: 700, color: cat.color }}>{collapsed[cat.label] ? "▶" : "▼"} {cat.label}</span>
                   <span style={{ fontFamily: S.heading, fontSize: 14, color: cat.color, fontWeight: 700, textAlign: "right" }}>{fmt(catInv)}</span>
                   <span style={{ fontFamily: S.heading, fontSize: 14, color: catVal > 0 ? S.success : S.muted, fontWeight: 700, textAlign: "right" }}>{catVal > 0 ? fmt(catVal) : "—"}</span>
-                  <span style={{ fontFamily: S.heading, fontSize: 13, color: catVal > 0 ? (catDiff >= 0 ? S.success : S.danger) : S.muted, fontWeight: 700, textAlign: "right" }}>{catVal > 0 ? `${catDiff >= 0 ? "+" : ""}${fmt(catDiff)}` : "—"}</span>
+                  {!isMobile && <span style={{ fontFamily: S.heading, fontSize: 13, color: catVal > 0 ? (catDiff >= 0 ? S.success : S.danger) : S.muted, fontWeight: 700, textAlign: "right" }}>{catVal > 0 ? `${catDiff >= 0 ? "+" : ""}${fmt(catDiff)}` : "—"}</span>}
                 </div>
                 {!collapsed[cat.label] && <div style={{ display: "flex", flexDirection: "column", gap: 3, paddingLeft: 8 }}>
                   {cat.items.map((p) => {
@@ -1675,14 +1675,14 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
                     const val = (pv[p.key as string] as number) ?? 0;
                     const diff = val - inv;
                     return (
-                      <div key={p.key as string} className="row-h" style={{ display: "grid", gridTemplateColumns: "1fr 120px 120px 80px", gap: 8, alignItems: "center", padding: "7px 12px", background: S.surface2, borderRadius: 8 }}>
+                      <div key={p.key as string} className="row-h" style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 90px 90px" : "1fr 120px 120px 80px", gap: 8, alignItems: "center", padding: "7px 12px", background: S.surface2, borderRadius: 8 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                           <div style={{ width: 6, height: 6, borderRadius: "50%", background: cat.color, flexShrink: 0, opacity: 0.6 }} />
                           <span style={{ fontSize: 13, color: inv > 0 ? S.text : S.muted }}>{p.label}</span>
                         </div>
                         <div style={{ textAlign: "right" }}><EditableAmt value={inv} onChange={v => onSavingsChange(m.month_key, { [p.key]: v } as unknown as Partial<Savings>)} color={cat.color} size="sm" /></div>
                         <div style={{ textAlign: "right" }}><EditableAmt value={val} onChange={v => onPortfolioValuesChange(m.month_key, { [p.key as string]: v })} color={val > 0 ? S.success : S.muted} size="sm" /></div>
-                        <div style={{ textAlign: "right", fontFamily: S.heading, fontSize: 13, fontWeight: 700, color: val > 0 ? (diff >= 0 ? S.success : S.danger) : S.muted }}>{val > 0 ? `${diff >= 0 ? "+" : ""}${fmt(diff)}` : "—"}</div>
+                        {!isMobile && <div style={{ textAlign: "right", fontFamily: S.heading, fontSize: 13, fontWeight: 700, color: val > 0 ? (diff >= 0 ? S.success : S.danger) : S.muted }}>{val > 0 ? `${diff >= 0 ? "+" : ""}${fmt(diff)}` : "—"}</div>}
                         <button onClick={() => { onSavingsChange(m.month_key, { [p.key]: undefined } as unknown as Partial<Savings>); }} style={{ width: 20, height: 20, border: "none", background: "transparent", color: S.muted, cursor: "pointer", opacity: 0.4, display: "flex", alignItems: "center", justifyContent: "center" }} title="Supprimer"><Trash2 size={10} /></button>
                       </div>
                     );
