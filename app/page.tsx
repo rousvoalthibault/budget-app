@@ -444,7 +444,7 @@ export default function BudgetApp() {
           .desktop-sidebar{display:none!important}
           .main-content{margin-left:0!important;padding-bottom:64px}
           .app-header{flex-wrap:wrap;padding:8px 12px}
-          .header-brand{border-right:none!important;padding:6px 0!important;width:100%;justify-content:center!important}
+          .header-brand{display:none!important}
           .header-brand h1{font-size:15px!important}
           .header-tools{border-left:none!important;padding:0!important;position:absolute;right:8px;top:8px}
           .kpi-strip{flex-wrap:wrap!important;border-radius:10px!important}
