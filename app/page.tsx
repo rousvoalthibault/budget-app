@@ -373,7 +373,7 @@ export default function BudgetApp() {
   // Forecast alerts
   if (forecast?.alerts) {
     forecast.alerts.forEach((a: { month_name: string; alert_type: string; message: string }) => {
-      inAppAlerts.push({ type: a.alert_type === "danger" ? "danger" : "warning", id: `forecast-${a.month_key}`, title: a.month_name, detail: a.message });
+      inAppAlerts.push({ type: a.alert_type === "danger" ? "danger" : "warning", id: `forecast-${a.month_name}`, title: a.month_name, detail: a.message });
     });
   }
 
