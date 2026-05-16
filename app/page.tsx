@@ -177,6 +177,7 @@ export default function BudgetApp() {
   const [obNewLabel, setObNewLabel] = useState("");
   const [obNewAmount, setObNewAmount] = useState("");
   const [showAlerts, setShowAlerts] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [dismissedAlerts, setDismissedAlerts] = useState<string[]>(() => { try { return JSON.parse(localStorage.getItem("budget_dismissed_alerts") || "[]"); } catch { return []; } });
   const dismissAlert = (id: string) => { setDismissedAlerts(prev => { const n = [...prev, id]; localStorage.setItem("budget_dismissed_alerts", JSON.stringify(n)); return n; }); };
   const [savingsGoals, setSavingsGoals] = useState<{id:string;name:string;target:number;current:number;target_date:string;color:string;validated_months:string[]}[]>([]);
@@ -631,7 +632,25 @@ export default function BudgetApp() {
           {TABS.map(t => { const Icon = t.icon; const active = tab === t.id; return (<button key={t.id} onClick={() => setTab(t.id)} title={t.label} style={{ display: "flex", alignItems: "center", gap: 12, padding: sidebarOpen ? "10px 12px" : "10px 0", justifyContent: sidebarOpen ? "flex-start" : "center", fontSize: 13, fontWeight: active ? 700 : 500, color: active ? S.primary : S.muted, background: active ? `${S.primary}12` : "transparent", border: "none", borderRadius: 10, cursor: "pointer", fontFamily: S.font, transition: "all 0.15s", width: "100%" }}><Icon size={18} />{sidebarOpen && <span>{t.label}</span>}</button>); })}
         </nav>
         <button onClick={() => setDarkMode(!darkMode)} style={{ marginTop: 8, background: "transparent", border: `1px solid ${S.border}`, color: S.muted, borderRadius: 8, padding: sidebarOpen ? "8px 12px" : "8px 0", display: "flex", alignItems: "center", justifyContent: sidebarOpen ? "flex-start" : "center", gap: 8, width: "100%", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>{darkMode ? "☀" : "☽"}{sidebarOpen && <span>{darkMode ? "Mode clair" : "Mode sombre"}</span>}</button>
-      </aside>
+
+        <div style={{ position: "relative", marginTop: 8, width: "100%", display: "flex", justifyContent: "center" }}>
+          <button onClick={() => setShowProfileMenu(!showProfileMenu)} style={{ display: "flex", alignItems: "center", gap: 8, padding: sidebarOpen ? "8px 12px" : "8px", background: showProfileMenu ? S.surface2 : S.bg, border: `1px solid ${S.border}`, borderRadius: 10, cursor: "pointer", color: S.text, fontFamily: S.font, fontSize: 12, fontWeight: 600, width: sidebarOpen ? "calc(100% - 16px)" : 36, justifyContent: sidebarOpen ? "flex-start" : "center", overflow: "hidden" }}>
+            <div style={{ width: 24, height: 24, borderRadius: "50%", background: S.accent, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 11, fontWeight: 800, flexShrink: 0 }}>{(user?.name || user?.email || "U")[0].toUpperCase()}</div>
+            {sidebarOpen && <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{user?.name || user?.email?.split("@")[0] || "Utilisateur"}</span>}
+          </button>
+          {showProfileMenu && <div onClick={e => e.stopPropagation()} style={{ position: "absolute", bottom: "calc(100% + 6px)", left: sidebarOpen ? 8 : -60, background: S.surface, border: `1px solid ${S.border}`, borderRadius: 12, boxShadow: "0 8px 32px rgba(0,0,0,0.15)", width: 200, zIndex: 100, overflow: "hidden", fontFamily: S.font }}>
+            <div style={{ padding: "12px 14px", borderBottom: `1px solid ${S.border}` }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: S.text }}>{user?.name || "Utilisateur"}</div>
+              <div style={{ fontSize: 11, color: S.muted, marginTop: 2 }}>{user?.email}</div>
+            </div>
+            <button onClick={() => setShowProfileMenu(false)} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "10px 14px", background: "none", border: "none", color: S.text, fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: S.font, textAlign: "left" as const }}>Voir profil</button>
+            <button onClick={() => setShowProfileMenu(false)} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "10px 14px", background: "none", border: "none", color: S.text, fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: S.font, textAlign: "left" as const }}>Parametres</button>
+            <div style={{ borderTop: `1px solid ${S.border}` }}>
+              <button onClick={async () => { if (confirm("Supprimer TOUTES vos donnees ? Cette action est irreversible.")) { await fetch("/api/budget/user-data", { method: "DELETE", headers: getAuthHeaders() }); showToast("Donnees supprimees"); loadData(); } setShowProfileMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "10px 14px", background: "none", border: "none", color: S.danger, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: S.font, textAlign: "left" as const }}>Tout supprimer</button>
+              <button onClick={() => { logout(); setShowProfileMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "10px 14px", background: "none", border: "none", color: S.muted, fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: S.font, textAlign: "left" as const }}>Se deconnecter</button>
+            </div>
+          </div>}
+        </div>      </aside>
       <div className="main-content" style={{ marginLeft: isMobile ? 0 : (sidebarOpen ? 220 : 60), transition: "margin-left 0.2s ease", flex: 1 }}>
       <header className="app-header" style={{ background: S.surface, borderBottom: `1px solid ${S.border}`, display: "flex", alignItems: "stretch", position: "sticky", top: 0, zIndex: 40 }}>
         {/* Brand - hidden on mobile */}
