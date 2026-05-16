@@ -142,6 +142,9 @@ export default function BudgetApp() {
     return () => window.removeEventListener("resize", check);
   }, []);
   const [darkMode, setDarkMode] = useState(false);
+  const [hints, setHints] = useState<Record<string, boolean>>({});
+  useEffect(() => { try { const h = JSON.parse(localStorage.getItem("budget_hints") || "{}"); setHints(h); } catch {} }, []);
+  const dismissHint = (key: string) => { setHints(prev => { const n = { ...prev, [key]: true }; localStorage.setItem("budget_hints", JSON.stringify(n)); return n; }); };
   S = darkMode ? DARK : LIGHT;
   const [tab, setTab] = useState<"dashboard" | "depenses" | "projection" | "historique" | "salaires" | "economies">("dashboard");
   const [months, setMonths] = useState<Month[]>([]);
@@ -251,7 +254,7 @@ export default function BudgetApp() {
       const d = await r.json();
       if (d.success) {
         setMonths(prev => prev.map(m => m.month_key !== mk ? m : { ...m, expenses: m.expenses.map(e => e.label === label ? { ...e, ...updates } : e) }));
-        if (updates.validated !== undefined) showToast(updates.validated ? `${label} validee` : `${label} devalidee`);
+        if (updates.validated !== undefined) showToast(updates.validated ? `${label} validée` : `${label} devalidée`);
         else showToast("Montant mis à jour");
         fetch("/api/budget/forecast", { headers: getAuthHeaders() }).then(r => r.json()).then(setForecast);
       }
@@ -269,7 +272,7 @@ export default function BudgetApp() {
       });
       const d = await r.json();
       if (d.success) {
-        showToast(`${label} ajoutee${d.propagated_to > 1 ? ` (${d.propagated_to} mois)` : ""}`);
+        showToast(`${label} ajoutée${d.propagated_to > 1 ? ` (${d.propagated_to} mois)` : ""}`);
         await loadData();
       }
     } catch { showToast("Erreur", false); }
@@ -281,7 +284,7 @@ export default function BudgetApp() {
     try {
       const r = await fetch(`/api/budget/month/${mk}/expense/${encodeURIComponent(label)}`, { method: "DELETE" });
       const d = await r.json();
-      if (d.success) { setMonths(prev => prev.map(m => m.month_key !== mk ? m : { ...m, expenses: m.expenses.filter(e => e.label !== label) })); showToast(`${label} supprimee`); fetch("/api/budget/forecast", { headers: getAuthHeaders() }).then(r => r.json()).then(setForecast); }
+      if (d.success) { setMonths(prev => prev.map(m => m.month_key !== mk ? m : { ...m, expenses: m.expenses.filter(e => e.label !== label) })); showToast(`${label} supprimée`); fetch("/api/budget/forecast", { headers: getAuthHeaders() }).then(r => r.json()).then(setForecast); }
     } catch { showToast("Erreur", false); }
     finally { setSaving(null); }
   }
@@ -348,14 +351,14 @@ export default function BudgetApp() {
   const inAppAlerts: { type: "danger" | "warning" | "info"; title: string; detail: string }[] = [];
   if (m) {
     // Current month balance alert
-    if (netBal < 0) inAppAlerts.push({ type: "danger", title: `Solde negatif ce mois`, detail: `${m.month_name} ${m.year} : ${netBal.toFixed(0)} EUR` });
-    else if (netBal < 300) inAppAlerts.push({ type: "warning", title: `Solde serre ce mois`, detail: `${m.month_name} ${m.year} : ${netBal.toFixed(0)} EUR restants` });
+    if (netBal < 0) inAppAlerts.push({ type: "danger", title: `Solde négatif ce mois`, detail: `${m.month_name} ${m.year} : ${netBal.toFixed(0)} EUR` });
+    else if (netBal < 300) inAppAlerts.push({ type: "warning", title: `Solde serré ce mois`, detail: `${m.month_name} ${m.year} : ${netBal.toFixed(0)} EUR restants` });
     // Budget envelope alerts (>80% used)
     const ba = m.budget_allocation as unknown as Record<string, number>;
     const bv = (m.budget_validated || {}) as Record<string, boolean>;
     Object.entries(ba).forEach(([k, alloc]) => {
       if (alloc > 0 && bv[k]) {
-        inAppAlerts.push({ type: "info", title: `Enveloppe ${k} validee`, detail: `${alloc.toFixed(0)} EUR` });
+        inAppAlerts.push({ type: "info", title: `Enveloppe ${k} validée`, detail: `${alloc.toFixed(0)} EUR` });
       }
     });
   }
@@ -386,7 +389,7 @@ export default function BudgetApp() {
           {authMode === "register" ? "Creer mon compte" : "Se connecter"}
         </button>
         <p style={{ textAlign: "center", marginTop: 16, color: S.muted, fontSize: 13 }}>
-          {authMode === "register" ? "Deja un compte ? " : "Pas encore de compte ? "}
+          {authMode === "register" ? "Déjà un compte ? " : "Pas encore de compte ? "}
           <button onClick={() => { setAuthMode(authMode === "register" ? "login" : "register"); setAuthError(""); }} style={{ background: "none", border: "none", color: S.primary, fontWeight: 700, fontSize: 13, fontFamily: S.font, textDecoration: "underline" }}>
             {authMode === "register" ? "Se connecter" : "Inscription"}
           </button>
@@ -482,6 +485,8 @@ export default function BudgetApp() {
         .card-h{transition:border-color 0.2s, transform 0.2s, box-shadow 0.2s}
         .card-h:hover{box-shadow:0 4px 12px rgba(0,0,0,0.15)}
         .refresh-spin{animation:spin 0.8s linear infinite}
+        .hint-bubble{position:relative;background:#f97316;color:#fff;font-size:12px;font-weight:600;padding:8px 14px;border-radius:10px;margin:8px 0;animation:fadeUpStagger 0.4s ease;display:flex;align-items:center;gap:8px;box-shadow:0 4px 16px rgba(249,115,22,0.25)}
+        .hint-close{background:none;border:none;color:rgba(255,255,255,0.7);font-size:14px;cursor:pointer;padding:0 4px;flex-shrink:0}
       `}</style>
 
       {toast && (
@@ -512,7 +517,7 @@ export default function BudgetApp() {
             </div>)}
 
             {onboardStep === 1 && (<div>
-              <h2 style={{ fontFamily: S.heading, fontSize: 22, fontWeight: 700, margin: "0 0 6px" }}>Charges fixes mensuelles</h2>
+              <h2 style={{ fontFamily: S.heading, fontSize: 22, fontWeight: 700, margin: "0 0 6px" }}>Dépenses récurrentes mensuelles</h2>
               <p style={{ color: S.muted, fontSize: 14, margin: "0 0 16px" }}>Ajoutez vos depenses recurrentes. Vous pourrez modifier plus tard.</p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
                 {COMMON_EXPENSES.filter(ce => !obExpenses.some(e => e.label === ce.l)).map(ce => (
@@ -613,7 +618,7 @@ export default function BudgetApp() {
       {/* ── Content ────────────────────────────────────────────────── */}
       <main key={tab} className="tab-content" style={{ padding: "24px", maxWidth: 1200, margin: "0 auto", animation: "fadeUpStagger 0.35s cubic-bezier(0.4,0,0.2,1)" }}>
         {tab === "dashboard" && m && (
-          <DashboardTab month={m} months={months} idx={idx} isMobile={isMobile} netBalance={netBal} totalExpenses={totalExp} validatedBudget={validatedBudget} validatedCount={validatedCnt} totalCount={totalItems} 
+          <DashboardTab month={m} months={months} idx={idx} isMobile={isMobile} hints={hints} dismissHint={dismissHint} netBalance={netBal} totalExpenses={totalExp} validatedBudget={validatedBudget} validatedCount={validatedCnt} totalCount={totalItems} 
             onIncomeChange={(f, v) => patchIncome(m.month_key, f, v)}
             onValidate={(l, v) => patchExpense(m.month_key, l, { validated: v })} saving={saving} />
         )}
@@ -652,8 +657,8 @@ export default function BudgetApp() {
 }
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
-function DashboardTab({ month: m, months, idx, netBalance, totalExpenses, validatedBudget, validatedCount, totalCount, onIncomeChange, onValidate, saving, isMobile }: {
-  month: Month; months: Month[]; idx: number; netBalance: number; totalExpenses: number; validatedBudget: number; validatedCount: number; totalCount: number; isMobile: boolean;
+function DashboardTab({ month: m, months, idx, netBalance, totalExpenses, validatedBudget, validatedCount, totalCount, onIncomeChange, onValidate, saving, isMobile, hints, dismissHint }: {
+  month: Month; months: Month[]; idx: number; netBalance: number; totalExpenses: number; validatedBudget: number; validatedCount: number; totalCount: number; isMobile: boolean; hints: Record<string, boolean>; dismissHint: (k: string) => void;
   onIncomeChange: (f: "income_salary" | "income_other", v: number) => void;
   onValidate: (label: string, v: boolean) => void; saving: string | null;
 }) {
@@ -669,11 +674,11 @@ function DashboardTab({ month: m, months, idx, netBalance, totalExpenses, valida
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div className="kpi-strip" style={{ display: "flex", gap: 0, background: S.surface, borderRadius: 14, border: `1px solid ${S.border}`, overflow: "hidden" }}>
         {[
-          { label: "Revenus", value: income, color: S.success, icon: "€", sub: undefined, tip: "Total de tous vos revenus : salaire, rente, actions, virements, etc." },
-          { label: "Dépenses", tip: "Charges fixes + variables + enveloppes budget (hors investissements)", value: totalExpenses, color: S.danger, icon: "↓", sub: validatedBudget > 0 ? `dont ${fmt(validatedBudget)} env.` : undefined },
-          { label: "Solde net", value: netBalance, color: balColor, icon: "◎", tip: "Revenus - Dépenses - Épargne totale", sub: undefined },
-          { label: "Cumulé YTD", value: (() => { let c2 = 0; for (let i2 = 0; i2 <= idx; i2++) { const m2 = months[i2]; c2 += m2.income_salary + m2.income_other + ((m2 as unknown as Record<string,number>).income_rente ?? 0) + ((m2 as unknown as Record<string,number>).income_epargne ?? 0) + ((m2 as unknown as Record<string,number>).income_actions ?? 0) + ((m2 as unknown as Record<string,number>).income_virements ?? 0) - m2.expenses.filter((e2: Expense) => e2.category !== "investment").reduce((s2: number, e2: Expense) => s2 + e2.amount, 0) - Object.values(m2.budget_allocation as unknown as Record<string,number>).reduce((s2: number, v2: number) => s2 + v2, 0) - (m2.savings?.target_monthly ?? 140) - m2.expenses.filter((e2: Expense) => e2.category === "investment").reduce((s2: number, e2: Expense) => s2 + e2.amount, 0); } return Math.round(c2); })(), color: S.primary, icon: "↗", tip: "Somme de vos soldes mensuels depuis Janvier", sub: "Depuis janvier" },
-          { label: "Épargne", value: m.expenses.filter((e: Expense) => e.category === "investment").reduce((s: number, e: Expense) => s + e.amount, 0), color: S.accent, icon: "★", tip: "Total investissements & épargne mensuels", sub: `Cumul: ${fmt(months.slice(0, idx + 1).reduce((s: number, mo: Month) => s + mo.expenses.filter((e: Expense) => e.category === "investment").reduce((s2: number, e2: Expense) => s2 + e2.amount, 0), 0))}` },
+          { label: "Revenus", value: income, color: S.success, icon: "€", sub: undefined, tip: "Tout l'argent qui entre : salaire, rente, placements…" },
+          { label: "Dépenses", tip: "Ce que vous dépensez chaque mois (hors épargne)", value: totalExpenses, color: S.danger, icon: "↓", sub: validatedBudget > 0 ? `dont ${fmt(validatedBudget)} env.` : undefined },
+          { label: "Il vous reste", value: netBalance, color: balColor, icon: "◎", tip: "Revenus − Dépenses − Épargne = ce qui reste en fin de mois", sub: undefined },
+          { label: "Cumul depuis janv.", value: (() => { let c2 = 0; for (let i2 = 0; i2 <= idx; i2++) { const m2 = months[i2]; c2 += m2.income_salary + m2.income_other + ((m2 as unknown as Record<string,number>).income_rente ?? 0) + ((m2 as unknown as Record<string,number>).income_epargne ?? 0) + ((m2 as unknown as Record<string,number>).income_actions ?? 0) + ((m2 as unknown as Record<string,number>).income_virements ?? 0) - m2.expenses.filter((e2: Expense) => e2.category !== "investment").reduce((s2: number, e2: Expense) => s2 + e2.amount, 0) - Object.values(m2.budget_allocation as unknown as Record<string,number>).reduce((s2: number, v2: number) => s2 + v2, 0) - (m2.savings?.target_monthly ?? 140) - m2.expenses.filter((e2: Expense) => e2.category === "investment").reduce((s2: number, e2: Expense) => s2 + e2.amount, 0); } return Math.round(c2); })(), color: S.primary, icon: "↗", tip: "La somme de vos restes depuis le début de l'année", sub: "Depuis janvier" },
+          { label: "Épargne", value: m.expenses.filter((e: Expense) => e.category === "investment").reduce((s: number, e: Expense) => s + e.amount, 0), color: S.accent, icon: "★", tip: "Vos investissements mensuels (PEA, assurance vie…)", sub: `Cumul: ${fmt(months.slice(0, idx + 1).reduce((s: number, mo: Month) => s + mo.expenses.filter((e: Expense) => e.category === "investment").reduce((s2: number, e2: Expense) => s2 + e2.amount, 0), 0))}` },
         ].map((k, i, arr) => (
           <div key={k.label} title={(k as {tip?:string}).tip || ""} style={{ flex: 1, padding: "14px 14px", borderRight: i < arr.length - 1 ? `1px solid ${S.border}` : "none", textAlign: "center" }}>
             <div style={{ width: 30, height: 30, borderRadius: 8, background: `${k.color}15`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 6px", fontSize: 13, color: k.color }}>{k.icon}</div>
@@ -683,6 +688,8 @@ function DashboardTab({ month: m, months, idx, netBalance, totalExpenses, valida
           </div>
         ))}
       </div>
+
+      {!hints.welcome && <div className="hint-bubble"><span>Bienvenue ! Voici votre tableau de bord. Les icones info vous donnent des explications.</span><button className="hint-close" onClick={() => dismissHint("welcome")}>x</button></div>}
 
       <AiAnalysis month={m} months={months} idx={idx} />
 
@@ -724,7 +731,8 @@ function DashboardTab({ month: m, months, idx, netBalance, totalExpenses, valida
         </div>
       </Card>
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}><span style={{ fontFamily: S.heading, fontSize: 14, fontWeight: 700 }}>Valider ses dépenses</span><button onClick={() => setShowSwipeTutorial(true)} style={{ width: 24, height: 24, borderRadius: 6, border: `1px solid ${S.border}`, background: "transparent", color: S.muted, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>?</button></div>
+      {!hints.swipe && <div className="hint-bubble" style={{ marginBottom: 4 }}><span>Swipez pour valider vos depenses !</span><button className="hint-close" onClick={() => dismissHint("swipe")}>x</button></div>}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}><span style={{ fontFamily: S.heading, fontSize: 14, fontWeight: 700 }}>Valider ses dépenses</span><button onClick={() => setShowSwipeTutorial(true)} style={{ width: 24, height: 24, borderRadius: 6, border: `1px solid ${S.border}`, background: "transparent", color: S.muted, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>?</button></div>
       <SwipeValidator expenses={m.expenses} onValidate={onValidate} saving={saving} />
     </div>
   );
@@ -1232,7 +1240,7 @@ function ProjectionTab({ forecast: f, prevCumul = 0, goalMonthly = 0 }: { foreca
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))", gap: 16 }}>
-        {[{ l: "Revenus 12 mois", v: ti, c: S.success }, { l: "Dépenses 12 mois", v: te, c: S.danger }, { l: "Solde cumulé final", v: fc, c: fc >= 0 ? S.primary : S.danger }].map(({ l, v, c }) => (
+        {[{ l: "Revenus 12 mois", v: ti, c: S.success }, { l: "Dépenses 12 mois", v: te, c: S.danger }, { l: "Total économisé", v: fc, c: fc >= 0 ? S.primary : S.danger }].map(({ l, v, c }) => (
           <Card key={l} className="card-h"><SLabel>{l}</SLabel><p style={{ fontFamily: S.heading, fontSize: 28, fontWeight: 700, color: c, margin: 0 }}>{fmt(v)}</p></Card>
         ))}
         <Card className="card-h" style={{ borderColor: alerts.length > 0 ? `${S.danger}40` : `${S.success}30` }}><SLabel>Mois a risque</SLabel><p style={{ fontFamily: S.heading, fontSize: 28, fontWeight: 700, color: alerts.length > 0 ? S.danger : S.success, margin: 0 }}>{alerts.length} mois</p></Card>
@@ -1242,7 +1250,7 @@ function ProjectionTab({ forecast: f, prevCumul = 0, goalMonthly = 0 }: { foreca
         <div key={a.month_key} style={{ background: a.alert_type === "danger" ? `${S.danger}08` : `${S.warning}08`, border: `1px solid ${a.alert_type === "danger" ? S.danger : S.warning}40`, borderRadius: 12, padding: "12px 18px", display: "flex", alignItems: "center", gap: 12 }}>
           <AlertTriangle size={18} color={a.alert_type === "danger" ? S.danger : S.warning} />
           <span style={{ fontFamily: S.heading, fontSize: 17, color: S.accent, flexShrink: 0, fontWeight: 700 }}>{a.month_name}</span>
-          <span style={{ fontSize: 13, color: S.text, flex: 1 }}>{a.message || (a.alert_type === "danger" ? "Solde negatif" : "Solde serre")}</span>
+          <span style={{ fontSize: 13, color: S.text, flex: 1 }}>{a.message || (a.alert_type === "danger" ? "Solde négatif" : "Solde serré")}</span>
           <span style={{ fontFamily: S.heading, fontSize: 17, color: a.alert_type === "danger" ? S.danger : S.warning, fontWeight: 700, flexShrink: 0 }}>{fmt(a.balance)}</span>
         </div>
       ))}
@@ -1306,7 +1314,7 @@ function HistoriqueTab({ months, goalMonthly = 0 }: { months: Month[]; goalMonth
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 16 }}>
-        {[{ l: "Total revenus 2026", v: ti, c: S.success }, { l: "Total depenses 2026", v: te, c: S.danger }, { l: "Solde cumulé fin 2026", v: fc, c: fc >= 0 ? S.primary : S.danger }].map(({ l, v, c }) => (
+        {[{ l: "Total revenus", v: ti, c: S.success }, { l: "Total dépenses", v: te, c: S.danger }, { l: "Total économisé", v: fc, c: fc >= 0 ? S.primary : S.danger }].map(({ l, v, c }) => (
           <Card key={l} className="card-h"><SLabel>{l}</SLabel><p style={{ fontFamily: S.heading, fontSize: 26, fontWeight: 700, color: c, margin: 0 }}>{fmt(v)}</p></Card>
         ))}
       </div>
@@ -1335,7 +1343,7 @@ function HistoriqueTab({ months, goalMonthly = 0 }: { months: Month[]; goalMonth
       </Card>
 
       <Card>
-        <SLabel>Historique detaille 2026 — mois par mois avec solde cumule</SLabel>
+        <SLabel>Historique détaillé — mois par mois</SLabel>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: S.font, fontSize: 13 }}>
             <thead><tr>{["Mois","Revenus","Dépenses","Épargne","Solde","Cumulé","Valid."].map(h => <th key={h} style={{ padding: "10px 14px", textAlign: "left", color: S.muted, fontWeight: 600, fontSize: 11, borderBottom: `2px solid ${S.border}`, textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>{h}</th>)}</tr></thead>
