@@ -1310,6 +1310,30 @@ function HistoriqueTab({ months, goalMonthly = 0 }: { months: Month[]; goalMonth
           <Card key={l} className="card-h"><SLabel>{l}</SLabel><p style={{ fontFamily: S.heading, fontSize: 26, fontWeight: 700, color: c, margin: 0 }}>{fmt(v)}</p></Card>
         ))}
       </div>
+
+      {/* Evolution chart */}
+      <Card>
+        <SLabel>Evolution mensuelle</SLabel>
+        <ResponsiveContainer width="100%" height={240}>
+          <ComposedChart data={rows.map(r => ({ name: r.month_name.slice(0, 3), "Revenus": r.inc, "Dépenses": r.exp, "Solde": r.bal, "Cumulé": r.cumul }))} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
+            <CartesianGrid stroke="rgba(0,0,0,0.05)" strokeDasharray="3 3" />
+            <XAxis dataKey="name" tick={{ fill: S.muted, fontSize: 11, fontFamily: S.font }} axisLine={false} tickLine={false} />
+            <YAxis yAxisId="left" tick={{ fill: S.muted, fontSize: 10, fontFamily: S.font }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `${(v/1000).toFixed(0)}k`} />
+            <YAxis yAxisId="right" orientation="right" tick={{ fill: S.accent, fontSize: 10, fontFamily: S.font }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `${(v/1000).toFixed(0)}k`} />
+            <Tooltip content={<ChartTip />} />
+            <ReferenceLine yAxisId="right" y={0} stroke={S.muted} strokeDasharray="4 4" strokeWidth={1} />
+            <Bar yAxisId="left" dataKey="Revenus" fill={`${S.success}40`} radius={[3,3,0,0]} maxBarSize={20} />
+            <Bar yAxisId="left" dataKey="Dépenses" fill={`${S.danger}40`} radius={[3,3,0,0]} maxBarSize={20} />
+            <Line yAxisId="right" type="monotone" dataKey="Cumulé" stroke={S.accent} strokeWidth={3} dot={{ fill: S.accent, r: 3, strokeWidth: 0 }} />
+          </ComposedChart>
+        </ResponsiveContainer>
+        <div style={{ display: "flex", gap: 14, marginTop: 8, justifyContent: "center", flexWrap: "wrap" as const }}>
+          {[{ c: `${S.success}40`, l: "Revenus" }, { c: `${S.danger}40`, l: "Dépenses" }, { c: S.accent, l: "Cumulé" }].map(({ c, l }) => (
+            <div key={l} style={{ display: "flex", alignItems: "center", gap: 5 }}><div style={{ width: 10, height: 10, background: c, borderRadius: 2 }} /><span style={{ color: S.muted, fontSize: 11 }}>{l}</span></div>
+          ))}
+        </div>
+      </Card>
+
       <Card>
         <SLabel>Historique detaille 2026 — mois par mois avec solde cumule</SLabel>
         <div style={{ overflowX: "auto" }}>
