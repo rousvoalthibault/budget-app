@@ -5,13 +5,17 @@ type Ctx = { params: Promise<{ path: string[] }> };
 
 async function proxy(request: Request, ctx: Ctx): Promise<Response> {
   const { path } = await ctx.params;
-  const qs = new URL(request.url).search;
-  const url = `${process.env.CODEWORDS_RUNTIME_URI}/run/${BACKEND_ID}/${path.join("/")}${qs}`;
+  const origUrl = new URL(request.url);
   const userToken = request.headers.get("x-user-token") || "";
+  // Pass user token as query param _token (survives CodeWords runtime proxy)
+  if (userToken) {
+    origUrl.searchParams.set("_token", userToken);
+  }
+  const qs = origUrl.search;
+  const url = `${process.env.CODEWORDS_RUNTIME_URI}/run/${BACKEND_ID}/${path.join("/")}${qs}`;
   const headers: HeadersInit = {
     Authorization: `Bearer ${process.env.CODEWORDS_API_KEY}`,
     "Content-Type": "application/json",
-    ...(userToken ? { "x-user-token": userToken } : {}),
   };
   const opts: RequestInit = { method: request.method, headers };
   if (!["GET", "HEAD", "DELETE"].includes(request.method)) {
