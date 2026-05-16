@@ -1665,7 +1665,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
   const m = months[currentIdx];
   const xpPort = useExpand();
   if (!m) return null;
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({"Actions / Cryptos": true, "Assurances Vie": true, "RSU": true, "Livrets": true, "Retraite & Autres": true});
   const sav = m.savings;
   const pct = sav.cumulative_target > 0 ? Math.min(100, Math.round((sav.cumulative_actual / sav.cumulative_target) * 100)) : 0;
   const allItems = PORTFOLIO_CATEGORIES.flatMap(c => c.items);
