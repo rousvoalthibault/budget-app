@@ -601,7 +601,8 @@ export default function BudgetApp() {
                 <button onClick={async () => {
                   try {
                     const body = { salary: parseFloat(obSalary) || 0, savings_target: parseFloat(obSavings) || 0, start_year: selectedYear, fixed_expenses: obExpenses.filter(e => e.amount).map(e => ({ label: e.label, amount: parseFloat(e.amount) || 0, category: e.category })) };
-                    await fetch("/api/budget/onboarding", { method: "POST", headers: getAuthHeaders(), body: JSON.stringify(body) });
+                    const obRes = await fetch("/api/budget/onboarding", { method: "POST", headers: getAuthHeaders(), body: JSON.stringify(body) });
+                    if (!obRes.ok) { const e = await obRes.json().catch(() => ({})); showToast(e.detail || "Erreur " + obRes.status, false); return; }
                     setNeedsOnboarding(false);
                     setOnboardStep(0);
                     setTimeout(() => startTour(), 800);
