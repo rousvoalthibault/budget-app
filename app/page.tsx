@@ -366,14 +366,14 @@ export default function BudgetApp() {
     const bv = (m.budget_validated || {}) as Record<string, boolean>;
     Object.entries(ba).forEach(([k, alloc]) => {
       if (alloc > 0 && bv[k]) {
-        inAppAlerts.push({ type: "info", title: `Enveloppe ${k} validée`, detail: `${alloc.toFixed(0)} EUR` });
+        inAppAlerts.push({ type: "info", id: `env-${k}`, title: `Enveloppe ${k} validée`, detail: `${alloc.toFixed(0)} EUR` });
       }
     });
   }
   // Forecast alerts
   if (forecast?.alerts) {
     forecast.alerts.forEach((a: { month_name: string; alert_type: string; message: string }) => {
-      inAppAlerts.push({ type: a.alert_type === "danger" ? "danger" : "warning", title: a.month_name, detail: a.message });
+      inAppAlerts.push({ type: a.alert_type === "danger" ? "danger" : "warning", id: `forecast-${a.month_key}`, title: a.month_name, detail: a.message });
     });
   }
 
