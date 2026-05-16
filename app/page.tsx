@@ -203,7 +203,7 @@ export default function BudgetApp() {
       if (d.success && d.token) {
         localStorage.setItem("budget_token", d.token);
         setAuthToken(d.token);
-        if (d.needs_onboarding) setNeedsOnboarding(true); else setTimeout(() => { if (!localStorage.getItem("budget_tour_done")) setTourStep(0); }, 1000);
+        if (d.needs_onboarding) setNeedsOnboarding(true); else setTimeout(() => { if (!localStorage.getItem("budget_tour_done") && !needsOnboarding) setTourStep(0); }, 1000);
       } else {
         setAuthError(d.detail || "Erreur de connexion");
       }
@@ -514,7 +514,7 @@ export default function BudgetApp() {
       `}</style>
 
       {/* Welcome Tour */}
-      {tourStep >= 0 && (() => {
+      {tourStep >= 0 && !needsOnboarding && (() => {
         const steps = [
           { n: 1, t: "Bienvenue !", d: "Voici votre tableau de bord. Il resume votre situation financiere du mois en un coup d'oeil." },
           { n: 2, t: "Vos KPIs", d: "Les 5 indicateurs en haut montrent vos revenus, depenses, ce qu'il vous reste, le cumul depuis janvier et votre epargne." },
