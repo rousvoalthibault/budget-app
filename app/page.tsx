@@ -125,8 +125,8 @@ function EditableAmt({ value, onChange, color, size = "md" }: { value: number; o
   function commit() { const n = parseFloat(draft); if (!isNaN(n) && n >= 0) onChange(n); setEditing(false); }
   if (editing) return <input ref={ref} value={draft} onChange={e => setDraft(e.target.value)} onBlur={commit} onKeyDown={e => { if (e.key === "Enter") commit(); if (e.key === "Escape") setEditing(false); }} style={{ width: size === "lg" ? 130 : 80, background: S.surface2, border: `1.5px solid ${col}`, borderRadius: 8, padding: "2px 8px", color: S.text, fontFamily: S.heading, fontSize: fs, fontWeight: 700, outline: "none" }} />;
   return (
-    <span onClick={start} title="Cliquer pour modifier" style={{ cursor: "pointer", fontFamily: S.heading, fontSize: fs, fontWeight: 700, color: col, lineHeight: 1.1, display: "inline-flex", alignItems: "center", gap: 4 }}>
-      {fmt(value)}<Pencil size={Math.max(10, fs * 0.42)} style={{ opacity: 0.3, marginBottom: 1 }} />
+    <span onClick={start} title="Cliquer pour modifier" className="editable-amt" style={{ cursor: "pointer", fontFamily: S.heading, fontSize: fs, fontWeight: 700, color: col, lineHeight: 1.1, display: "inline-flex", alignItems: "center", gap: 4 }}>
+      {fmt(value)}<Pencil className="edit-pencil" size={Math.max(10, fs * 0.42)} style={{ marginBottom: 1 }} />
     </span>
   );
 }
@@ -482,6 +482,10 @@ export default function BudgetApp() {
         @keyframes fadeUpStagger{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
         .check-bounce{animation:bounceCheck 0.35s cubic-bezier(0.4,0,0.2,1)}
         .row-h:hover .edit-hint{opacity:0.6!important}
+        .editable-amt{position:relative;border-bottom:1.5px dashed transparent;transition:border-color 0.2s;padding-bottom:1px}
+        .editable-amt:hover{border-color:currentColor}
+        .editable-amt:hover .edit-pencil{opacity:0.5!important}
+        .editable-amt .edit-pencil{opacity:0;transition:opacity 0.2s}
         .edit-hint{opacity:0;transition:opacity 0.2s}
         .card-h:hover{border-color:rgba(255,255,255,0.15)!important;transform:translateY(-1px)}
         .card-h{transition:border-color 0.2s, transform 0.2s, box-shadow 0.2s}
