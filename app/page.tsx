@@ -172,6 +172,7 @@ export default function BudgetApp() {
   const [onboardStep, setOnboardStep] = useState(0);
   const [obSalary, setObSalary] = useState("");
   const [obSavings, setObSavings] = useState("");
+  const [obLoading, setObLoading] = useState(false);
   const [obExpenses, setObExpenses] = useState<{label:string;amount:string;category:string}[]>([]);
   const [obNewLabel, setObNewLabel] = useState("");
   const [obNewAmount, setObNewAmount] = useState("");
@@ -202,6 +203,7 @@ export default function BudgetApp() {
       const d = await r.json();
       if (d.success && d.token) {
         localStorage.setItem("budget_token", d.token);
+          fetch("/api/budget/health", { headers: getAuthHeaders() }).catch(() => {}); // warm up backend
         setAuthToken(d.token);
         if (d.needs_onboarding) setNeedsOnboarding(true); else setTimeout(() => { if (!localStorage.getItem("budget_tour_done") && !needsOnboarding) setTourStep(0); }, 1000);
       } else {
@@ -598,11 +600,12 @@ export default function BudgetApp() {
               <input type="number" value={obSavings} onChange={e => setObSavings(e.target.value)} placeholder="Ex: 500" style={{ width: "100%", padding: "12px 14px", fontSize: 18, fontFamily: S.heading, fontWeight: 700, border: `2px solid ${S.border}`, borderRadius: 10, background: S.bg, color: S.text, outline: "none" }} autoFocus />
               <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
                 <button onClick={() => setOnboardStep(1)} style={{ flex: 1, padding: "12px", fontSize: 14, border: `1px solid ${S.border}`, borderRadius: 10, background: "transparent", color: S.text, cursor: "pointer" }}>← Retour</button>
-                <button onClick={async () => {
+                <button disabled={obLoading} onClick={async () => {
+                  setObLoading(true);
                   try {
                     const body = { salary: parseFloat(obSalary) || 0, savings_target: parseFloat(obSavings) || 0, start_year: selectedYear, fixed_expenses: obExpenses.filter(e => e.amount).map(e => ({ label: e.label, amount: parseFloat(e.amount) || 0, category: e.category })) };
                     const obRes = await fetch("/api/budget/onboarding", { method: "POST", headers: getAuthHeaders(), body: JSON.stringify(body) });
-                    if (!obRes.ok) { const e = await obRes.json().catch(() => ({})); showToast(e.detail || "Erreur " + obRes.status, false); return; }
+                    if (!obRes.ok) { const e = await obRes.json().catch(() => ({})); setObLoading(false); alert(e.detail || "Erreur serveur " + obRes.status); return; }
                     setNeedsOnboarding(false);
                     setOnboardStep(0);
                     setTimeout(() => startTour(), 800);
@@ -611,8 +614,8 @@ export default function BudgetApp() {
                     setMonths(md.months || []);
                     setIdx(0);
                     showToast("Budget configure ! 🎉");
-                  } catch { showToast("Erreur lors de la configuration", false); }
-                }} style={{ flex: 2, padding: "12px", fontSize: 15, fontWeight: 700, background: S.accent, color: "#fff", border: "none", borderRadius: 10, cursor: "pointer" }}>Lancer mon budget 🚀</button>
+                  } catch (err) { setObLoading(false); alert("Erreur: " + (err instanceof Error ? err.message : String(err))); }
+                }} style={{ flex: 2, padding: "12px", fontSize: 15, fontWeight: 700, background: S.accent, color: "#fff", border: "none", borderRadius: 10, cursor: obLoading ? "wait" : "pointer", opacity: obLoading ? 0.7 : 1 }}>{obLoading ? "Configuration en cours..." : "Lancer mon budget 🚀</button>
               </div>
             </div>)}
           </div>
