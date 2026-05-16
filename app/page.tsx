@@ -143,6 +143,8 @@ export default function BudgetApp() {
   }, []);
   const [darkMode, setDarkMode] = useState(false);
   const [hints, setHints] = useState<Record<string, boolean>>({});
+  const [tourStep, setTourStep] = useState(-1);
+  const startTour = () => { if (!localStorage.getItem("budget_tour_done")) setTourStep(0); };
   useEffect(() => { try { const h = JSON.parse(localStorage.getItem("budget_hints") || "{}"); setHints(h); } catch {} }, []);
   const dismissHint = (key: string) => { setHints(prev => { const n = { ...prev, [key]: true }; localStorage.setItem("budget_hints", JSON.stringify(n)); return n; }); };
   S = darkMode ? DARK : LIGHT;
@@ -199,7 +201,7 @@ export default function BudgetApp() {
       if (d.success && d.token) {
         localStorage.setItem("budget_token", d.token);
         setAuthToken(d.token);
-        if (d.needs_onboarding) setNeedsOnboarding(true);
+        if (d.needs_onboarding) setNeedsOnboarding(true); else setTimeout(() => { if (!localStorage.getItem("budget_tour_done")) setTourStep(0); }, 1000);
       } else {
         setAuthError(d.detail || "Erreur de connexion");
       }
@@ -486,8 +488,45 @@ export default function BudgetApp() {
         .card-h:hover{box-shadow:0 4px 12px rgba(0,0,0,0.15)}
         .refresh-spin{animation:spin 0.8s linear infinite}
         .hint-bubble{position:relative;background:#f97316;color:#fff;font-size:12px;font-weight:600;padding:8px 14px;border-radius:10px;margin:8px 0;animation:fadeUpStagger 0.4s ease;display:flex;align-items:center;gap:8px;box-shadow:0 4px 16px rgba(249,115,22,0.25)}
+        .tour-overlay{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;animation:fadeUpStagger 0.3s ease}
+        .tour-card{background:#fff;border-radius:20px;max-width:380px;width:90%;padding:28px 24px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.3);position:relative}
+        .tour-step-num{width:36px;height:36px;border-radius:50%;background:#f97316;color:#fff;font-size:15px;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
+        .tour-title{font-size:17px;font-weight:800;color:#1e293b;margin-bottom:6px}
+        .tour-desc{font-size:13px;color:#64748b;line-height:1.6;margin-bottom:18px}
+        .tour-dots{display:flex;gap:6px;justify-content:center;margin-bottom:16px}
+        .tour-dot{width:8px;height:8px;border-radius:50%;background:#e2e8f0}
+        .tour-dot.active{background:#f97316;width:20px;border-radius:4px}
+        .tour-dot.done{background:#16a34a}
+        .tour-btn{padding:10px 28px;border-radius:10px;border:none;font-family:Outfit;font-size:14px;font-weight:700;cursor:pointer}
+        .tour-btn-next{background:#f97316;color:#fff}
+        .tour-btn-skip{background:none;color:#94a3b8;font-size:12px;margin-top:8px;border:none;cursor:pointer;font-family:Outfit}
         .hint-close{background:none;border:none;color:rgba(255,255,255,0.7);font-size:14px;cursor:pointer;padding:0 4px;flex-shrink:0}
       `}</style>
+
+      {/* Welcome Tour */}
+      {tourStep >= 0 && (() => {
+        const steps = [
+          { n: 1, t: "Bienvenue !", d: "Voici votre tableau de bord. Il resume votre situation financiere du mois en un coup d'oeil." },
+          { n: 2, t: "Vos KPIs", d: "Les 5 indicateurs en haut montrent vos revenus, depenses, ce qu'il vous reste, le cumul depuis janvier et votre epargne." },
+          { n: 3, t: "Validez vos depenses", d: "Chaque mois, cochez vos depenses une par une pour confirmer qu'elles sont correctes. Vous pouvez aussi swiper !" },
+          { n: 4, t: "Modifiez les montants", d: "Cliquez sur n'importe quel montant pour le modifier directement. C'est aussi simple qu'un tableur." },
+          { n: 5, t: "Explorez les onglets", d: "Depenses, Projection, Historique, Epargne, Salaires... Tout est accessible en bas de l'ecran sur mobile ou dans la sidebar sur desktop." },
+        ];
+        const s = steps[tourStep];
+        if (!s) return null;
+        return (<div className="tour-overlay" onClick={() => { if (tourStep >= steps.length - 1) { setTourStep(-1); localStorage.setItem("budget_tour_done", "1"); } else setTourStep(tourStep + 1); }}>
+          <div className="tour-card" onClick={e => e.stopPropagation()}>
+            <div className="tour-step-num">{s.n}</div>
+            <div className="tour-title">{s.t}</div>
+            <div className="tour-desc">{s.d}</div>
+            <div className="tour-dots">{steps.map((_, i) => <div key={i} className={`tour-dot${i === tourStep ? " active" : i < tourStep ? " done" : ""}`} />)}</div>
+            <button className="tour-btn tour-btn-next" onClick={() => { if (tourStep >= steps.length - 1) { setTourStep(-1); localStorage.setItem("budget_tour_done", "1"); } else setTourStep(tourStep + 1); }}>
+              {tourStep >= steps.length - 1 ? "C'est parti !" : "Suivant"}
+            </button>
+            <br /><button className="tour-btn-skip" onClick={() => { setTourStep(-1); localStorage.setItem("budget_tour_done", "1"); }}>Passer le tour</button>
+          </div>
+        </div>);
+      })()}
 
       {toast && (
         <div style={{ position: "fixed", top: 20, right: 20, zIndex: 9999, background: toast.ok ? S.surface : "#2a1010", border: `1px solid ${toast.ok ? S.accent : S.danger}`, borderRadius: 12, padding: "12px 20px 8px", fontFamily: S.font, fontSize: 14, animation: "slideInToast 0.3s ease", boxShadow: "0 8px 32px rgba(0,0,0,0.5)", minWidth: 200, overflow: "hidden" }}>
@@ -555,6 +594,7 @@ export default function BudgetApp() {
                     await fetch("/api/budget/onboarding", { method: "POST", headers: getAuthHeaders(), body: JSON.stringify(body) });
                     setNeedsOnboarding(false);
                     setOnboardStep(0);
+                    setTimeout(() => startTour(), 800);
                     const mr = await fetch(`/api/budget/months?year=${selectedYear}`, { headers: getAuthHeaders() });
                     const md = await mr.json();
                     setMonths(md.months || []);
