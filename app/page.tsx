@@ -162,6 +162,7 @@ export default function BudgetApp() {
   const [toast, setToast] = useState<{ msg: string; ok?: boolean } | null>(null);
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const [user, setUser] = useState<{email:string;name:string}|null>(null);
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
   const [authEmail, setAuthEmail] = useState("");
   const [authPw, setAuthPw] = useState("");
@@ -187,6 +188,7 @@ export default function BudgetApp() {
   // Check auth on mount
   useEffect(() => {
     const t = typeof window !== "undefined" ? localStorage.getItem("budget_token") : null;
+    try { const u = JSON.parse(localStorage.getItem("budget_user") || "null"); if (u) setUser(u); } catch {}
     setAuthToken(t);
     setAuthChecked(true);
   }, []);
@@ -204,6 +206,8 @@ export default function BudgetApp() {
       const d = await r.json();
       if (d.success && d.token) {
         localStorage.setItem("budget_token", d.token);
+          localStorage.setItem("budget_user", JSON.stringify({ email: d.email || authEmail, name: d.name || authName }));
+          setUser({ email: d.email || authEmail, name: d.name || authName });
           fetch("/api/budget/health", { headers: getAuthHeaders() }).catch(() => {}); // warm up backend
         setAuthToken(d.token);
         if (d.needs_onboarding) setNeedsOnboarding(true); else setTimeout(() => { if (!localStorage.getItem("budget_tour_done") && !needsOnboarding) setTourStep(0); }, 1000);
