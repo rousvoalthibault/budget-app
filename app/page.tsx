@@ -699,7 +699,8 @@ export default function BudgetApp() {
             onIncomeChange={(f, v) => patchIncome(m.month_key, f, v)}
             onValidate={(l, v) => patchExpense(m.month_key, l, { validated: v })} saving={saving} />
         )}
-        {tab === "depenses" && m && (
+        {tab === "depenses" && m && (<>
+          {!hints.depenses && <div className="hint-bubble" style={{ margin: "0 0 8px" }}><span>Cliquez sur un montant pour le modifier. Ajoutez des depenses avec +</span><button className="hint-close" onClick={() => dismissHint("depenses")}>x</button></div>}
           <DepensesTab month={m} months={months} monthKey={m.month_key}
             onValidate={(l, v) => patchExpense(m.month_key, l, { validated: v })}
             onAmountChange={(l, a) => patchExpense(m.month_key, l, { amount: a })}
@@ -708,17 +709,18 @@ export default function BudgetApp() {
             onAddExpense={(label, amount, category) => addExpense(m.month_key, label, amount, category)}
             onDeleteExpense={(label) => deleteExpense(m.month_key, label)}
             saving={saving} isAdding={saving === "adding"} />
-        )}
-        {tab === "projection" && forecast && <ProjectionTab forecast={forecast} goalMonthly={totalGoalMonthly} prevCumul={(() => { let c = 0; const curMk = months[idx]?.month_key || ""; for (const mo of months) { if (mo.month_key >= curMk) break; const inc = mo.income_salary + mo.income_other + ((mo as unknown as Record<string,number>).income_rente ?? 0) + ((mo as unknown as Record<string,number>).income_epargne ?? 0) + ((mo as unknown as Record<string,number>).income_actions ?? 0) + ((mo as unknown as Record<string,number>).income_virements ?? 0) + ((mo as unknown as Record<string,number>).income_solde_ajuste ?? 0); const exp = mo.expenses.filter(e => e.category !== "investment").reduce((s, e) => s + e.amount, 0) + Object.values(mo.budget_allocation as unknown as Record<string, number>).reduce((s, v) => s + v, 0); c += inc - exp; } return c; })()} />}
-        {tab === "historique" && months.length > 0 && <HistoriqueTab months={months} goalMonthly={totalGoalMonthly} />}
-        {tab === "salaires" && <SalairesTab showToast={showToast} />}
-        {tab === "economies" && months.length > 0 && (
+        </>)}
+        {tab === "projection" && forecast && <>{!hints.projection && <div className="hint-bubble" style={{ margin: "0 24px 8px" }}><span>La projection montre vos 12 prochains mois. Les mois en rouge ont un solde negatif prevu.</span><button className="hint-close" onClick={() => dismissHint("projection")}>x</button></div>}<ProjectionTab forecast={forecast} goalMonthly={totalGoalMonthly} prevCumul={(() => { let c = 0; const curMk = months[idx]?.month_key || ""; for (const mo of months) { if (mo.month_key >= curMk) break; const inc = mo.income_salary + mo.income_other + ((mo as unknown as Record<string,number>).income_rente ?? 0) + ((mo as unknown as Record<string,number>).income_epargne ?? 0) + ((mo as unknown as Record<string,number>).income_actions ?? 0) + ((mo as unknown as Record<string,number>).income_virements ?? 0) + ((mo as unknown as Record<string,number>).income_solde_ajuste ?? 0); const exp = mo.expenses.filter(e => e.category !== "investment").reduce((s, e) => s + e.amount, 0) + Object.values(mo.budget_allocation as unknown as Record<string, number>).reduce((s, v) => s + v, 0); c += inc - exp; } return c; })()} /></>}
+        {tab === "historique" && months.length > 0 && <>{!hints.historique && <div className="hint-bubble" style={{ margin: "0 24px 8px" }}><span>Visualisez votre historique mois par mois. Le graphe montre vos revenus, depenses et cumul.</span><button className="hint-close" onClick={() => dismissHint("historique")}>x</button></div>}<HistoriqueTab months={months} goalMonthly={totalGoalMonthly} /></>}
+        {tab === "salaires" && <>{!hints.salaires && <div className="hint-bubble" style={{ margin: "0 24px 8px" }}><span>Suivez votre evolution salariale et simulez votre impot sur le revenu en bas de page.</span><button className="hint-close" onClick={() => dismissHint("salaires")}>x</button></div>}<SalairesTab showToast={showToast} /></>}
+        {tab === "economies" && months.length > 0 && (<>
+          {!hints.economies && <div className="hint-bubble" style={{ margin: "0 0 8px" }}><span>Gerez vos investissements et suivez votre portefeuille.</span><button className="hint-close" onClick={() => dismissHint("economies")}>x</button></div>}
           <EconomiesTab months={months} currentIdx={idx} isMobile={isMobile}
             onSavingsChange={(mk, u) => patchSavings(mk, u)}
             onPortfolioValuesChange={(mk, u) => patchPortfolioValues(mk, u)}
             onValidateExpense={(label, v) => patchExpense(months[idx].month_key, label, { validated: v })}
             onAddInvestment={(label, amount) => addExpense(months[idx].month_key, label, amount, "investment")} />
-        )}
+        </>)}
       </main>
       {/* Mobile bottom tab bar */}
       <nav className="mobile-tabbar">
