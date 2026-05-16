@@ -615,7 +615,7 @@ export default function BudgetApp() {
                     setIdx(0);
                     showToast("Budget configure ! 🎉");
                   } catch (err) { setObLoading(false); alert("Erreur: " + (err instanceof Error ? err.message : String(err))); }
-                }} style={{ flex: 2, padding: "12px", fontSize: 15, fontWeight: 700, background: S.accent, color: "#fff", border: "none", borderRadius: 10, cursor: obLoading ? "wait" : "pointer", opacity: obLoading ? 0.7 : 1 }}>{obLoading ? "Configuration en cours..." : "Lancer mon budget 🚀</button>
+                }} style={{ flex: 2, padding: "12px", fontSize: 15, fontWeight: 700, background: S.accent, color: "#fff", border: "none", borderRadius: 10, cursor: obLoading ? "wait" : "pointer", opacity: obLoading ? 0.7 : 1 }}>{obLoading ? "Configuration en cours..." : "Lancer mon budget 🚀"}</button>
               </div>
             </div>)}
           </div>
