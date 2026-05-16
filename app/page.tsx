@@ -179,6 +179,8 @@ export default function BudgetApp() {
   const [obNewAmount, setObNewAmount] = useState("");
   const [showAlerts, setShowAlerts] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [dismissedAlerts, setDismissedAlerts] = useState<string[]>(() => { try { return JSON.parse(localStorage.getItem("budget_dismissed_alerts") || "[]"); } catch { return []; } });
   const dismissAlert = (id: string) => { setDismissedAlerts(prev => { const n = [...prev, id]; localStorage.setItem("budget_dismissed_alerts", JSON.stringify(n)); return n; }); };
   const [savingsGoals, setSavingsGoals] = useState<{id:string;name:string;target:number;current:number;target_date:string;color:string;validated_months:string[]}[]>([]);
@@ -520,6 +522,56 @@ export default function BudgetApp() {
         .hint-close{background:none;border:none;color:rgba(255,255,255,0.7);font-size:14px;cursor:pointer;padding:0 4px;flex-shrink:0}
       `}</style>
 
+      {/* Profile Modal */}
+      {showProfile && <div onClick={() => setShowProfile(false)} style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+        <div onClick={e => e.stopPropagation()} style={{ background: S.surface, borderRadius: 20, width: "100%", maxWidth: 440, maxHeight: "80vh", overflow: "auto", padding: 24, fontFamily: S.font }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}><h2 style={{ fontSize: 18, fontWeight: 800, color: S.text }}>Mon profil</h2><button onClick={() => setShowProfile(false)} style={{ background: "none", border: "none", fontSize: 18, color: S.muted, cursor: "pointer" }}>x</button></div>
+          <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
+            <div style={{ width: 56, height: 56, borderRadius: "50%", background: `linear-gradient(135deg, ${S.accent}, ${S.warning})`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 22, fontWeight: 800, flexShrink: 0 }}>{(user?.name || user?.email || "U")[0].toUpperCase()}</div>
+            <div><div style={{ fontSize: 16, fontWeight: 700, color: S.text }}>{user?.name || "Utilisateur"}</div><div style={{ fontSize: 12, color: S.muted, marginTop: 2 }}>{user?.email}</div></div>
+          </div>
+          {[{l:"Nom complet",v:user?.name||"Non renseigne"},{l:"Email",v:user?.email||""},{l:"Mot de passe",v:"*********"},{l:"Membre depuis",v:"Mai 2026"},{l:"Devise",v:"EUR"}].map(f => (
+            <div key={f.l} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: `1px solid ${S.border}` }}>
+              <span style={{ fontSize: 12, color: S.muted }}>{f.l}</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: S.text }}>{f.v}</span>
+            </div>
+          ))}
+        </div>
+      </div>}
+
+      {/* Settings Modal */}
+      {showSettings && <div onClick={() => setShowSettings(false)} style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+        <div onClick={e => e.stopPropagation()} style={{ background: S.surface, borderRadius: 20, width: "100%", maxWidth: 440, maxHeight: "80vh", overflow: "auto", padding: 24, fontFamily: S.font }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}><h2 style={{ fontSize: 18, fontWeight: 800, color: S.text }}>Parametres</h2><button onClick={() => setShowSettings(false)} style={{ background: "none", border: "none", fontSize: 18, color: S.muted, cursor: "pointer" }}>x</button></div>
+          <div style={{ fontSize: 10, fontWeight: 700, color: S.muted, textTransform: "uppercase" as const, letterSpacing: 1.5, marginBottom: 8 }}>Affichage</div>
+          <div style={{ background: S.bg, borderRadius: 12, marginBottom: 16, border: `1px solid ${S.border}` }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", borderBottom: `1px solid ${S.border}` }}><span style={{ fontSize: 13, fontWeight: 600, color: S.text }}>Mode sombre</span><button onClick={() => { setDarkMode(!darkMode); }} style={{ width: 40, height: 22, borderRadius: 11, background: darkMode ? S.accent : S.border, border: "none", cursor: "pointer", position: "relative" }}><div style={{ width: 18, height: 18, borderRadius: "50%", background: "#fff", position: "absolute", top: 2, left: darkMode ? 20 : 2, transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.15)" }} /></button></div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px" }}><span style={{ fontSize: 13, fontWeight: 600, color: S.text }}>Langue</span><span style={{ fontSize: 12, color: S.muted }}>Francais</span></div>
+          </div>
+          <div style={{ fontSize: 10, fontWeight: 700, color: S.muted, textTransform: "uppercase" as const, letterSpacing: 1.5, marginBottom: 8 }}>Budget</div>
+          <div style={{ background: S.bg, borderRadius: 12, marginBottom: 16, border: `1px solid ${S.border}` }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", borderBottom: `1px solid ${S.border}` }}><span style={{ fontSize: 13, fontWeight: 600, color: S.text }}>Notifications</span><button style={{ width: 40, height: 22, borderRadius: 11, background: S.accent, border: "none", cursor: "pointer", position: "relative" }}><div style={{ width: 18, height: 18, borderRadius: "50%", background: "#fff", position: "absolute", top: 2, left: 20, boxShadow: "0 1px 3px rgba(0,0,0,0.15)" }} /></button></div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", borderBottom: `1px solid ${S.border}`, cursor: "pointer" }}><span style={{ fontSize: 13, fontWeight: 600, color: S.text }}>Exporter mes donnees</span><span style={{ color: S.muted }}>CSV</span></div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", cursor: "pointer" }}><span style={{ fontSize: 13, fontWeight: 600, color: S.text }}>Enveloppes par defaut</span><span style={{ color: S.muted }}>6</span></div>
+          </div>
+          <div style={{ fontSize: 10, fontWeight: 700, color: S.muted, textTransform: "uppercase" as const, letterSpacing: 1.5, marginBottom: 8 }}>Aide</div>
+          <div style={{ background: S.bg, borderRadius: 12, marginBottom: 16, border: `1px solid ${S.border}` }}>
+            <div onClick={() => { localStorage.removeItem("budget_tour_done"); localStorage.removeItem("budget_hints"); setHints({}); setTourStep(0); setShowSettings(false); }} style={{ padding: "12px 14px", borderBottom: `1px solid ${S.border}`, cursor: "pointer" }}><span style={{ fontSize: 13, fontWeight: 600, color: S.text }}>Revoir le tutoriel</span></div>
+            <div style={{ padding: "12px 14px", cursor: "pointer" }}><span style={{ fontSize: 13, fontWeight: 600, color: S.text }}>Signaler un probleme</span></div>
+          </div>
+          <div style={{ background: S.bg, borderRadius: 12, border: `1px solid ${S.danger}30` }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", borderBottom: `1px solid ${S.danger}15` }}>
+              <div><div style={{ fontSize: 13, fontWeight: 600, color: S.danger }}>Reinitialiser</div><div style={{ fontSize: 10, color: S.muted }}>Supprimer toutes les donnees</div></div>
+              <button onClick={async () => { if (confirm("Supprimer TOUTES vos donnees ?")) { await fetch("/api/budget/user-data", { method: "DELETE", headers: getAuthHeaders() }); showToast("Donnees supprimees"); loadData(); setShowSettings(false); }}} style={{ fontSize: 11, fontWeight: 700, color: S.danger, background: `${S.danger}08`, border: `1px solid ${S.danger}30`, padding: "6px 14px", borderRadius: 8, cursor: "pointer", fontFamily: S.font }}>Reinitialiser</button>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px" }}>
+              <div><div style={{ fontSize: 13, fontWeight: 600, color: S.danger }}>Supprimer le compte</div><div style={{ fontSize: 10, color: S.muted }}>Irreversible</div></div>
+              <button onClick={() => { if (confirm("Supprimer votre compte ? Cette action est irreversible.")) { logout(); }}} style={{ fontSize: 11, fontWeight: 700, color: S.danger, background: `${S.danger}08`, border: `1px solid ${S.danger}30`, padding: "6px 14px", borderRadius: 8, cursor: "pointer", fontFamily: S.font }}>Supprimer</button>
+            </div>
+          </div>
+        </div>
+      </div>}
+
       {/* Welcome Tour */}
       {tourStep >= 0 && !needsOnboarding && (() => {
         const steps = [
@@ -647,8 +699,8 @@ export default function BudgetApp() {
               <div style={{ fontSize: 13, fontWeight: 700, color: S.text }}>{user?.name || "Utilisateur"}</div>
               <div style={{ fontSize: 11, color: S.muted, marginTop: 2 }}>{user?.email}</div>
             </div>
-            <button onClick={() => setShowProfileMenu(false)} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "10px 14px", background: "none", border: "none", color: S.text, fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: S.font, textAlign: "left" as const }}>Voir profil</button>
-            <button onClick={() => setShowProfileMenu(false)} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "10px 14px", background: "none", border: "none", color: S.text, fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: S.font, textAlign: "left" as const }}>Parametres</button>
+            <button onClick={() => { setShowProfile(true); setShowProfileMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "10px 14px", background: "none", border: "none", color: S.text, fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: S.font, textAlign: "left" as const }}>Voir profil</button>
+            <button onClick={() => { setShowSettings(true); setShowProfileMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "10px 14px", background: "none", border: "none", color: S.text, fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: S.font, textAlign: "left" as const }}>Parametres</button>
             <div style={{ borderTop: `1px solid ${S.border}` }}>
               <button onClick={async () => { if (confirm("Supprimer TOUTES vos donnees ? Cette action est irreversible.")) { await fetch("/api/budget/user-data", { method: "DELETE", headers: getAuthHeaders() }); showToast("Donnees supprimees"); loadData(); } setShowProfileMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "10px 14px", background: "none", border: "none", color: S.danger, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: S.font, textAlign: "left" as const }}>Tout supprimer</button>
               <button onClick={() => { logout(); setShowProfileMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "10px 14px", background: "none", border: "none", color: S.muted, fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: S.font, textAlign: "left" as const }}>Se deconnecter</button>
