@@ -523,6 +523,7 @@ export default function BudgetApp() {
         .card-h:hover{box-shadow:0 4px 12px rgba(0,0,0,0.15)}
         .refresh-spin{animation:spin 0.8s linear infinite}
         .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+        @media(max-width:768px){table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}}
         @media(max-width:768px){.table-scroll{margin:0 -10px;padding:0 10px}}
         .hint-bubble{position:relative;background:#f97316;color:#fff;font-size:12px;font-weight:600;padding:8px 14px;border-radius:10px;margin:8px 0;animation:fadeUpStagger 0.4s ease;display:flex;align-items:center;gap:8px;box-shadow:0 4px 16px rgba(249,115,22,0.25)}
         .tour-overlay{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;animation:fadeUpStagger 0.3s ease}
@@ -1445,7 +1446,7 @@ function ProjectionTab({ forecast: f, prevCumul = 0, goalMonthly = 0 }: { foreca
       <Card>
         <SLabel>Detail 12 mois avec solde cumule</SLabel>
         <div style={{ overflowX: "auto" }}>
-          <div className="table-scroll"><table style={{ width: "100%", borderCollapse: "collapse", minWidth: 600, fontFamily: S.font, fontSize: 13 }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: S.font, fontSize: 13 }}>
             <thead><tr>{["Mois","Revenus","Dépenses","Épargne","Solde","Cumulé","Statut"].map(h => <th key={h} style={{ padding: "8px 14px", textAlign: "left", color: S.muted, fontWeight: 600, fontSize: 11, borderBottom: `2px solid ${S.border}` }}>{h}</th>)}</tr></thead>
             <tbody>{(() => { let rc = prevCumul; return rolling.map(mo => { rc += mo.balance; const ac = mo.alert_type === "danger" ? S.danger : mo.alert_type === "warning" ? S.warning : S.success; const ip = (mo as EM).is_projected; return (
               <tr key={mo.month_key} className="row-h" style={{ borderBottom: `1px solid ${S.border}`, opacity: ip ? 0.7 : 1 }}>
@@ -1507,7 +1508,7 @@ function HistoriqueTab({ months, goalMonthly = 0 }: { months: Month[]; goalMonth
       <Card>
         <SLabel>Historique détaillé — mois par mois</SLabel>
         <div style={{ overflowX: "auto" }}>
-          <div className="table-scroll"><table style={{ width: "100%", borderCollapse: "collapse", minWidth: 600, fontFamily: S.font, fontSize: 13 }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: S.font, fontSize: 13 }}>
             <thead><tr>{["Mois","Revenus","Dépenses","Épargne","Solde","Cumulé","Valid."].map(h => <th key={h} style={{ padding: "10px 14px", textAlign: "left", color: S.muted, fontWeight: 600, fontSize: 11, borderBottom: `2px solid ${S.border}`, textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>{h}</th>)}</tr></thead>
             <tbody>{rows.map(r => {
               const bc = r.bal >= 0 ? S.success : S.danger; const cc = r.cumul >= 0 ? S.success : S.danger; const pv = r.tc > 0 ? Math.round((r.vc/r.tc)*100) : 0;
@@ -1558,7 +1559,7 @@ function SalairesTab({ showToast: toast }: { showToast: (msg: string) => void })
       <Card>
         <SLabel>Historique des salaires bruts</SLabel>
         <div style={{ overflowX: "auto" }}>
-          <div className="table-scroll"><table style={{ width: "100%", borderCollapse: "collapse", minWidth: 600, fontFamily: S.font, fontSize: 13, minWidth: 800 }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: S.font, fontSize: 13, minWidth: 800 }}>
             <thead><tr>
               <th style={{ padding: "10px 14px", textAlign: "left", color: S.muted, fontWeight: 700, fontSize: 11, borderBottom: `2px solid ${S.border}`, position: "sticky", left: 0, background: S.surface, zIndex: 2 }}>MOIS</th>
               {data.years.map(y => (<th key={y} style={{ padding: "10px 12px", textAlign: "right", color: y === 2026 ? S.accent : S.muted, fontWeight: 700, fontSize: 12, borderBottom: `2px solid ${S.border}` }}>{y}</th>))}
@@ -1914,7 +1915,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
       <Card>
         <SLabel>Historique mensuel des plus/moins-values par categorie</SLabel>
         <div style={{ overflowX: "auto" }}>
-          <div className="table-scroll"><table style={{ width: "100%", borderCollapse: "collapse", minWidth: 600, fontFamily: S.font, fontSize: 13 }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: S.font, fontSize: 13 }}>
             <thead><tr>
               <th style={{ padding: "8px 14px", textAlign: "left", color: S.muted, fontWeight: 600, fontSize: 11, borderBottom: `1px solid ${S.border}` }}>Mois</th>
               {PORTFOLIO_CATEGORIES.map(c => <th key={c.label} style={{ padding: "8px 10px", textAlign: "right", color: c.color, fontWeight: 600, fontSize: 10, borderBottom: `1px solid ${S.border}` }}>{c.label}</th>)}
