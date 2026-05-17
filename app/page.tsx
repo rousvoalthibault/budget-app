@@ -179,6 +179,9 @@ export default function BudgetApp() {
   const [obNewAmount, setObNewAmount] = useState("");
   const [showAlerts, setShowAlerts] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [spaces, setSpaces] = useState<{id:string;name:string;owner_uid:string;members:{uid:string;role:string;email:string}[]}[]>([]);
+  const [activeSpace, setActiveSpace] = useState<string>(""); // "" = personal budget
+  const [showSpaceMenu, setShowSpaceMenu] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [dismissedAlerts, setDismissedAlerts] = useState<string[]>(() => { try { return JSON.parse(localStorage.getItem("budget_dismissed_alerts") || "[]"); } catch { return []; } });
@@ -234,12 +237,13 @@ export default function BudgetApp() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [mr, fr] = await Promise.all([fetch(`/api/budget/months?year=${yearRef.current}`, { headers: getAuthHeaders() }), fetch("/api/budget/forecast", { headers: getAuthHeaders() })]);
+      const [mr, fr] = await Promise.all([fetch(`/api/budget/months?year=${yearRef.current}${activeSpace ? `&space=${activeSpace}` : ""}`, { headers: getAuthHeaders() }), fetch("/api/budget/forecast", { headers: getAuthHeaders() })]);
       const md = await mr.json(); const fd = await fr.json();
       const mths: Month[] = md.months || [];
       setMonths(mths); setForecast(fd);
       setIdx(i => Math.min(i, mths.length - 1));
       fetch("/api/budget/savings-goals", { headers: getAuthHeaders() }).then(r => r.json()).then(d => setSavingsGoals(d.goals || [])).catch(() => {});
+      fetch("/api/budget/spaces", { headers: getAuthHeaders() }).then(r => r.json()).then(d => setSpaces(d.spaces || [])).catch(() => {});
     } catch { showToast("Erreur de chargement", false); }
     finally { setLoading(false); }
   }, []);
@@ -256,7 +260,7 @@ export default function BudgetApp() {
     const init = async () => {
       setLoading(true);
       try {
-        const [mr, fr] = await Promise.all([fetch(`/api/budget/months?year=${yearRef.current}`, { headers: getAuthHeaders() }), fetch("/api/budget/forecast", { headers: getAuthHeaders() })]);
+        const [mr, fr] = await Promise.all([fetch(`/api/budget/months?year=${yearRef.current}${activeSpace ? `&space=${activeSpace}` : ""}`, { headers: getAuthHeaders() }), fetch("/api/budget/forecast", { headers: getAuthHeaders() })]);
         const md = await mr.json(); const fd = await fr.json();
         const mths: Month[] = md.months || [];
         setMonths(mths); setForecast(fd);
@@ -586,7 +590,11 @@ export default function BudgetApp() {
           <div style={{ background: S.bg, borderRadius: 12, marginBottom: 16, border: `1px solid ${S.border}` }}>
             <div onClick={() => { localStorage.removeItem("budget_tour_done"); localStorage.removeItem("budget_hints"); setHints({}); setTourStep(0); setShowSettings(false); }} style={{ padding: "12px 14px", borderBottom: `1px solid ${S.border}`, cursor: "pointer" }}><span style={{ fontSize: 13, fontWeight: 600, color: S.text }}>Revoir le tutoriel</span></div>
             <div style={{ padding: "12px 14px", cursor: "pointer" }}><span style={{ fontSize: 13, fontWeight: 600, color: S.text }}>Signaler un problème</span></div>
+
           </div>
+          <div style={{ fontSize: 10, fontWeight: 700, color: S.muted, textTransform: "uppercase" as const, letterSpacing: 1.5, marginBottom: 8 }}>Budget partagé</div>
+          <div style={{ background: S.bg, borderRadius: 12, marginBottom: 16, border: `1px solid ${S.border}` }}>
+            {spaces.length === 0 ? <div style={{ padding: "12px 14px" }}><button onClick={async () => { const name = prompt("Nom du budget partagé :", "Budget couple"); if (!name) return; const r = await fetch("/api/budget/spaces", { method: "POST", headers: getAuthHeaders(), body: JSON.stringify({ name }) }); const d = await r.json(); if (d.success) { setSpaces(prev => [...prev, d.space]); showToast("Budget partagé créé !"); } }} style={{ fontSize: 13, fontWeight: 600, color: S.accent, background: "none", border: "none", cursor: "pointer", fontFamily: S.font }}>+ Créer un budget partagé</button></div> : spaces.map(s => <div key={s.id} style={{ padding: "12px 14px", borderBottom: `1px solid ${S.border}` }}><div style={{ fontSize: 13, fontWeight: 700, color: S.text, marginBottom: 6 }}>{s.name}</div>{s.members.map(mem => <div key={mem.uid} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}><div style={{ width: 20, height: 20, borderRadius: "50%", background: mem.role === "owner" ? S.accent : S.primary, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 9, fontWeight: 700 }}>{(mem.email || "?")[0].toUpperCase()}</div><span style={{ fontSize: 11, color: S.text }}>{mem.email || "Vous"}</span><span style={{ fontSize: 9, color: S.muted, marginLeft: "auto" }}>{mem.role === "owner" ? "Propriétaire" : "Éditeur"}</span></div>)}<button onClick={async () => { const email = prompt("Email du partenaire :"); if (!email) return; const r = await fetch(`/api/budget/spaces/${s.id}/invite`, { method: "POST", headers: getAuthHeaders(), body: JSON.stringify({ email, role: "editor" }) }); const d = await r.json(); if (r.ok) { setSpaces(prev => prev.map(sp => sp.id === s.id ? d.space : sp)); showToast("Invitation envoyée !"); } else { alert(d.detail || "Erreur"); } }} style={{ fontSize: 11, fontWeight: 600, color: S.accent, background: "none", border: "none", cursor: "pointer", fontFamily: S.font, marginTop: 6 }}>+ Inviter un membre</button></div>)}          </div>
           <div style={{ background: S.bg, borderRadius: 12, border: `1px solid ${S.danger}30` }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", borderBottom: `1px solid ${S.danger}15` }}>
               <div><div style={{ fontSize: 13, fontWeight: 600, color: S.danger }}>Réinitialiser</div><div style={{ fontSize: 10, color: S.muted }}>Supprimer toutes les donnees</div></div>
@@ -694,7 +702,7 @@ export default function BudgetApp() {
                     setNeedsOnboarding(false);
                     setOnboardStep(0);
                     setTimeout(() => startTour(), 800);
-                    const mr = await fetch(`/api/budget/months?year=${selectedYear}`, { headers: getAuthHeaders() });
+                    const mr = await fetch(`/api/budget/months?year=${selectedYear}${activeSpace ? `&space=${activeSpace}` : ""}`, { headers: getAuthHeaders() });
                     const md = await mr.json();
                     setMonths(md.months || []);
                     setIdx(0);
@@ -744,18 +752,19 @@ export default function BudgetApp() {
         </div>}
         {/* Month navigation - center */}
         {m && <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: isMobile ? "flex-start" : "center", gap: isMobile ? 6 : 10 }}>
-          <button onClick={() => { if (idx === 0 && selectedYear > 2026) { const ny = selectedYear - 1; setSelectedYear(ny); setIdx(11); fetch(`/api/budget/months?year=${ny}`, { headers: getAuthHeaders() }).then(r => r.json()).then(md => setMonths(md.months || [])); } else { setIdx(i => Math.max(0, i - 1)); } }} disabled={idx === 0 && selectedYear <= 2026} style={{ width: isMobile ? 24 : 28, height: isMobile ? 24 : 28, borderRadius: 6, border: `1px solid ${S.border}`, background: S.bg, color: S.muted, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><ArrowLeft size={13} /></button>
+          <button onClick={() => { if (idx === 0 && selectedYear > 2026) { const ny = selectedYear - 1; setSelectedYear(ny); setIdx(11); fetch(`/api/budget/months?year=${ny}${activeSpace ? `&space=${activeSpace}` : ""}`, { headers: getAuthHeaders() }).then(r => r.json()).then(md => setMonths(md.months || [])); } else { setIdx(i => Math.max(0, i - 1)); } }} disabled={idx === 0 && selectedYear <= 2026} style={{ width: isMobile ? 24 : 28, height: isMobile ? 24 : 28, borderRadius: 6, border: `1px solid ${S.border}`, background: S.bg, color: S.muted, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><ArrowLeft size={13} /></button>
           <select
             value={`${selectedYear}-${String(idx + 1).padStart(2, "0")}`}
-            onChange={(e) => { const [y, mo] = e.target.value.split("-").map(Number); setSelectedYear(y); setIdx(mo - 1); fetch(`/api/budget/months?year=${y}`, { headers: getAuthHeaders() }).then(r => r.json()).then(md => setMonths(md.months || [])); }}
+            onChange={(e) => { const [y, mo] = e.target.value.split("-").map(Number); setSelectedYear(y); setIdx(mo - 1); fetch(`/api/budget/months?year=${y}${activeSpace ? `&space=${activeSpace}` : ""}`, { headers: getAuthHeaders() }).then(r => r.json()).then(md => setMonths(md.months || [])); }}
             style={{ fontFamily: S.heading, fontSize: 14, fontWeight: 700, color: S.primary, background: `${S.accent}08`, border: `1px solid ${S.accent}30`, borderRadius: 8, padding: isMobile ? "5px 20px 5px 10px" : "7px 28px 7px 12px", cursor: "pointer", appearance: "none" as const, WebkitAppearance: "none" as const, textAlign: "center", outline: "none" }}>
             {YEARS.map(y => { const MN = ["Janvier","Fevrier","Mars","Avril","Mai","Juin","Juillet","Aout","Septembre","Octobre","Novembre","Decembre"]; return MN.map((mn, mi) => (<option key={`${y}-${mi}`} value={`${y}-${String(mi+1).padStart(2,"0")}`}>{mn} {y}</option>)); })}
           </select>
-          <button onClick={() => { if (idx === months.length - 1 && selectedYear < 2036) { const ny = selectedYear + 1; setSelectedYear(ny); setIdx(0); fetch(`/api/budget/months?year=${ny}`, { headers: getAuthHeaders() }).then(r => r.json()).then(md => setMonths(md.months || [])); } else { setIdx(i => Math.min(months.length - 1, i + 1)); } }} disabled={idx === months.length - 1 && selectedYear >= 2036} style={{ width: isMobile ? 24 : 28, height: isMobile ? 24 : 28, borderRadius: 6, border: `1px solid ${S.border}`, background: S.bg, color: S.muted, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><ArrowRight size={13} /></button>
+          <button onClick={() => { if (idx === months.length - 1 && selectedYear < 2036) { const ny = selectedYear + 1; setSelectedYear(ny); setIdx(0); fetch(`/api/budget/months?year=${ny}${activeSpace ? `&space=${activeSpace}` : ""}`, { headers: getAuthHeaders() }).then(r => r.json()).then(md => setMonths(md.months || [])); } else { setIdx(i => Math.min(months.length - 1, i + 1)); } }} disabled={idx === months.length - 1 && selectedYear >= 2036} style={{ width: isMobile ? 24 : 28, height: isMobile ? 24 : 28, borderRadius: 6, border: `1px solid ${S.border}`, background: S.bg, color: S.muted, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><ArrowRight size={13} /></button>
           {!isMobile && <span style={{ fontSize: 10, color: S.muted, fontWeight: 600 }}>{validatedCnt}/{totalItems} valides</span>}
         </div>}
         {/* Tools */}
         <div className="header-tools" style={{ display: "flex", alignItems: "center", gap: 5, padding: "0 14px", borderLeft: `1px solid ${S.border}` }}>
+          {spaces.length > 0 && <div style={{ position: "relative" }}><button onClick={() => setShowSpaceMenu(!showSpaceMenu)} style={{ padding: "4px 10px", borderRadius: 8, border: `1px solid ${activeSpace ? S.accent + "40" : S.border}`, background: activeSpace ? `${S.accent}10` : "transparent", color: activeSpace ? S.accent : S.muted, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: S.font, whiteSpace: "nowrap" as const }}>{activeSpace ? spaces.find(s => s.id === activeSpace)?.name || "Commun" : "Perso"}</button>{showSpaceMenu && <div onClick={e => e.stopPropagation()} style={{ position: "absolute", top: 32, right: 0, background: S.surface, border: `1px solid ${S.border}`, borderRadius: 10, boxShadow: "0 8px 24px rgba(0,0,0,0.15)", width: 180, zIndex: 100, overflow: "hidden", fontFamily: S.font }}><button onClick={() => { setActiveSpace(""); setShowSpaceMenu(false); loadData(); }} style={{ display: "block", width: "100%", padding: "10px 14px", background: !activeSpace ? `${S.accent}08` : "none", border: "none", color: S.text, fontSize: 12, fontWeight: !activeSpace ? 700 : 500, cursor: "pointer", fontFamily: S.font, textAlign: "left" as const }}>Mon budget</button>{spaces.map(s => <button key={s.id} onClick={() => { setActiveSpace(s.id); setShowSpaceMenu(false); loadData(); }} style={{ display: "block", width: "100%", padding: "10px 14px", background: activeSpace === s.id ? `${S.accent}08` : "none", border: "none", borderTop: `1px solid ${S.border}`, color: S.text, fontSize: 12, fontWeight: activeSpace === s.id ? 700 : 500, cursor: "pointer", fontFamily: S.font, textAlign: "left" as const }}>{s.name}</button>)}</div>}</div>}
           {isMobile && <button onClick={() => setShowProfileMenu(!showProfileMenu)} style={{ width: 26, height: 26, borderRadius: "50%", background: S.accent, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 11, fontWeight: 800, border: "none", cursor: "pointer", flexShrink: 0 }}>{(user?.name || user?.email || "U")[0].toUpperCase()}</button>}
           {showProfileMenu && isMobile && <div onClick={e => e.stopPropagation()} style={{ position: "fixed", top: 48, right: 10, left: 10, background: S.surface, border: `1px solid ${S.border}`, borderRadius: 14, boxShadow: "0 12px 40px rgba(0,0,0,0.15)", zIndex: 100, fontFamily: S.font, overflow: "hidden" }}>
             <div style={{ padding: "14px 16px", borderBottom: `1px solid ${S.border}`, display: "flex", alignItems: "center", gap: 12 }}>
