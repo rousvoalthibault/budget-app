@@ -389,7 +389,7 @@ export default function BudgetApp() {
     const bv = (m.budget_validated || {}) as Record<string, boolean>;
     Object.entries(ba).forEach(([k, alloc]) => {
       if (alloc > 0 && bv[k]) {
-        inAppAlerts.push({ type: "info", id: `env-${k}`, title: `Enveloppe ${k} validée`, detail: `${alloc.toFixed(0)} EUR` });
+        inAppAlerts.push({ type: "info", id: `env-${k}`, title: `Reste à vivre ${k} validée`, detail: `${alloc.toFixed(0)} EUR` });
       }
     });
   }
@@ -1318,7 +1318,7 @@ function DepensesTab({ month: m, months, monthKey, onValidate, onAmountChange, o
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
           <SLabel>{title}</SLabel>
           <div style={{ display: "flex", gap: 4 }}>
-          <button onClick={() => { const mi = months.findIndex(mo => mo.month_key === monthKey); if (mi <= 0) { alert("Pas de mois precedent"); return; } const prev = months[mi-1]; const prevItems = prev.expenses.filter(e => e.category === catKey); if (prevItems.length === 0) { alert("Aucune depense " + catKey + " le mois precedent"); return; } if (!confirm(`Copier ${prevItems.length} depenses de ${prev.month_name} ?`)) return; prevItems.forEach(e => { if (!items.some(ex => ex.label === e.label)) { onAddExpense(e.label, e.amount, catKey); } }); }} style={{ background: `${color}10`, color, border: `1px solid ${color}25`, borderRadius: 8, fontSize: 9, fontWeight: 600, padding: "0 8px", height: 28, display: "flex", alignItems: "center", cursor: "pointer", fontFamily: S.font, whiteSpace: "nowrap" as const }} title="Copier du mois precedent">Copier M-1</button>
+          <button onClick={() => { const mi = months.findIndex(mo => mo.month_key === monthKey); let prev = mi > 0 ? months[mi-1] : null; if (!prev) { alert("Utilisez Copier M-1 a partir de Fevrier. Pour Janvier, importez via CSV."); return; }; const prevItems = prev.expenses.filter(e => e.category === catKey); if (prevItems.length === 0) { alert("Aucune depense " + catKey + " le mois precedent"); return; } if (!confirm(`Copier ${prevItems.length} depenses de ${prev.month_name} ?`)) return; prevItems.forEach(e => { if (!items.some(ex => ex.label === e.label)) { onAddExpense(e.label, e.amount, catKey); } }); }} style={{ background: `${color}10`, color, border: `1px solid ${color}25`, borderRadius: 8, fontSize: 9, fontWeight: 600, padding: "0 8px", height: 28, display: "flex", alignItems: "center", cursor: "pointer", fontFamily: S.font, whiteSpace: "nowrap" as const }} title="Copier du mois precedent">Copier M-1</button>
           <button onClick={() => addingTo === catKey ? cancelAdd() : openAdd(catKey)} style={{ background: addingTo === catKey ? `${color}30` : `${color}20`, color, border: `1px solid ${color}40`, borderRadius: 8, width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center" }} title="Ajouter une depense">
             {addingTo === catKey ? <X size={14} /> : <Plus size={14} />}
           </button>
@@ -1379,8 +1379,8 @@ function DepensesTab({ month: m, months, monthKey, onValidate, onAmountChange, o
 
       <Card style={{ borderColor: `${S.primary}25` }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-          <SLabel>Budget Reste à vivre — valider = compte dans les depenses</SLabel>
-        <button onClick={() => { const mi = months.findIndex(mo => mo.month_key === monthKey); if (mi <= 0) { alert("Pas de mois precedent"); return; } const prev = months[mi-1]; const prevAlloc = prev.budget_allocation || {}; if (!confirm("Copier les enveloppes de " + prev.month_name + " ?")) return; Object.entries(prevAlloc).forEach(([k, v]) => { if (typeof v === "number") onBudgetChange({ amounts: { [k]: v } }); }); }} style={{ fontSize: 9, fontWeight: 600, color: S.muted, background: `${S.muted}10`, border: `1px solid ${S.muted}25`, borderRadius: 8, padding: "0 8px", height: 24, display: "flex", alignItems: "center", cursor: "pointer", fontFamily: S.font, whiteSpace: "nowrap" as const }}>Copier M-1</button>
+          <SLabel>Budget Reste à vivre — Valider = Compte dans les dépenses</SLabel>
+        <button onClick={() => { const mi = months.findIndex(mo => mo.month_key === monthKey); let prev = mi > 0 ? months[mi-1] : null; if (!prev) { alert("Utilisez Copier M-1 a partir de Fevrier. Pour Janvier, importez via CSV."); return; }; const prevAlloc = prev.budget_allocation || {}; if (!confirm("Copier le reste à vivre de " + prev.month_name + " ?")) return; Object.entries(prevAlloc).forEach(([k, v]) => { if (typeof v === "number") onBudgetChange({ amounts: { [k]: v } }); }); }} style={{ fontSize: 9, fontWeight: 600, color: S.muted, background: `${S.muted}10`, border: `1px solid ${S.muted}25`, borderRadius: 8, padding: "0 8px", height: 24, display: "flex", alignItems: "center", cursor: "pointer", fontFamily: S.font, whiteSpace: "nowrap" as const }}>Copier M-1</button>
           {validatedBudgetTotal > 0 && <span style={{ fontFamily: S.heading, fontSize: 16, color: S.primary, fontWeight: 700 }}>+{fmt(validatedBudgetTotal)} intégrés</span>}
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 8 }}>
@@ -1399,7 +1399,7 @@ function DepensesTab({ month: m, months, monthKey, onValidate, onAmountChange, o
             );
           })}
         </div>
-        <button onClick={() => { const name = prompt("Nom de la nouvelle enveloppe :"); if (name) onBudgetChange({ add_key: name, add_amount: 0 }); }} style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", fontSize: 12, fontWeight: 600, border: `1px dashed ${S.border}`, borderRadius: 8, background: "transparent", color: S.muted, cursor: "pointer", width: "100%", justifyContent: "center" }}><Plus size={12} /> Ajouter une enveloppe</button>
+        <button onClick={() => { const name = prompt("Nom de la nouvelle catégorie :"); if (name) onBudgetChange({ add_key: name, add_amount: 0 }); }} style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", fontSize: 12, fontWeight: 600, border: `1px dashed ${S.border}`, borderRadius: 8, background: "transparent", color: S.muted, cursor: "pointer", width: "100%", justifyContent: "center" }}><Plus size={12} /> Ajouter une catégorie</button>
       </Card>
     </div>
   </>);
