@@ -389,13 +389,27 @@ export default function BudgetApp() {
 
   // Auth guard: show login if not authenticated
   if (authChecked && !authToken) return (
-    <div style={{ background: S.bg, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: S.font }}>
-      <div style={{ background: S.surface, borderRadius: 20, padding: "40px 36px", width: "100%", maxWidth: 400, border: `1px solid ${S.border}`, boxShadow: "0 8px 32px rgba(0,0,0,0.06)" }}>
-        <h1 style={{ fontFamily: S.heading, fontSize: 28, fontWeight: 800, textAlign: "center", margin: "0 0 4px", color: S.text }}>Budget Personnel</h1>
-          <span style={{ fontSize: 11, color: S.muted }}>{getDateFR()}</span>
-        <p style={{ color: S.muted, fontSize: 14, textAlign: "center", margin: "0 0 28px" }}>
-          {authMode === "register" ? "Inscription" : "Connexion"}
-        </p>
+    <div style={{ background: S.bg, minHeight: "100vh", display: "flex", fontFamily: S.font }}>
+      {/* Left: branding panel (hidden on mobile) */}
+      <div style={{ flex: 1, background: `linear-gradient(135deg, ${S.accent}, #f59e0b)`, display: isMobile ? "none" : "flex", flexDirection: "column", justifyContent: "center", padding: "60px 48px", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: -80, right: -80, width: 300, height: 300, borderRadius: "50%", background: "rgba(255,255,255,0.08)" }} />
+        <div style={{ position: "absolute", bottom: -60, left: -40, width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />
+        <h1 style={{ fontFamily: S.heading, fontSize: 36, fontWeight: 900, color: "#fff", margin: "0 0 12px", lineHeight: 1.1 }}>Prenez le controle de vos finances</h1>
+        <p style={{ fontSize: 16, color: "rgba(255,255,255,0.85)", lineHeight: 1.6, margin: "0 0 32px" }}>Suivez vos revenus, depenses et investissements. Visualisez vos projections. Atteignez vos objectifs.</p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {["Tableau de bord avec 5 KPIs en temps reel", "Projection 12 mois avec alertes", "Portefeuille investissements detaille", "Simulateur fiscal integre"].map(f => (
+            <div key={f} style={{ display: "flex", alignItems: "center", gap: 10 }}><div style={{ width: 20, height: 20, borderRadius: 6, background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}><Check size={12} color="#fff" /></div><span style={{ fontSize: 13, color: "rgba(255,255,255,0.9)", fontWeight: 500 }}>{f}</span></div>
+          ))}
+        </div>
+      </div>
+      {/* Right: login form */}
+      <div style={{ flex: 1, maxWidth: isMobile ? "100%" : 480, display: "flex", alignItems: "center", justifyContent: "center", padding: isMobile ? "40px 24px" : "40px 48px" }}>
+      <div style={{ width: "100%", maxWidth: 380 }}>
+        <div style={{ marginBottom: 32 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}><div style={{ width: 36, height: 36, borderRadius: 10, background: S.accent, display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div><span style={{ fontFamily: S.heading, fontSize: 20, fontWeight: 800, color: S.text }}>BudgetApp</span></div>
+          <h2 style={{ fontFamily: S.heading, fontSize: 24, fontWeight: 800, color: S.text, margin: "0 0 4px" }}>{authMode === "register" ? "Creer un compte" : "Content de vous revoir"}</h2>
+          <p style={{ color: S.muted, fontSize: 13, margin: 0 }}>{authMode === "register" ? "Commencez a gerer votre budget en 2 minutes" : "Connectez-vous pour acceder a votre budget"}</p>
+        </div>
         {authError && <div style={{ background: `${S.danger}10`, border: `1px solid ${S.danger}40`, borderRadius: 10, padding: "10px 14px", marginBottom: 16, color: S.danger, fontSize: 13 }}>{authError}</div>}
         {authMode === "register" && (
           <input value={authName} onChange={e => setAuthName(e.target.value)} placeholder="Nom (optionnel)" style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${S.border}`, background: S.surface2, color: S.text, fontSize: 14, fontFamily: S.font, marginBottom: 12, outline: "none" }} />
@@ -412,6 +426,7 @@ export default function BudgetApp() {
             {authMode === "register" ? "Se connecter" : "Inscription"}
           </button>
         </p>
+      </div>
       </div>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
@@ -1451,6 +1466,7 @@ function ProjectionTab({ forecast: f, prevCumul = 0, goalMonthly = 0 }: { foreca
 
 // ── Historique ────────────────────────────────────────────────────────────────
 function HistoriqueTab({ months, goalMonthly = 0 }: { months: Month[]; goalMonthly?: number }) {
+  const exportCSV = () => { const header = "Mois,Revenus,Depenses,Epargne,Solde,Cumule"; const csvRows = rows.map(r => `${r.month_name},${r.inc},${r.exp},${r.sav},${r.bal},${r.cumul}`); const csv = [header, ...csvRows].join("\n"); const blob = new Blob([csv], { type: "text/csv" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = `budget_historique_${rows[0]?.year || 2026}.csv`; a.click(); URL.revokeObjectURL(url); };
   let cumul = 0;
   const rows = months.map(m => { const inc = m.income_salary + m.income_other + ((m as unknown as Record<string,number>).income_rente ?? 0) + ((m as unknown as Record<string,number>).income_epargne ?? 0) + ((m as unknown as Record<string,number>).income_actions ?? 0) + ((m as unknown as Record<string,number>).income_virements ?? 0) + ((m as unknown as Record<string,number>).income_solde_ajuste ?? 0); const expItems = m.expenses.filter(e => e.category !== "investment").reduce((s, e) => s + e.amount, 0); const budgetEnv = Object.values(m.budget_allocation as unknown as Record<string, number>).reduce((s, v) => s + v, 0); const exp = expItems + budgetEnv; const investSum = m.expenses.filter(e => e.category === "investment").reduce((s, e) => s + e.amount, 0); const sav = investSum ; const bal = inc - exp - sav; cumul += bal; return { ...m, inc, exp, sav, bal, cumul, vc: m.expenses.filter(e => e.validated).length, tc: m.expenses.length }; });
   const ti = rows.reduce((s, r) => s + r.inc, 0); const te = rows.reduce((s, r) => s + r.exp, 0); const fc = rows.length > 0 ? rows[rows.length-1].cumul : 0;
@@ -1463,8 +1479,9 @@ function HistoriqueTab({ months, goalMonthly = 0 }: { months: Month[]; goalMonth
       </div>
 
       {/* Evolution chart */}
-      <Card>
+      <Card style={{ position: "relative" }}>
         <SLabel>Evolution mensuelle</SLabel>
+        <button onClick={exportCSV} style={{ position: "absolute", top: 10, right: 14, fontSize: 11, fontWeight: 600, color: S.primary, background: `${S.primary}10`, border: `1px solid ${S.primary}30`, borderRadius: 8, padding: "4px 12px", cursor: "pointer", fontFamily: S.font }}>Exporter CSV</button>
         <ResponsiveContainer width="100%" height={240}>
           <ComposedChart data={rows.map(r => ({ name: r.month_name.slice(0, 3), "Revenus": r.inc, "Dépenses": r.exp, "Solde": r.bal, "Cumulé": r.cumul }))} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
             <CartesianGrid stroke="rgba(0,0,0,0.05)" strokeDasharray="3 3" />
