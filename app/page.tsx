@@ -585,7 +585,7 @@ export default function BudgetApp() {
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", borderBottom: `1px solid ${S.border}` }}><span style={{ fontSize: 13, fontWeight: 600, color: S.text }}>Notifications</span><button style={{ width: 40, height: 22, borderRadius: 11, background: S.accent, border: "none", cursor: "pointer", position: "relative" }}><div style={{ width: 18, height: 18, borderRadius: "50%", background: "#fff", position: "absolute", top: 2, left: 20, boxShadow: "0 1px 3px rgba(0,0,0,0.15)" }} /></button></div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", borderBottom: `1px solid ${S.border}`, cursor: "pointer" }} onClick={async () => { const r = await fetch(`/api/budget/export-csv?year=${selectedYear}`, { headers: getAuthHeaders() }); const d = await r.json(); if (d.csv) { const blob = new Blob([d.csv], { type: "text/csv" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = `budget_${selectedYear}.csv`; a.click(); URL.revokeObjectURL(url); showToast(`Export ${d.rows} lignes`); } }}><span style={{ fontSize: 13, fontWeight: 600, color: S.text }}>Exporter CSV</span><span style={{ fontSize: 11, color: S.accent, fontWeight: 600 }}>{selectedYear}</span></div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", borderBottom: `1px solid ${S.border}`, cursor: "pointer" }} onClick={() => { const input = document.createElement("input"); input.type = "file"; input.accept = ".csv"; input.onchange = async (e) => { const file = (e.target as HTMLInputElement).files?.[0]; if (!file) return; const text = await file.text(); if (!confirm(`Importer ${file.name} ?\nCela va mettre à jour toutes les données de ${selectedYear}.`)) return; const r = await fetch("/api/budget/import-csv", { method: "POST", headers: getAuthHeaders(), body: JSON.stringify({ csv: text, year: selectedYear }) }); const d = await r.json(); if (r.ok) { showToast(`Importé : ${d.parsed_rows} lignes, ${d.updated_months} mois`); loadData(); setShowSettings(false); } else { alert(d.detail || "Erreur import"); } }; input.click(); }}><span style={{ fontSize: 13, fontWeight: 600, color: S.text }}>Importer CSV</span><span style={{ fontSize: 11, color: S.primary, fontWeight: 600 }}>Upload</span></div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", cursor: "pointer" }}><span style={{ fontSize: 13, fontWeight: 600, color: S.text }}>Enveloppes par defaut</span><span style={{ color: S.muted }}>6</span></div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", cursor: "pointer" }}><span style={{ fontSize: 13, fontWeight: 600, color: S.text }}>Reste à vivre par defaut</span><span style={{ color: S.muted }}>6</span></div>
           </div>
           <div style={{ fontSize: 10, fontWeight: 700, color: S.muted, textTransform: "uppercase" as const, letterSpacing: 1.5, marginBottom: 8 }}>Aide</div>
           <div style={{ background: S.bg, borderRadius: 12, marginBottom: 16, border: `1px solid ${S.border}` }}>
@@ -891,7 +891,7 @@ function DashboardTab({ month: m, months, idx, netBalance, totalExpenses, valida
 
       <Card>
         <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase" as const, color: S.muted, letterSpacing: 1, marginBottom: 12 }}>Répartition des dépenses</div>
-        {[{n:"Fixes",v:fixed.reduce((s:number,e:Expense)=>s+e.amount,0),c:S.primary},{n:"Variables",v:variable.reduce((s:number,e:Expense)=>s+e.amount,0),c:S.warning},{n:"Enveloppes",v:Object.values(m.budget_allocation as unknown as Record<string,number>).reduce((s:number,v:number)=>s+v,0),c:S.muted},{n:"Épargne",v:(m.savings?.target_monthly ?? 0) + m.expenses.filter((e:Expense)=>e.category==="investment").reduce((s:number,e:Expense)=>s+e.amount,0),c:S.accent}].map(cat => {
+        {[{n:"Fixes",v:fixed.reduce((s:number,e:Expense)=>s+e.amount,0),c:S.primary},{n:"Variables",v:variable.reduce((s:number,e:Expense)=>s+e.amount,0),c:S.warning},{n:"Reste à vivre",v:Object.values(m.budget_allocation as unknown as Record<string,number>).reduce((s:number,v:number)=>s+v,0),c:S.muted},{n:"Épargne",v:(m.savings?.target_monthly ?? 0) + m.expenses.filter((e:Expense)=>e.category==="investment").reduce((s:number,e:Expense)=>s+e.amount,0),c:S.accent}].map(cat => {
           const total2 = fixed.reduce((s:number,e:Expense)=>s+e.amount,0) + variable.reduce((s:number,e:Expense)=>s+e.amount,0) + Object.values(m.budget_allocation as unknown as Record<string,number>).reduce((s:number,v:number)=>s+v,0);
           const pct = total2 > 0 ? Math.round((cat.v / total2) * 100) : 0;
           return (<div key={cat.n} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
@@ -1379,7 +1379,7 @@ function DepensesTab({ month: m, months, monthKey, onValidate, onAmountChange, o
 
       <Card style={{ borderColor: `${S.primary}25` }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-          <SLabel>Budgets enveloppes — valider = compte dans les depenses</SLabel>
+          <SLabel>Budget Reste à vivre — valider = compte dans les depenses</SLabel>
         <button onClick={() => { const mi = months.findIndex(mo => mo.month_key === monthKey); if (mi <= 0) { alert("Pas de mois precedent"); return; } const prev = months[mi-1]; const prevAlloc = prev.budget_allocation || {}; if (!confirm("Copier les enveloppes de " + prev.month_name + " ?")) return; Object.entries(prevAlloc).forEach(([k, v]) => { if (typeof v === "number") onBudgetChange({ amounts: { [k]: v } }); }); }} style={{ fontSize: 9, fontWeight: 600, color: S.muted, background: `${S.muted}10`, border: `1px solid ${S.muted}25`, borderRadius: 8, padding: "0 8px", height: 24, display: "flex", alignItems: "center", cursor: "pointer", fontFamily: S.font, whiteSpace: "nowrap" as const }}>Copier M-1</button>
           {validatedBudgetTotal > 0 && <span style={{ fontFamily: S.heading, fontSize: 16, color: S.primary, fontWeight: 700 }}>+{fmt(validatedBudgetTotal)} intégrés</span>}
         </div>
@@ -1444,14 +1444,44 @@ function ProjectionTab({ forecast: f, prevCumul = 0, goalMonthly = 0 }: { foreca
         <Card className="card-h" style={{ borderColor: alerts.length > 0 ? `${S.danger}40` : `${S.success}30` }}><SLabel>Mois a risque</SLabel><p style={{ fontFamily: S.heading, fontSize: 28, fontWeight: 700, color: alerts.length > 0 ? S.danger : S.success, margin: 0 }}>{alerts.length} mois</p></Card>
       </div>
 
-      {alerts.length > 0 && alerts.map(a => (
-        <div key={a.month_key} style={{ background: a.alert_type === "danger" ? `${S.danger}08` : `${S.warning}08`, border: `1px solid ${a.alert_type === "danger" ? S.danger : S.warning}40`, borderRadius: 12, padding: "12px 18px", display: "flex", alignItems: "center", gap: 12 }}>
-          <AlertTriangle size={18} color={a.alert_type === "danger" ? S.danger : S.warning} />
-          <span style={{ fontFamily: S.heading, fontSize: 17, color: S.accent, flexShrink: 0, fontWeight: 700 }}>{a.month_name}</span>
-          <span style={{ fontSize: 13, color: S.text, flex: 1 }}>{a.message || (a.alert_type === "danger" ? "Solde négatif" : "Solde serré")}</span>
-          <span style={{ fontFamily: S.heading, fontSize: 17, color: a.alert_type === "danger" ? S.danger : S.warning, fontWeight: 700, flexShrink: 0 }}>{fmt(a.balance)}</span>
+      {/* Analyse IA de la projection */}
+      <Card style={{ borderColor: `${S.primary}25` }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <SLabel>Analyse IA de la projection</SLabel>
+          <button onClick={async () => {
+            const btn = document.getElementById("proj-ai-btn") as HTMLButtonElement; if (btn) btn.disabled = true;
+            const el = document.getElementById("proj-ai-result");
+            if (el) el.innerHTML = "<span style='color:#94a3b8'>Analyse en cours...</span>";
+            const totalInc = rolling.reduce((s, mo) => s + mo.income, 0);
+            const totalExp = rolling.reduce((s, mo) => s + mo.expenses, 0);
+            const totalSav = rolling.reduce((s, mo) => s + mo.savings_target, 0);
+            const dangerMonths = alerts.filter(a => a.alert_type === "danger").map(a => a.month_name).join(", ");
+            const warningMonths = alerts.filter(a => a.alert_type === "warning").map(a => a.month_name).join(", ");
+            const avgBal = rolling.reduce((s, mo) => s + mo.balance, 0) / rolling.length;
+            const prompt = `Analyse cette projection budget 12 mois et donne des recommandations concretes:
+Revenus total: ${Math.round(totalInc)} EUR
+Depenses total: ${Math.round(totalExp)} EUR
+Epargne total: ${Math.round(totalSav)} EUR
+Solde moyen mensuel: ${Math.round(avgBal)} EUR
+Mois en danger (solde negatif): ${dangerMonths || "aucun"}
+Mois serres: ${warningMonths || "aucun"}
+Details par mois: ${rolling.map(mo => `${mo.month_name}: rev ${Math.round(mo.income)}, dep ${Math.round(mo.expenses)}, solde ${Math.round(mo.balance)}`).join(" | ")}
+
+Donne 3-4 recommandations precises et actionnables pour optimiser ce budget. Sois direct et concret. Format: liste avec des puces.`;
+            try {
+              const r = await fetch("/api/cw-auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: [{ role: "user", content: prompt }], model: "gpt-4.1-mini" }) });
+              const d = await r.json();
+              const text = d.choices?.[0]?.message?.content || d.content || "Erreur";
+              if (el) el.innerHTML = text.replace(/
+/g, "<br>").replace(/- /g, "• ");
+            } catch { if (el) el.innerHTML = "Erreur de connexion"; }
+            if (btn) btn.disabled = false;
+          }} id="proj-ai-btn" style={{ fontSize: 12, fontWeight: 700, color: "#fff", background: S.primary, border: "none", borderRadius: 8, padding: "6px 16px", cursor: "pointer", fontFamily: S.font }}>Analyser la projection</button>
         </div>
-      ))}
+        <div id="proj-ai-result" style={{ fontSize: 13, color: S.text, lineHeight: 1.7, minHeight: 40 }}>
+          <span style={{ color: S.muted, fontSize: 12 }}>{alerts.length > 0 ? `${alerts.length} mois a risque detecte${alerts.length > 1 ? "s" : ""}. Cliquez sur Analyser pour des recommandations.` : "Aucun mois a risque. Cliquez sur Analyser pour optimiser davantage."}</span>
+        </div>
+      </Card>
 
       <Card>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16, flexWrap: "wrap" as const, gap: 8 }}>
