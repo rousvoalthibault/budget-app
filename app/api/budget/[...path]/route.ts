@@ -1,18 +1,26 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 
 const BACKEND_ID = "budget_app_api_b2ecbb91";
+const COOKIE_NAME = "budget_auth";
 type Ctx = { params: Promise<{ path: string[] }> };
 
 async function proxy(request: Request, ctx: Ctx): Promise<Response> {
   const { path } = await ctx.params;
   const origUrl = new URL(request.url);
-  const userToken = request.headers.get("x-user-token") || "";
-  // Pass user token as query param _token (survives CodeWords runtime proxy)
-  if (userToken) {
-    origUrl.searchParams.set("_token", userToken);
+  const pathStr = path.join("/");
+
+  // Read token from: 1) cookie (secure), 2) header (legacy), 3) skip
+  const cookieStore = await cookies();
+  const cookieToken = cookieStore.get(COOKIE_NAME)?.value || "";
+  const headerToken = request.headers.get("x-user-token") || "";
+  const token = cookieToken || headerToken;
+
+  if (token) {
+    origUrl.searchParams.set("_token", token);
   }
   const qs = origUrl.search;
-  const url = `${process.env.CODEWORDS_RUNTIME_URI}/run/${BACKEND_ID}/${path.join("/")}${qs}`;
+  const url = `${process.env.CODEWORDS_RUNTIME_URI}/run/${BACKEND_ID}/${pathStr}${qs}`;
   const headers: HeadersInit = {
     Authorization: `Bearer ${process.env.CODEWORDS_API_KEY}`,
     "Content-Type": "application/json",
@@ -25,7 +33,25 @@ async function proxy(request: Request, ctx: Ctx): Promise<Response> {
   try {
     const res = await fetch(url, opts);
     const data = await res.json();
-    return NextResponse.json(data, { status: res.status });
+    const response = NextResponse.json(data, { status: res.status });
+
+    // On login/register success: set HttpOnly cookie with the token
+    if ((pathStr === "auth/login" || pathStr === "auth/register") && res.ok && data.token) {
+      response.cookies.set(COOKIE_NAME, data.token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 30, // 30 days
+      });
+    }
+
+    // On logout: clear the cookie
+    if (pathStr === "auth/logout") {
+      response.cookies.delete(COOKIE_NAME);
+    }
+
+    return response;
   } catch {
     return NextResponse.json({ error: "Backend unavailable" }, { status: 502 });
   }
