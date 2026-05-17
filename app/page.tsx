@@ -1469,9 +1469,9 @@ Details par mois: ${rolling.map(mo => `${mo.month_name}: rev ${Math.round(mo.inc
 
 Donne 3-4 recommandations precises et actionnables pour optimiser ce budget. Sois direct et concret. Format: liste avec des puces.`;
             try {
-              const r = await fetch("/api/cw-auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: [{ role: "user", content: prompt }], model: "gpt-4.1-mini" }) });
+              const r = await fetch("/api/analyze", { method: "POST", headers: getAuthHeaders(), body: JSON.stringify({ prompt }) });
               const d = await r.json();
-              const text = d.choices?.[0]?.message?.content || d.content || "Erreur";
+              const text = d.analysis || d.error || "Erreur";
               if (el) el.innerHTML = text.split("\n").join("<br>").split("- ").join("• ");
             } catch { if (el) el.innerHTML = "Erreur de connexion"; }
             if (btn) btn.disabled = false;
