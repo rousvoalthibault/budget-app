@@ -364,13 +364,13 @@ export default function BudgetApp() {
   // In-app alerts computation
   const inAppAlerts: { type: string; title: string; detail: string; id: string; actionLabel?: string; actionTab?: string }[] = [];
   if (m) {
-    if (netBal < 0) inAppAlerts.push({ type: "danger", id: "bal-neg", title: "Solde negatif ce mois", detail: `${m.month_name} ${m.year} : ${netBal.toFixed(0)} EUR` });
-    else if (netBal < 300) inAppAlerts.push({ type: "warning", id: "bal-low", title: "Solde serre ce mois", detail: `${m.month_name} ${m.year} : ${netBal.toFixed(0)} EUR restants` });
+    if (netBal < 0) inAppAlerts.push({ type: "danger", id: "bal-neg", title: "Solde négatif ce mois", detail: `${m.month_name} ${m.year} : ${netBal.toFixed(0)} EUR` });
+    else if (netBal < 300) inAppAlerts.push({ type: "warning", id: "bal-low", title: "Solde serré ce mois", detail: `${m.month_name} ${m.year} : ${netBal.toFixed(0)} EUR restants` });
     else if (netBal > 1000) inAppAlerts.push({ type: "success", id: "bal-good", title: "Bon mois !", detail: `Il vous reste ${netBal.toFixed(0)} EUR. Continuez !` });
     const unvalidated = m.expenses.filter(e => !e.validated).length;
-    if (unvalidated > 0) inAppAlerts.push({ type: "action", id: "unval", title: `${unvalidated} depense${unvalidated > 1 ? "s" : ""} non validee${unvalidated > 1 ? "s" : ""}`, detail: "Validez vos depenses pour un suivi precis.", actionLabel: "Valider", actionTab: "depenses" });
-    if (idx > 0 && months[idx-1]) { const prev = months[idx-1]; const prevE = prev.expenses.filter(e => e.category !== "investment").reduce((s,e) => s + e.amount, 0); const curE = m.expenses.filter(e => e.category !== "investment").reduce((s,e) => s + e.amount, 0); const pct = prevE > 0 ? Math.round(((curE - prevE) / prevE) * 100) : 0; if (pct > 15) inAppAlerts.push({ type: "insight", id: `exp-up-${idx}`, title: "Depenses en hausse", detail: `+${pct}% vs ${prev.month_name} (${Math.round(curE)} EUR vs ${Math.round(prevE)} EUR)`, actionLabel: "Details", actionTab: "depenses" }); else if (pct < -15) inAppAlerts.push({ type: "success", id: `exp-down-${idx}`, title: "Depenses en baisse", detail: `${pct}% vs ${prev.month_name}. Bien joue !` }); }
-    const investT = m.expenses.filter(e => e.category === "investment").reduce((s,e) => s + e.amount, 0); const avgInv = idx > 0 ? months.slice(0, idx).reduce((s, mo) => s + mo.expenses.filter(e => e.category === "investment").reduce((s2,e) => s2 + e.amount, 0), 0) / idx : 0; if (investT > avgInv * 1.1 && idx > 0) inAppAlerts.push({ type: "success", id: `inv-up-${idx}`, title: "Epargne au-dessus de la moyenne", detail: `${Math.round(investT)} EUR investi (moy: ${Math.round(avgInv)} EUR)`, actionLabel: "Epargne", actionTab: "economies" });
+    if (unvalidated > 0) inAppAlerts.push({ type: "action", id: "unval", title: `${unvalidated} depense${unvalidated > 1 ? "s" : ""} non validée${unvalidated > 1 ? "s" : ""}`, detail: "Validez vos dépenses pour un suivi précis.", actionLabel: "Valider", actionTab: "depenses" });
+    if (idx > 0 && months[idx-1]) { const prev = months[idx-1]; const prevE = prev.expenses.filter(e => e.category !== "investment").reduce((s,e) => s + e.amount, 0); const curE = m.expenses.filter(e => e.category !== "investment").reduce((s,e) => s + e.amount, 0); const pct = prevE > 0 ? Math.round(((curE - prevE) / prevE) * 100) : 0; if (pct > 15) inAppAlerts.push({ type: "insight", id: `exp-up-${idx}`, title: "Dépenses en hausse", detail: `+${pct}% vs ${prev.month_name} (${Math.round(curE)} EUR vs ${Math.round(prevE)} EUR)`, actionLabel: "Details", actionTab: "depenses" }); else if (pct < -15) inAppAlerts.push({ type: "success", id: `exp-down-${idx}`, title: "Dépenses en baisse", detail: `${pct}% vs ${prev.month_name}. Bien joué !` }); }
+    const investT = m.expenses.filter(e => e.category === "investment").reduce((s,e) => s + e.amount, 0); const avgInv = idx > 0 ? months.slice(0, idx).reduce((s, mo) => s + mo.expenses.filter(e => e.category === "investment").reduce((s2,e) => s2 + e.amount, 0), 0) / idx : 0; if (investT > avgInv * 1.1 && idx > 0) inAppAlerts.push({ type: "success", id: `inv-up-${idx}`, title: "Épargne au-dessus de la moyenne", detail: `${Math.round(investT)} EUR investi (moy: ${Math.round(avgInv)} EUR)`, actionLabel: "Epargne", actionTab: "economies" });
     // Budget envelope alerts (>80% used)
     const ba = m.budget_allocation as unknown as Record<string, number>;
     const bv = (m.budget_validated || {}) as Record<string, boolean>;
@@ -394,10 +394,10 @@ export default function BudgetApp() {
       <div style={{ flex: 1, background: `linear-gradient(135deg, ${S.accent}, #f59e0b)`, display: isMobile ? "none" : "flex", flexDirection: "column", justifyContent: "center", padding: "60px 48px", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: -80, right: -80, width: 300, height: 300, borderRadius: "50%", background: "rgba(255,255,255,0.08)" }} />
         <div style={{ position: "absolute", bottom: -60, left: -40, width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />
-        <h1 style={{ fontFamily: S.heading, fontSize: 36, fontWeight: 900, color: "#fff", margin: "0 0 12px", lineHeight: 1.1 }}>Prenez le controle de vos finances</h1>
-        <p style={{ fontSize: 16, color: "rgba(255,255,255,0.85)", lineHeight: 1.6, margin: "0 0 32px" }}>Suivez vos revenus, depenses et investissements. Visualisez vos projections. Atteignez vos objectifs.</p>
+        <h1 style={{ fontFamily: S.heading, fontSize: 36, fontWeight: 900, color: "#fff", margin: "0 0 12px", lineHeight: 1.1 }}>Prenez le contrôle de vos finances</h1>
+        <p style={{ fontSize: 16, color: "rgba(255,255,255,0.85)", lineHeight: 1.6, margin: "0 0 32px" }}>Suivez vos revenus, dépenses et investissements. Visualisez vos projections. Atteignez vos objectifs.</p>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {["Tableau de bord avec 5 KPIs en temps reel", "Projection 12 mois avec alertes", "Portefeuille investissements detaille", "Simulateur fiscal integre"].map(f => (
+          {["Tableau de bord avec 5 KPIs en temps réel", "Projection 12 mois avec alertes", "Portefeuille investissements détaillé", "Simulateur fiscal intégré"].map(f => (
             <div key={f} style={{ display: "flex", alignItems: "center", gap: 10 }}><div style={{ width: 20, height: 20, borderRadius: 6, background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}><Check size={12} color="#fff" /></div><span style={{ fontSize: 13, color: "rgba(255,255,255,0.9)", fontWeight: 500 }}>{f}</span></div>
           ))}
         </div>
@@ -407,8 +407,8 @@ export default function BudgetApp() {
       <div style={{ width: "100%", maxWidth: 380 }}>
         <div style={{ marginBottom: 32 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}><div style={{ width: 36, height: 36, borderRadius: 10, background: S.accent, display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div><span style={{ fontFamily: S.heading, fontSize: 20, fontWeight: 800, color: S.text }}>BudgetApp</span></div>
-          <h2 style={{ fontFamily: S.heading, fontSize: 24, fontWeight: 800, color: S.text, margin: "0 0 4px" }}>{authMode === "register" ? "Creer un compte" : "Content de vous revoir"}</h2>
-          <p style={{ color: S.muted, fontSize: 13, margin: 0 }}>{authMode === "register" ? "Commencez a gerer votre budget en 2 minutes" : "Connectez-vous pour acceder a votre budget"}</p>
+          <h2 style={{ fontFamily: S.heading, fontSize: 24, fontWeight: 800, color: S.text, margin: "0 0 4px" }}>{authMode === "register" ? "Créer un compte" : "Content de vous revoir"}</h2>
+          <p style={{ color: S.muted, fontSize: 13, margin: 0 }}>{authMode === "register" ? "Commencez à gérer votre budget en 2 minutes" : "Connectez-vous pour accéder à votre budget"}</p>
         </div>
         {authError && <div style={{ background: `${S.danger}10`, border: `1px solid ${S.danger}40`, borderRadius: 10, padding: "10px 14px", marginBottom: 16, color: S.danger, fontSize: 13 }}>{authError}</div>}
         {authMode === "register" && (
@@ -418,7 +418,7 @@ export default function BudgetApp() {
         <input value={authPw} onChange={e => setAuthPw(e.target.value)} placeholder="Mot de passe" type="password" style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${S.border}`, background: S.surface2, color: S.text, fontSize: 14, fontFamily: S.font, marginBottom: 20, outline: "none" }} onKeyDown={e => e.key === "Enter" && handleAuth()} />
         <button onClick={handleAuth} disabled={authLoading} style={{ width: "100%", padding: "12px", borderRadius: 10, border: "none", background: S.primary, color: "#fff", fontSize: 15, fontWeight: 700, fontFamily: S.font, opacity: authLoading ? 0.7 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
           {authLoading && <div style={{ width: 14, height: 14, border: "2px solid #fff", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />}
-          {authMode === "register" ? "Creer mon compte" : "Se connecter"}
+          {authMode === "register" ? "Créer mon compte" : "Se connecter"}
         </button>
         <p style={{ textAlign: "center", marginTop: 16, color: S.muted, fontSize: 13 }}>
           {authMode === "register" ? "Déjà un compte ? " : "Pas encore de compte ? "}
@@ -549,7 +549,7 @@ export default function BudgetApp() {
             <div style={{ width: 56, height: 56, borderRadius: "50%", background: `linear-gradient(135deg, ${S.accent}, ${S.warning})`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 22, fontWeight: 800, flexShrink: 0 }}>{(user?.name || user?.email || "U")[0].toUpperCase()}</div>
             <div><div style={{ fontSize: 16, fontWeight: 700, color: S.text }}>{user?.name || "Utilisateur"}</div><div style={{ fontSize: 12, color: S.muted, marginTop: 2 }}>{user?.email}</div></div>
           </div>
-          {[{l:"Nom complet",v:user?.name||"Non renseigne",editable:true,action:async () => { const n = prompt("Nouveau nom:", user?.name || ""); if (n !== null) { setUser(prev => prev ? {...prev, name: n} : prev); localStorage.setItem("budget_user", JSON.stringify({...user, name: n})); showToast("Nom mis a jour"); } }},{l:"Email",v:user?.email||""},{l:"Mot de passe",v:"*********",editable:true,action:async () => { alert("Changement de mot de passe bientot disponible"); }},{l:"Membre depuis",v:"Mai 2026"},{l:"Devise",v:"EUR"}].map((f: {l:string;v:string;editable?:boolean;action?:()=>void}) => (
+          {[{l:"Nom complet",v:user?.name||"Non renseigné",editable:true,action:async () => { const n = prompt("Nouveau nom:", user?.name || ""); if (n !== null) { setUser(prev => prev ? {...prev, name: n} : prev); localStorage.setItem("budget_user", JSON.stringify({...user, name: n})); showToast("Nom mis a jour"); } }},{l:"Email",v:user?.email||""},{l:"Mot de passe",v:"*********",editable:true,action:async () => { const oldPw = prompt("Mot de passe actuel :"); if (!oldPw) return; const newPw = prompt("Nouveau mot de passe (min 4 car.) :"); if (!newPw || newPw.length < 4) { alert("Mot de passe trop court (min 4 caracteres)"); return; } const newPw2 = prompt("Confirmer le nouveau mot de passe :"); if (newPw !== newPw2) { alert("Les mots de passe ne correspondent pas"); return; } try { const r = await fetch("/api/budget/auth/change-password", { method: "PUT", headers: getAuthHeaders(), body: JSON.stringify({ old_password: oldPw, new_password: newPw }) }); const d = await r.json(); if (r.ok) { showToast("Mot de passe mis à jour !"); setShowProfile(false); } else { alert(d.detail || "Erreur"); } } catch { alert("Erreur de connexion"); } }},{l:"Membre depuis",v:"Mai 2026"},{l:"Devise",v:"EUR"}].map((f: {l:string;v:string;editable?:boolean;action?:()=>void}) => (
             <div key={f.l} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: `1px solid ${S.border}` }}>
               <span style={{ fontSize: 12, color: S.muted }}>{f.l}</span>
               <span style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ fontSize: 13, fontWeight: 600, color: S.text }}>{f.v}</span>{f.editable && <button onClick={f.action} style={{ fontSize: 10, fontWeight: 600, color: S.accent, background: `${S.accent}10`, border: `1px solid ${S.accent}30`, borderRadius: 6, padding: "2px 8px", cursor: "pointer", fontFamily: S.font }}>Modifier</button>}</span>
@@ -561,7 +561,7 @@ export default function BudgetApp() {
       {/* Settings Modal */}
       {showSettings && <div onClick={() => setShowSettings(false)} style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
         <div onClick={e => e.stopPropagation()} style={{ background: S.surface, borderRadius: 20, width: "100%", maxWidth: 440, maxHeight: "80vh", overflow: "auto", padding: 24, fontFamily: S.font }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}><h2 style={{ fontSize: 18, fontWeight: 800, color: S.text }}>Parametres</h2><button onClick={() => setShowSettings(false)} style={{ background: "none", border: "none", fontSize: 18, color: S.muted, cursor: "pointer" }}>x</button></div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}><h2 style={{ fontSize: 18, fontWeight: 800, color: S.text }}>Paramètres</h2><button onClick={() => setShowSettings(false)} style={{ background: "none", border: "none", fontSize: 18, color: S.muted, cursor: "pointer" }}>x</button></div>
           <div style={{ fontSize: 10, fontWeight: 700, color: S.muted, textTransform: "uppercase" as const, letterSpacing: 1.5, marginBottom: 8 }}>Affichage</div>
           <div style={{ background: S.bg, borderRadius: 12, marginBottom: 16, border: `1px solid ${S.border}` }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", borderBottom: `1px solid ${S.border}` }}><span style={{ fontSize: 13, fontWeight: 600, color: S.text }}>Mode sombre</span><button onClick={() => { setDarkMode(!darkMode); }} style={{ width: 40, height: 22, borderRadius: 11, background: darkMode ? S.accent : S.border, border: "none", cursor: "pointer", position: "relative" }}><div style={{ width: 18, height: 18, borderRadius: "50%", background: "#fff", position: "absolute", top: 2, left: darkMode ? 20 : 2, transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.15)" }} /></button></div>
@@ -576,15 +576,15 @@ export default function BudgetApp() {
           <div style={{ fontSize: 10, fontWeight: 700, color: S.muted, textTransform: "uppercase" as const, letterSpacing: 1.5, marginBottom: 8 }}>Aide</div>
           <div style={{ background: S.bg, borderRadius: 12, marginBottom: 16, border: `1px solid ${S.border}` }}>
             <div onClick={() => { localStorage.removeItem("budget_tour_done"); localStorage.removeItem("budget_hints"); setHints({}); setTourStep(0); setShowSettings(false); }} style={{ padding: "12px 14px", borderBottom: `1px solid ${S.border}`, cursor: "pointer" }}><span style={{ fontSize: 13, fontWeight: 600, color: S.text }}>Revoir le tutoriel</span></div>
-            <div style={{ padding: "12px 14px", cursor: "pointer" }}><span style={{ fontSize: 13, fontWeight: 600, color: S.text }}>Signaler un probleme</span></div>
+            <div style={{ padding: "12px 14px", cursor: "pointer" }}><span style={{ fontSize: 13, fontWeight: 600, color: S.text }}>Signaler un problème</span></div>
           </div>
           <div style={{ background: S.bg, borderRadius: 12, border: `1px solid ${S.danger}30` }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", borderBottom: `1px solid ${S.danger}15` }}>
-              <div><div style={{ fontSize: 13, fontWeight: 600, color: S.danger }}>Reinitialiser</div><div style={{ fontSize: 10, color: S.muted }}>Supprimer toutes les donnees</div></div>
-              <button onClick={async () => { if (confirm("Supprimer TOUTES vos donnees ?")) { await fetch("/api/budget/user-data", { method: "DELETE", headers: getAuthHeaders() }); showToast("Donnees supprimees"); loadData(); setShowSettings(false); }}} style={{ fontSize: 11, fontWeight: 700, color: S.danger, background: `${S.danger}08`, border: `1px solid ${S.danger}30`, padding: "6px 14px", borderRadius: 8, cursor: "pointer", fontFamily: S.font }}>Reinitialiser</button>
+              <div><div style={{ fontSize: 13, fontWeight: 600, color: S.danger }}>Réinitialiser</div><div style={{ fontSize: 10, color: S.muted }}>Supprimer toutes les donnees</div></div>
+              <button onClick={async () => { if (confirm("Supprimer TOUTES vos donnees ?")) { await fetch("/api/budget/user-data", { method: "DELETE", headers: getAuthHeaders() }); showToast("Données supprimées"); loadData(); setShowSettings(false); }}} style={{ fontSize: 11, fontWeight: 700, color: S.danger, background: `${S.danger}08`, border: `1px solid ${S.danger}30`, padding: "6px 14px", borderRadius: 8, cursor: "pointer", fontFamily: S.font }}>Réinitialiser</button>
             </div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px" }}>
-              <div><div style={{ fontSize: 13, fontWeight: 600, color: S.danger }}>Supprimer le compte</div><div style={{ fontSize: 10, color: S.muted }}>Irreversible</div></div>
+              <div><div style={{ fontSize: 13, fontWeight: 600, color: S.danger }}>Supprimer le compte</div><div style={{ fontSize: 10, color: S.muted }}>Irréversible</div></div>
               <button onClick={() => { if (confirm("Supprimer votre compte ? Cette action est irreversible.")) { logout(); }}} style={{ fontSize: 11, fontWeight: 700, color: S.danger, background: `${S.danger}08`, border: `1px solid ${S.danger}30`, padding: "6px 14px", borderRadius: 8, cursor: "pointer", fontFamily: S.font }}>Supprimer</button>
             </div>
           </div>
@@ -595,8 +595,8 @@ export default function BudgetApp() {
       {tourStep >= 0 && !needsOnboarding && (() => {
         const steps = [
           { n: 1, t: "Bienvenue !", d: "Voici votre tableau de bord. Il resume votre situation financiere du mois en un coup d'oeil." },
-          { n: 2, t: "Vos KPIs", d: "Les 5 indicateurs en haut montrent vos revenus, depenses, ce qu'il vous reste, le cumul depuis janvier et votre epargne." },
-          { n: 3, t: "Validez vos depenses", d: "Chaque mois, cochez vos depenses une par une pour confirmer qu'elles sont correctes. Vous pouvez aussi swiper !" },
+          { n: 2, t: "Vos KPIs", d: "Les 5 indicateurs en haut montrent vos revenus, dépenses, ce qu'il vous reste, le cumul depuis janvier et votre epargne." },
+          { n: 3, t: "Validez vos dépenses", d: "Chaque mois, cochez vos depenses une par une pour confirmer qu'elles sont correctes. Vous pouvez aussi swiper !" },
           { n: 4, t: "Modifiez les montants", d: "Cliquez sur n'importe quel montant pour le modifier directement. C'est aussi simple qu'un tableur." },
           { n: 5, t: "Explorez les onglets", d: "Depenses, Projection, Historique, Epargne, Salaires... Tout est accessible en bas de l'ecran sur mobile ou dans la sidebar sur desktop." },
         ];
@@ -670,9 +670,9 @@ export default function BudgetApp() {
             </div>)}
 
             {onboardStep === 2 && (<div>
-              <h2 style={{ fontFamily: S.heading, fontSize: 22, fontWeight: 700, margin: "0 0 6px" }}>Objectif epargne</h2>
-              <p style={{ color: S.muted, fontSize: 14, margin: "0 0 20px" }}>Combien souhaitez-vous mettre de cote chaque mois ?</p>
-              <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Epargne mensuelle (EUR)</label>
+              <h2 style={{ fontFamily: S.heading, fontSize: 22, fontWeight: 700, margin: "0 0 6px" }}>Objectif épargne</h2>
+              <p style={{ color: S.muted, fontSize: 14, margin: "0 0 20px" }}>Combien souhaitez-vous mettre de côté chaque mois ?</p>
+              <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Épargne mensuelle (EUR)</label>
               <input type="number" value={obSavings} onChange={e => setObSavings(e.target.value)} placeholder="Ex: 500" style={{ width: "100%", padding: "12px 14px", fontSize: 18, fontFamily: S.heading, fontWeight: 700, border: `2px solid ${S.border}`, borderRadius: 10, background: S.bg, color: S.text, outline: "none" }} autoFocus />
               <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
                 <button onClick={() => setOnboardStep(1)} style={{ flex: 1, padding: "12px", fontSize: 14, border: `1px solid ${S.border}`, borderRadius: 10, background: "transparent", color: S.text, cursor: "pointer" }}>← Retour</button>
@@ -689,7 +689,7 @@ export default function BudgetApp() {
                     const md = await mr.json();
                     setMonths(md.months || []);
                     setIdx(0);
-                    showToast("Budget configure ! 🎉");
+                    showToast("Budget configuré ! 🎉");
                   } catch (err) { setObLoading(false); alert("Erreur: " + (err instanceof Error ? err.message : String(err))); }
                 }} style={{ flex: 2, padding: "12px", fontSize: 15, fontWeight: 700, background: S.accent, color: "#fff", border: "none", borderRadius: 10, cursor: obLoading ? "wait" : "pointer", opacity: obLoading ? 0.7 : 1 }}>{obLoading ? "Configuration en cours..." : "Lancer mon budget 🚀"}</button>
               </div>
@@ -719,10 +719,10 @@ export default function BudgetApp() {
               <div style={{ fontSize: 11, color: S.muted, marginTop: 2 }}>{user?.email}</div>
             </div>
             <button onClick={() => { setShowProfile(true); setShowProfileMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "10px 14px", background: "none", border: "none", color: S.text, fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: S.font, textAlign: "left" as const }}>Voir profil</button>
-            <button onClick={() => { setShowSettings(true); setShowProfileMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "10px 14px", background: "none", border: "none", color: S.text, fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: S.font, textAlign: "left" as const }}>Parametres</button>
+            <button onClick={() => { setShowSettings(true); setShowProfileMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "10px 14px", background: "none", border: "none", color: S.text, fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: S.font, textAlign: "left" as const }}>Paramètres</button>
             <div style={{ borderTop: `1px solid ${S.border}` }}>
-              <button onClick={async () => { if (confirm("Supprimer TOUTES vos donnees ? Cette action est irreversible.")) { await fetch("/api/budget/user-data", { method: "DELETE", headers: getAuthHeaders() }); showToast("Donnees supprimees"); loadData(); } setShowProfileMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "10px 14px", background: "none", border: "none", color: S.danger, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: S.font, textAlign: "left" as const }}>Tout supprimer</button>
-              <button onClick={() => { logout(); setShowProfileMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "10px 14px", background: "none", border: "none", color: S.muted, fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: S.font, textAlign: "left" as const }}>Se deconnecter</button>
+              <button onClick={async () => { if (confirm("Supprimer TOUTES vos donnees ? Cette action est irreversible.")) { await fetch("/api/budget/user-data", { method: "DELETE", headers: getAuthHeaders() }); showToast("Données supprimées"); loadData(); } setShowProfileMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "10px 14px", background: "none", border: "none", color: S.danger, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: S.font, textAlign: "left" as const }}>Tout supprimer</button>
+              <button onClick={() => { logout(); setShowProfileMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "10px 14px", background: "none", border: "none", color: S.muted, fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: S.font, textAlign: "left" as const }}>Se déconnecter</button>
             </div>
           </div>}
         </div>      </aside>
@@ -754,9 +754,9 @@ export default function BudgetApp() {
               <div><div style={{ fontSize: 14, fontWeight: 700, color: S.text }}>{user?.name || "Utilisateur"}</div><div style={{ fontSize: 11, color: S.muted }}>{user?.email}</div></div>
             </div>
             <button onClick={() => { setShowProfile(true); setShowProfileMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "12px 16px", background: "none", border: "none", borderBottom: `1px solid ${S.border}`, color: S.text, fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: S.font, textAlign: "left" as const }}>Voir profil</button>
-            <button onClick={() => { setShowSettings(true); setShowProfileMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "12px 16px", background: "none", border: "none", borderBottom: `1px solid ${S.border}`, color: S.text, fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: S.font, textAlign: "left" as const }}>Parametres</button>
-            <button onClick={async () => { if (confirm("Supprimer TOUTES vos donnees ?")) { await fetch("/api/budget/user-data", { method: "DELETE", headers: getAuthHeaders() }); showToast("Donnees supprimees"); loadData(); } setShowProfileMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "12px 16px", background: "none", border: "none", borderBottom: `1px solid ${S.border}`, color: S.danger, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: S.font, textAlign: "left" as const }}>Tout supprimer</button>
-            <button onClick={() => { logout(); setShowProfileMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "12px 16px", background: "none", border: "none", color: S.muted, fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: S.font, textAlign: "left" as const }}>Se deconnecter</button>
+            <button onClick={() => { setShowSettings(true); setShowProfileMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "12px 16px", background: "none", border: "none", borderBottom: `1px solid ${S.border}`, color: S.text, fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: S.font, textAlign: "left" as const }}>Paramètres</button>
+            <button onClick={async () => { if (confirm("Supprimer TOUTES vos donnees ?")) { await fetch("/api/budget/user-data", { method: "DELETE", headers: getAuthHeaders() }); showToast("Données supprimées"); loadData(); } setShowProfileMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "12px 16px", background: "none", border: "none", borderBottom: `1px solid ${S.border}`, color: S.danger, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: S.font, textAlign: "left" as const }}>Tout supprimer</button>
+            <button onClick={() => { logout(); setShowProfileMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "12px 16px", background: "none", border: "none", color: S.muted, fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: S.font, textAlign: "left" as const }}>Se déconnecter</button>
           </div>}
           <button onClick={() => setNeedsOnboarding(true)} title="Aide" style={{ display: "flex", width: isMobile ? 26 : 30, height: isMobile ? 26 : 30, borderRadius: 8, border: `1px solid ${S.border}`, background: S.bg, color: S.muted, alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 13, fontWeight: 700 }}>?</button>
           <div style={{ position: "relative" }}>
@@ -782,7 +782,7 @@ export default function BudgetApp() {
             onValidate={(l, v) => patchExpense(m.month_key, l, { validated: v })} saving={saving} />
         )}
         {tab === "depenses" && m && (<>
-          {!hints.depenses && <div className="hint-bubble" style={{ margin: "0 0 8px" }}><span>Cliquez sur un montant pour le modifier. Ajoutez des depenses avec +</span><button className="hint-close" onClick={() => dismissHint("depenses")}>x</button></div>}
+          {!hints.depenses && <div className="hint-bubble" style={{ margin: "0 0 8px" }}><span>Cliquez sur un montant pour le modifier. Ajoutez des dépenses avec +</span><button className="hint-close" onClick={() => dismissHint("depenses")}>x</button></div>}
           <DepensesTab month={m} months={months} monthKey={m.month_key}
             onValidate={(l, v) => patchExpense(m.month_key, l, { validated: v })}
             onAmountChange={(l, a) => patchExpense(m.month_key, l, { amount: a })}
@@ -792,11 +792,11 @@ export default function BudgetApp() {
             onDeleteExpense={(label) => deleteExpense(m.month_key, label)}
             saving={saving} isAdding={saving === "adding"} />
         </>)}
-        {tab === "projection" && forecast && <>{!hints.projection && <div className="hint-bubble" style={{ margin: "0 24px 8px" }}><span>La projection montre vos 12 prochains mois. Les mois en rouge ont un solde negatif prevu.</span><button className="hint-close" onClick={() => dismissHint("projection")}>x</button></div>}<ProjectionTab forecast={forecast} goalMonthly={totalGoalMonthly} prevCumul={(() => { let c = 0; const curMk = months[idx]?.month_key || ""; for (const mo of months) { if (mo.month_key >= curMk) break; const inc = mo.income_salary + mo.income_other + ((mo as unknown as Record<string,number>).income_rente ?? 0) + ((mo as unknown as Record<string,number>).income_epargne ?? 0) + ((mo as unknown as Record<string,number>).income_actions ?? 0) + ((mo as unknown as Record<string,number>).income_virements ?? 0) + ((mo as unknown as Record<string,number>).income_solde_ajuste ?? 0); const exp = mo.expenses.filter(e => e.category !== "investment").reduce((s, e) => s + e.amount, 0) + Object.values(mo.budget_allocation as unknown as Record<string, number>).reduce((s, v) => s + v, 0); c += inc - exp; } return c; })()} /></>}
-        {tab === "historique" && months.length > 0 && <>{!hints.historique && <div className="hint-bubble" style={{ margin: "0 24px 8px" }}><span>Visualisez votre historique mois par mois. Le graphe montre vos revenus, depenses et cumul.</span><button className="hint-close" onClick={() => dismissHint("historique")}>x</button></div>}<HistoriqueTab months={months} goalMonthly={totalGoalMonthly} /></>}
-        {tab === "salaires" && <>{!hints.salaires && <div className="hint-bubble" style={{ margin: "0 24px 8px" }}><span>Suivez votre evolution salariale et simulez votre impot sur le revenu en bas de page.</span><button className="hint-close" onClick={() => dismissHint("salaires")}>x</button></div>}<SalairesTab showToast={showToast} /></>}
+        {tab === "projection" && forecast && <>{!hints.projection && <div className="hint-bubble" style={{ margin: "0 24px 8px" }}><span>La projection montre vos 12 prochains mois. Les mois en rouge ont un solde négatif prévu.</span><button className="hint-close" onClick={() => dismissHint("projection")}>x</button></div>}<ProjectionTab forecast={forecast} goalMonthly={totalGoalMonthly} prevCumul={(() => { let c = 0; const curMk = months[idx]?.month_key || ""; for (const mo of months) { if (mo.month_key >= curMk) break; const inc = mo.income_salary + mo.income_other + ((mo as unknown as Record<string,number>).income_rente ?? 0) + ((mo as unknown as Record<string,number>).income_epargne ?? 0) + ((mo as unknown as Record<string,number>).income_actions ?? 0) + ((mo as unknown as Record<string,number>).income_virements ?? 0) + ((mo as unknown as Record<string,number>).income_solde_ajuste ?? 0); const exp = mo.expenses.filter(e => e.category !== "investment").reduce((s, e) => s + e.amount, 0) + Object.values(mo.budget_allocation as unknown as Record<string, number>).reduce((s, v) => s + v, 0); c += inc - exp; } return c; })()} /></>}
+        {tab === "historique" && months.length > 0 && <>{!hints.historique && <div className="hint-bubble" style={{ margin: "0 24px 8px" }}><span>Visualisez votre historique mois par mois. Le graphe montre vos revenus, dépenses et cumul.</span><button className="hint-close" onClick={() => dismissHint("historique")}>x</button></div>}<HistoriqueTab months={months} goalMonthly={totalGoalMonthly} /></>}
+        {tab === "salaires" && <>{!hints.salaires && <div className="hint-bubble" style={{ margin: "0 24px 8px" }}><span>Suivez votre évolution salariale et simulez votre impôt sur le revenu en bas de page.</span><button className="hint-close" onClick={() => dismissHint("salaires")}>x</button></div>}<SalairesTab showToast={showToast} /></>}
         {tab === "economies" && months.length > 0 && (<>
-          {!hints.economies && <div className="hint-bubble" style={{ margin: "0 0 8px" }}><span>Gerez vos investissements et suivez votre portefeuille.</span><button className="hint-close" onClick={() => dismissHint("economies")}>x</button></div>}
+          {!hints.economies && <div className="hint-bubble" style={{ margin: "0 0 8px" }}><span>Gérez vos investissements et suivez votre portefeuille.</span><button className="hint-close" onClick={() => dismissHint("economies")}>x</button></div>}
           <EconomiesTab months={months} currentIdx={idx} isMobile={isMobile}
             onSavingsChange={(mk, u) => patchSavings(mk, u)}
             onPortfolioValuesChange={(mk, u) => patchPortfolioValues(mk, u)}
@@ -916,7 +916,7 @@ function AiAnalysis({ month, months, idx }: { month: Month; months: Month[]; idx
     const balance = income - expenses - savings;
     let cumulBal = 0;
     for (let i = 0; i <= idx; i++) { const mi2 = months[i]; cumulBal += mi2.income_salary + mi2.income_other + ((mi2 as unknown as Record<string,number>).income_rente ?? 0) + ((mi2 as unknown as Record<string,number>).income_epargne ?? 0) + ((mi2 as unknown as Record<string,number>).income_actions ?? 0) + ((mi2 as unknown as Record<string,number>).income_virements ?? 0) + ((mi2 as unknown as Record<string,number>).income_solde_ajuste ?? 0) - mi2.expenses.filter(e => e.category !== "investment").reduce((s, e) => s + e.amount, 0) ; }
-    const prompt = `Budget ${month.month_name} 2026: Revenu: ${income}EUR, Depenses fixes: ${fixed}EUR (${income > 0 ? Math.round(fixed/income*100) : 0}%), Variables: ${variable}EUR, Investissements: ${invest}EUR, Epargne: ${savings}EUR, Solde net: ${balance}EUR, Cumul depuis jan: ${Math.round(cumulBal)}EUR, Taux effort: ${income > 0 ? Math.round(expenses/income*100) : 0}%, Validation: ${month.expenses.filter(e => e.validated).length}/${month.expenses.length}`;
+    const prompt = `Budget ${month.month_name} 2026: Revenu: ${income}EUR, Dépenses fixes: ${fixed}EUR (${income > 0 ? Math.round(fixed/income*100) : 0}%), Variables: ${variable}EUR, Investissements: ${invest}EUR, Epargne: ${savings}EUR, Solde net: ${balance}EUR, Cumul depuis jan: ${Math.round(cumulBal)}EUR, Taux effort: ${income > 0 ? Math.round(expenses/income*100) : 0}%, Validation: ${month.expenses.filter(e => e.validated).length}/${month.expenses.length}`;
     try { const r = await fetch("/api/analyze", { method: "POST", headers: getAuthHeaders(), body: JSON.stringify({ prompt }) }); const d = await r.json(); setAnalysis(d.analysis); } catch { setAnalysis("Analyse indisponible."); }
     setLoading(false);
   }
@@ -1344,7 +1344,7 @@ function DepensesTab({ month: m, months, monthKey, onValidate, onAmountChange, o
       <Card style={{ borderColor: `${S.primary}25` }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
           <SLabel>Budgets enveloppes — valider = compte dans les depenses</SLabel>
-          {validatedBudgetTotal > 0 && <span style={{ fontFamily: S.heading, fontSize: 16, color: S.primary, fontWeight: 700 }}>+{fmt(validatedBudgetTotal)} integres</span>}
+          {validatedBudgetTotal > 0 && <span style={{ fontFamily: S.heading, fontSize: 16, color: S.primary, fontWeight: 700 }}>+{fmt(validatedBudgetTotal)} intégrés</span>}
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 8 }}>
           {Object.entries(m.budget_allocation).map(([key, amount]) => {
@@ -1483,7 +1483,7 @@ function HistoriqueTab({ months, goalMonthly = 0 }: { months: Month[]; goalMonth
 
       {/* Evolution chart */}
       <Card style={{ position: "relative" }}>
-        <SLabel>Evolution mensuelle</SLabel>
+        <SLabel>Évolution mensuelle</SLabel>
         <button onClick={exportCSV} style={{ position: "absolute", top: 10, right: 14, fontSize: 11, fontWeight: 600, color: S.primary, background: `${S.primary}10`, border: `1px solid ${S.primary}30`, borderRadius: 8, padding: "4px 12px", cursor: "pointer", fontFamily: S.font }}>Exporter CSV</button>
         <ResponsiveContainer width="100%" height={240}>
           <ComposedChart data={rows.map(r => ({ name: r.month_name.slice(0, 3), "Revenus": r.inc, "Dépenses": r.exp, "Solde": r.bal, "Cumulé": r.cumul }))} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
