@@ -223,6 +223,7 @@ export default function BudgetApp() {
 
   function logout() {
     localStorage.removeItem("budget_token");
+    fetch("/api/auth/logout", { method: "POST" }).catch(() => {}); // clear HttpOnly cookie
     setAuthToken(null);
     setMonths([]);
     setForecast(null);
@@ -241,6 +242,14 @@ export default function BudgetApp() {
       fetch("/api/budget/savings-goals", { headers: getAuthHeaders() }).then(r => r.json()).then(d => setSavingsGoals(d.goals || [])).catch(() => {});
     } catch { showToast("Erreur de chargement", false); }
     finally { setLoading(false); }
+  }, []);
+
+  // Keep-alive: ping backend every 4 min to avoid cold start
+  useEffect(() => {
+    const keepAlive = setInterval(() => {
+      fetch("/api/budget/health").catch(() => {});
+    }, 4 * 60 * 1000); // every 4 min
+    return () => clearInterval(keepAlive);
   }, []);
 
   useEffect(() => {
