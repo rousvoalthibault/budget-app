@@ -212,6 +212,7 @@ export default function BudgetApp() {
           setUser({ email: d.email || authEmail, name: d.name || authName });
           fetch("/api/budget/health", { headers: getAuthHeaders() }).catch(() => {}); // warm up backend
         setAuthToken(d.token);
+        await loadData();
         if (d.needs_onboarding) setNeedsOnboarding(true); else setTimeout(() => { if (!localStorage.getItem("budget_tour_done") && !needsOnboarding) setTourStep(0); }, 1000);
       } else {
         setAuthError(d.detail || "Erreur de connexion");
