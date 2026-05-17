@@ -1437,11 +1437,24 @@ function ProjectionTab({ forecast: f, prevCumul = 0, goalMonthly = 0 }: { foreca
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))", gap: 16 }}>
-        {[{ l: "Revenus 12 mois", v: ti, c: S.success }, { l: "Dépenses 12 mois", v: te, c: S.danger }, { l: "Total économisé", v: fc, c: fc >= 0 ? S.primary : S.danger }].map(({ l, v, c }) => (
-          <Card key={l} className="card-h"><SLabel>{l}</SLabel><p style={{ fontFamily: S.heading, fontSize: 28, fontWeight: 700, color: c, margin: 0 }}>{fmt(v)}</p></Card>
-        ))}
-        <Card className="card-h" style={{ borderColor: alerts.length > 0 ? `${S.danger}40` : `${S.success}30` }}><SLabel>Mois a risque</SLabel><p style={{ fontFamily: S.heading, fontSize: 28, fontWeight: 700, color: alerts.length > 0 ? S.danger : S.success, margin: 0 }}>{alerts.length} mois</p></Card>
+      {/* KPIs enrichis */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
+        <Card className="card-h"><SLabel>Revenus 12 mois</SLabel><p style={{ fontFamily: S.heading, fontSize: 26, fontWeight: 800, color: S.success, margin: 0 }}>{fmt(ti)}</p></Card>
+        <Card className="card-h"><SLabel>Dépenses 12 mois</SLabel><p style={{ fontFamily: S.heading, fontSize: 26, fontWeight: 800, color: S.danger, margin: 0 }}>{fmt(te)}</p></Card>
+        <Card className="card-h"><SLabel>Capacité d’épargne</SLabel><p style={{ fontFamily: S.heading, fontSize: 26, fontWeight: 800, color: S.primary, margin: 0 }}>{ti > 0 ? Math.round((ti - te) / ti * 100) : 0}%</p><p style={{ fontSize: 10, color: S.muted, margin: "4px 0 0" }}>{fmt(ti - te)} sur 12 mois</p></Card>
+        <Card className="card-h"><SLabel>Mois confortables</SLabel><p style={{ fontFamily: S.heading, fontSize: 26, fontWeight: 800, color: rolling.filter(m => m.balance > 500).length >= 6 ? S.success : S.warning, margin: 0 }}>{rolling.filter(m => m.balance > 500).length} / 12</p><p style={{ fontSize: 10, color: S.muted, margin: "4px 0 0" }}>Solde &gt; 500€</p></Card>
+      </div>
+
+      {/* Taux d’effort + Score santé */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <Card>
+          <SLabel>Taux d’effort par catégorie</SLabel>
+          {(() => { const fixedT = rolling.reduce((s, m) => s + (m.expenses_detail || 0), 0); const envT = rolling.reduce((s, m) => s + (m.budget_envelopes || 0), 0); const savT = rolling.reduce((s, m) => s + (m.savings_target || 0), 0); const cats = [{n:"Fixes",v:fixedT,c:S.primary},{n:"Reste à vivre",v:envT,c:S.warning},{n:"Épargne",v:savT,c:S.accent}]; return cats.map(cat => (<div key={cat.n} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}><span style={{ fontSize: 10, fontWeight: 600, color: S.muted, width: 80 }}>{cat.n}</span><div style={{ flex: 1, height: 8, background: S.surface2, borderRadius: 4, overflow: "hidden" }}><div style={{ height: "100%", width: `${ti > 0 ? Math.min(100, Math.round(cat.v / ti * 100)) : 0}%`, background: cat.c, borderRadius: 4 }} /></div><span style={{ fontSize: 10, fontWeight: 700, color: cat.c, width: 35, textAlign: "right" as const }}>{ti > 0 ? Math.round(cat.v / ti * 100) : 0}%</span></div>)); })()}
+        </Card>
+        <Card style={{ textAlign: "center" }}>
+          <SLabel>Score santé financière</SLabel>
+          {(() => { const epargneScore = ti > 0 ? Math.min(3, Math.round((ti - te) / ti * 10)) : 0; const risqueScore = Math.min(3, Math.round((12 - alerts.length) / 4)); const confortScore = Math.min(4, Math.round(rolling.filter(m => m.balance > 300).length / 3)); const total = Math.min(10, epargneScore + risqueScore + confortScore); const color = total >= 7 ? S.success : total >= 5 ? S.warning : S.danger; const label = total >= 8 ? "Excellent" : total >= 6 ? "Bon" : total >= 4 ? "Moyen" : "Fragile"; return (<><svg viewBox="0 0 120 70" style={{ width: 120, height: 60, margin: "8px auto" }}><path d="M 10 60 A 50 50 0 0 1 110 60" fill="none" stroke={S.surface2} strokeWidth="8" /><path d="M 10 60 A 50 50 0 0 1 110 60" fill="none" stroke={color} strokeWidth="8" strokeLinecap="round" strokeDasharray="157" strokeDashoffset={157 - (157 * total / 10)} /><text x="60" y="52" textAnchor="middle" fill={color} fontFamily={S.heading} fontSize="20" fontWeight="800">{total}/10</text><text x="60" y="65" textAnchor="middle" fill={S.muted} fontFamily={S.font} fontSize="9">{label}</text></svg><p style={{ fontSize: 9, color: S.muted, margin: 0 }}>Épargne + risque + confort</p></>); })()}
+        </Card>
       </div>
 
       {/* Analyse IA de la projection */}
