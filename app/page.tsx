@@ -1472,8 +1472,7 @@ Donne 3-4 recommandations precises et actionnables pour optimiser ce budget. Soi
               const r = await fetch("/api/cw-auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: [{ role: "user", content: prompt }], model: "gpt-4.1-mini" }) });
               const d = await r.json();
               const text = d.choices?.[0]?.message?.content || d.content || "Erreur";
-              if (el) el.innerHTML = text.replace(/
-/g, "<br>").replace(/- /g, "• ");
+              if (el) el.innerHTML = text.split("\n").join("<br>").split("- ").join("• ");
             } catch { if (el) el.innerHTML = "Erreur de connexion"; }
             if (btn) btn.disabled = false;
           }} id="proj-ai-btn" style={{ fontSize: 12, fontWeight: 700, color: "#fff", background: S.primary, border: "none", borderRadius: 8, padding: "6px 16px", cursor: "pointer", fontFamily: S.font }}>Analyser la projection</button>
