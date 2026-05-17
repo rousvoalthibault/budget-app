@@ -216,7 +216,7 @@ export default function BudgetApp() {
           fetch("/api/budget/health", { headers: getAuthHeaders() }).catch(() => {}); // warm up backend
         setAuthToken(d.token);
         await loadData();
-        if (d.needs_onboarding) setNeedsOnboarding(true); else setTimeout(() => { if (!localStorage.getItem("budget_tour_done") && !needsOnboarding) setTourStep(0); }, 1000);
+        if (d.needs_onboarding) { setNeedsOnboarding(true); fetch("/api/budget/health", { headers: getAuthHeaders() }).catch(() => {}); } else setTimeout(() => { if (!localStorage.getItem("budget_tour_done") && !needsOnboarding) setTourStep(0); }, 1000);
       } else {
         setAuthError(d.detail || "Erreur de connexion");
       }
@@ -698,8 +698,23 @@ export default function BudgetApp() {
                   setObLoading(true);
                   try {
                     const body = { salary: parseFloat(obSalary) || 0, savings_target: parseFloat(obSavings) || 0, start_year: selectedYear, fixed_expenses: obExpenses.filter(e => e.amount).map(e => ({ label: e.label, amount: parseFloat(e.amount) || 0, category: e.category })) };
-                    const obRes = await fetch("/api/budget/onboarding", { method: "POST", headers: getAuthHeaders(), body: JSON.stringify(body) });
-                    if (!obRes.ok) { const e = await obRes.json().catch(() => ({})); setObLoading(false); alert(e.detail || "Erreur serveur " + obRes.status); return; }
+                    // Warm up backend first
+                    await fetch("/api/budget/health", { headers: getAuthHeaders() }).catch(() => {});
+                    // Try onboarding with retry on timeout
+                    let obRes: Response | null = null;
+                    for (let attempt = 0; attempt < 3; attempt++) {
+                      try {
+                        const controller = new AbortController();
+                        const timeout = setTimeout(() => controller.abort(), 45000);
+                        obRes = await fetch("/api/budget/onboarding", { method: "POST", headers: getAuthHeaders(), body: JSON.stringify(body), signal: controller.signal });
+                        clearTimeout(timeout);
+                        break;
+                      } catch (fetchErr) {
+                        if (attempt < 2) { await new Promise(r => setTimeout(r, 2000)); continue; }
+                        throw fetchErr;
+                      }
+                    }
+                    if (!obRes || !obRes.ok) { const e = obRes ? await obRes.json().catch(() => ({})) : {}; setObLoading(false); alert(e.detail || "Erreur serveur"); return; }
                     setNeedsOnboarding(false);
                     setOnboardStep(0);
                     setTimeout(() => startTour(), 800);
