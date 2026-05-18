@@ -1401,6 +1401,50 @@ function DepensesTab({ month: m, months, monthKey, onValidate, onAmountChange, o
         </div>
         <button onClick={() => { const name = prompt("Nom de la nouvelle catégorie :"); if (name) onBudgetChange({ add_key: name, add_amount: 0 }); }} style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", fontSize: 12, fontWeight: 600, border: `1px dashed ${S.border}`, borderRadius: 8, background: "transparent", color: S.muted, cursor: "pointer", width: "100%", justifyContent: "center" }}><Plus size={12} /> Ajouter une catégorie</button>
       </Card>
+
+      {/* Analyse IA des depenses */}
+      <Card style={{ borderColor: `${S.primary}25` }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <SLabel>Analyse IA des dépenses</SLabel>
+          <button onClick={async () => {
+            const btn = document.getElementById("dep-ai-btn") as HTMLButtonElement; if (btn) btn.disabled = true;
+            const el = document.getElementById("dep-ai-result");
+            if (el) el.innerHTML = "<span style='color:#94a3b8'>Analyse en cours...</span>";
+            const inc = m.income_salary + m.income_other + ((m as unknown as Record<string,number>).income_rente ?? 0) + ((m as unknown as Record<string,number>).income_epargne ?? 0) + ((m as unknown as Record<string,number>).income_actions ?? 0) + ((m as unknown as Record<string,number>).income_virements ?? 0) + ((m as unknown as Record<string,number>).income_solde_ajuste ?? 0);
+            const fixedExp = m.expenses.filter(e => e.category === "fixed");
+            const varExp = m.expenses.filter(e => e.category === "variable");
+            const investExp = m.expenses.filter(e => e.category === "investment");
+            const alloc = m.budget_allocation as unknown as Record<string, number>;
+            const fixedTotal = fixedExp.reduce((s, e) => s + e.amount, 0);
+            const varTotal = varExp.reduce((s, e) => s + e.amount, 0);
+            const investTotal = investExp.reduce((s, e) => s + e.amount, 0);
+            const allocTotal = Object.values(alloc).reduce((s, v) => s + v, 0);
+            const prompt = `Analyse les depenses du mois ${m.month_name} et donne des recommandations concretes pour optimiser:
+REVENUS: ${Math.round(inc)} EUR
+DEPENSES FIXES (${Math.round(fixedTotal)} EUR total, ${inc > 0 ? Math.round(fixedTotal/inc*100) : 0}% du revenu):
+${fixedExp.map(e => `- ${e.label}: ${e.amount} EUR`).join("\n") || "Aucune"}
+DEPENSES VARIABLES (${Math.round(varTotal)} EUR total, ${inc > 0 ? Math.round(varTotal/inc*100) : 0}% du revenu):
+${varExp.map(e => `- ${e.label}: ${e.amount} EUR`).join("\n") || "Aucune"}
+INVESTISSEMENTS (${Math.round(investTotal)} EUR total):
+${investExp.map(e => `- ${e.label}: ${e.amount} EUR`).join("\n") || "Aucun"}
+BUDGET RESTE A VIVRE (${Math.round(allocTotal)} EUR total):
+${Object.entries(alloc).map(([k, v]) => `- ${k}: ${v} EUR`).join("\n") || "Aucun"}
+TOTAL DEPENSES: ${Math.round(fixedTotal + varTotal + investTotal + allocTotal)} EUR
+RESTANT: ${Math.round(inc - fixedTotal - varTotal - investTotal - allocTotal)} EUR
+Donne 4-5 recommandations precises: quelles depenses reduire, quels postes optimiser, si le ratio fixes/variables est bon, et comment ameliorer le reste a vivre. Sois direct et concret.`;
+            try {
+              const r = await fetch("/api/analyze", { method: "POST", headers: getAuthHeaders(), body: JSON.stringify({ prompt }) });
+              const d = await r.json();
+              const text = d.analysis || d.error || "Erreur";
+              if (el) el.innerHTML = text.split("\n").join("<br>").split("- ").join("• ");
+            } catch { if (el) el.innerHTML = "Erreur de connexion"; }
+            if (btn) btn.disabled = false;
+          }} id="dep-ai-btn" style={{ fontSize: 12, fontWeight: 700, color: "#fff", background: S.primary, border: "none", borderRadius: 8, padding: "6px 16px", cursor: "pointer", fontFamily: S.font }}>Analyser mes dépenses</button>
+        </div>
+        <div id="dep-ai-result" style={{ fontSize: 13, color: S.text, lineHeight: 1.7, minHeight: 40 }}>
+          <span style={{ color: S.muted, fontSize: 12 }}>Cliquez sur Analyser pour obtenir des recommandations personnalisées sur vos dépenses du mois.</span>
+        </div>
+      </Card>
     </div>
   </>);
 }
