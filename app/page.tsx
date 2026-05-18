@@ -1579,7 +1579,7 @@ Donne 3-4 recommandations precises et actionnables pour optimiser ce budget. Soi
                 <td style={{ padding: "9px 14px", color: S.danger, fontWeight: 600 }}>{fmt(mo.expenses)}</td>
                 <td style={{ padding: "9px 14px", color: S.muted }}>{fmt(mo.savings_target )}</td>
                 <td style={{ padding: "9px 14px", color: ac, fontWeight: 600 }}>{fmt(mo.balance)}</td>
-                <td style={{ padding: "9px 14px", fontFamily: S.heading, fontSize: 17, fontWeight: 800, color: rc >= 0 ? S.success : S.danger }}>{fmt(rc)}</td>
+                <td style={{ padding: "9px 14px", fontFamily: S.heading, fontSize: 17, fontWeight: 800, color: rc >= 0 ? S.success : S.danger }}>{mo.income > 0 ? Math.round(rc / mo.income * 100) : 0}%</td>
                 <td style={{ padding: "9px 14px" }}><span style={{ background: `${ac}15`, color: ac, border: `1px solid ${ac}40`, borderRadius: 6, padding: "3px 10px", fontSize: 11, fontWeight: 700 }}>{mo.alert_type === "danger" ? "NEGATIF" : mo.alert_type === "warning" ? "SERRE" : "OK"}</span></td>
               </tr>); }); })()}</tbody>
           </table>
