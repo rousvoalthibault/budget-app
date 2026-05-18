@@ -1370,38 +1370,6 @@ function DepensesTab({ month: m, months, monthKey, onValidate, onAmountChange, o
         })()}
       </Card>
 
-      <div className="expenses-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-        {ColCard({ title: "Dépenses fixes", items: fixed, color: S.primary, catKey: "fixed" })}
-        {ColCard({ title: "Dépenses variables", items: variable, color: S.warning, catKey: "variable" })}
-      </div>
-
-
-
-      <Card style={{ borderColor: `${S.primary}25` }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-          <SLabel>Budget Reste à vivre — Valider = Compte dans les dépenses</SLabel>
-        <button onClick={async () => { const mi = months.findIndex(mo => mo.month_key === monthKey); let prev = mi > 0 ? months[mi-1] : null; if (!prev && mi === 0) { const [y] = monthKey.split("-").map(Number); const prevMk = (y-1) + "-12"; try { const pr = await fetch(`/api/budget/month/${prevMk}`, { headers: getAuthHeaders() }); if (pr.ok) { prev = await pr.json(); } } catch {} } if (!prev) { alert("Pas de mois precedent disponible"); return; }; const prevAlloc = prev.budget_allocation || {}; if (!confirm("Copier le reste à vivre de " + prev.month_name + " ?")) return; Object.entries(prevAlloc).forEach(([k, v]) => { if (typeof v === "number") onBudgetChange({ amounts: { [k]: v } }); }); }} style={{ fontSize: 9, fontWeight: 600, color: S.muted, background: `${S.muted}10`, border: `1px solid ${S.muted}25`, borderRadius: 8, padding: "0 8px", height: 24, display: "flex", alignItems: "center", cursor: "pointer", fontFamily: S.font, whiteSpace: "nowrap" as const }}>Copier M-1</button>
-          {validatedBudgetTotal > 0 && <span style={{ fontFamily: S.heading, fontSize: 16, color: S.primary, fontWeight: 700 }}>+{fmt(validatedBudgetTotal)} intégrés</span>}
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 8 }}>
-          {Object.entries(m.budget_allocation).map(([key, amount]) => {
-            const isValid = budgetValidated[key] || false;
-            return (
-              <div key={key} className="row-h" style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 12px", background: isValid ? `${S.primary}12` : S.surface2, borderRadius: 10, border: `1px solid ${isValid ? S.primary + "40" : S.border}`, transition: "all 0.2s" }}>
-                <Wallet size={14} color={isValid ? S.primary : S.muted} />
-                <input defaultValue={BUDGET_LABELS[key] || key} onBlur={e => { if (e.target.value !== key) onBudgetChange({ rename: { old: key, new: e.target.value } }); }} style={{ flex: 1, fontSize: 13, color: isValid ? S.text : S.muted, fontWeight: 600, background: "transparent", border: "none", outline: "none", padding: 0, fontFamily: "inherit" }} />
-                <EditableAmt value={amount as number} onChange={v => onBudgetChange({ amounts: { [key]: v } })} color={S.primary} size="sm" />
-                <button className="val-btn" onClick={() => onBudgetChange({ validated: { [key]: !isValid } })} style={{ width: 28, height: 28, borderRadius: 7, border: `1.5px solid ${isValid ? S.primary : S.muted}`, background: isValid ? S.primary : "transparent", color: isValid ? "#fff" : S.muted, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }} title={isValid ? "Devalider" : "Valider"}>
-                  <Check size={12} />
-                </button>
-                <button onClick={() => onBudgetChange({ delete_key: key })} style={{ width: 24, height: 24, borderRadius: 6, border: "none", background: "transparent", color: S.muted, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", opacity: 0.5 }} title="Supprimer"><Trash2 size={11} /></button>
-              </div>
-            );
-          })}
-        </div>
-        <button onClick={() => { const name = prompt("Nom de la nouvelle catégorie :"); if (name) onBudgetChange({ add_key: name, add_amount: 0 }); }} style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", fontSize: 12, fontWeight: 600, border: `1px dashed ${S.border}`, borderRadius: 8, background: "transparent", color: S.muted, cursor: "pointer", width: "100%", justifyContent: "center" }}><Plus size={12} /> Ajouter une catégorie</button>
-      </Card>
-
       {/* Analyse IA des depenses */}
       <Card style={{ borderColor: `${S.primary}25` }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
@@ -1445,6 +1413,39 @@ Donne 4-5 recommandations precises: quelles depenses reduire, quels postes optim
           <span style={{ color: S.muted, fontSize: 12 }}>Cliquez sur Analyser pour obtenir des recommandations personnalisées sur vos dépenses du mois.</span>
         </div>
       </Card>
+
+      <div className="expenses-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+        {ColCard({ title: "Dépenses fixes", items: fixed, color: S.primary, catKey: "fixed" })}
+        {ColCard({ title: "Dépenses variables", items: variable, color: S.warning, catKey: "variable" })}
+      </div>
+
+
+
+      <Card style={{ borderColor: `${S.primary}25` }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <SLabel>Budget Reste à vivre — Valider = Compte dans les dépenses</SLabel>
+        <button onClick={async () => { const mi = months.findIndex(mo => mo.month_key === monthKey); let prev = mi > 0 ? months[mi-1] : null; if (!prev && mi === 0) { const [y] = monthKey.split("-").map(Number); const prevMk = (y-1) + "-12"; try { const pr = await fetch(`/api/budget/month/${prevMk}`, { headers: getAuthHeaders() }); if (pr.ok) { prev = await pr.json(); } } catch {} } if (!prev) { alert("Pas de mois precedent disponible"); return; }; const prevAlloc = prev.budget_allocation || {}; if (!confirm("Copier le reste à vivre de " + prev.month_name + " ?")) return; Object.entries(prevAlloc).forEach(([k, v]) => { if (typeof v === "number") onBudgetChange({ amounts: { [k]: v } }); }); }} style={{ fontSize: 9, fontWeight: 600, color: S.muted, background: `${S.muted}10`, border: `1px solid ${S.muted}25`, borderRadius: 8, padding: "0 8px", height: 24, display: "flex", alignItems: "center", cursor: "pointer", fontFamily: S.font, whiteSpace: "nowrap" as const }}>Copier M-1</button>
+          {validatedBudgetTotal > 0 && <span style={{ fontFamily: S.heading, fontSize: 16, color: S.primary, fontWeight: 700 }}>+{fmt(validatedBudgetTotal)} intégrés</span>}
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 8 }}>
+          {Object.entries(m.budget_allocation).map(([key, amount]) => {
+            const isValid = budgetValidated[key] || false;
+            return (
+              <div key={key} className="row-h" style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 12px", background: isValid ? `${S.primary}12` : S.surface2, borderRadius: 10, border: `1px solid ${isValid ? S.primary + "40" : S.border}`, transition: "all 0.2s" }}>
+                <Wallet size={14} color={isValid ? S.primary : S.muted} />
+                <input defaultValue={BUDGET_LABELS[key] || key} onBlur={e => { if (e.target.value !== key) onBudgetChange({ rename: { old: key, new: e.target.value } }); }} style={{ flex: 1, fontSize: 13, color: isValid ? S.text : S.muted, fontWeight: 600, background: "transparent", border: "none", outline: "none", padding: 0, fontFamily: "inherit" }} />
+                <EditableAmt value={amount as number} onChange={v => onBudgetChange({ amounts: { [key]: v } })} color={S.primary} size="sm" />
+                <button className="val-btn" onClick={() => onBudgetChange({ validated: { [key]: !isValid } })} style={{ width: 28, height: 28, borderRadius: 7, border: `1.5px solid ${isValid ? S.primary : S.muted}`, background: isValid ? S.primary : "transparent", color: isValid ? "#fff" : S.muted, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }} title={isValid ? "Devalider" : "Valider"}>
+                  <Check size={12} />
+                </button>
+                <button onClick={() => onBudgetChange({ delete_key: key })} style={{ width: 24, height: 24, borderRadius: 6, border: "none", background: "transparent", color: S.muted, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", opacity: 0.5 }} title="Supprimer"><Trash2 size={11} /></button>
+              </div>
+            );
+          })}
+        </div>
+        <button onClick={() => { const name = prompt("Nom de la nouvelle catégorie :"); if (name) onBudgetChange({ add_key: name, add_amount: 0 }); }} style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", fontSize: 12, fontWeight: 600, border: `1px dashed ${S.border}`, borderRadius: 8, background: "transparent", color: S.muted, cursor: "pointer", width: "100%", justifyContent: "center" }}><Plus size={12} /> Ajouter une catégorie</button>
+      </Card>
+
     </div>
   </>);
 }
