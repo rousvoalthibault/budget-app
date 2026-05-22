@@ -1274,7 +1274,7 @@ function DepensesTab({ month: m, months, monthKey, onValidate, onAmountChange, o
       <div style={{ padding: "14px 16px", background: `${color}06`, borderRadius: 12, border: `1px solid ${color}40` }}>
         <p style={{ fontFamily: S.heading, fontSize: 16, fontWeight: 700, color: S.text, margin: "0 0 4px" }}>{pendingAdd.label} — {fmt(pendingAdd.amount)}</p>
         <p style={{ color: S.muted, fontSize: 13, margin: "0 0 10px" }}>Cochez les mois souhaites :</p>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 6, marginBottom: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(50px, 1fr))", gap: 6, marginBottom: 12 }}>
           {MONTH_KEYS.map((mk, i) => {
             const sel = selectedMonths.has(mk);
             return <button key={mk} onClick={() => { const s = new Set(selectedMonths); if (sel) s.delete(mk); else s.add(mk); setSelectedMonths(s); }} style={{ padding: "6px 4px", fontSize: 12, fontWeight: sel ? 700 : 500, borderRadius: 8, border: `1.5px solid ${sel ? color : S.border}`, background: sel ? `${color}15` : S.surface2, color: sel ? color : S.muted, fontFamily: S.font }}>{MONTH_SHORT[i]}</button>;
@@ -1391,7 +1391,7 @@ function DepensesTab({ month: m, months, monthKey, onValidate, onAmountChange, o
             <div style={{ display: "flex", height: 8, borderRadius: 4, overflow: "hidden", marginBottom: 14, gap: 2 }}>
               {items.filter(i => i.v > 0).map(i => (<div key={i.k} style={{ width: `${(i.v / total) * 100}%`, background: i.c, borderRadius: 4 }} title={`${i.l}: ${fmt(i.v)}`} />))}
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 6 }}>
               {items.map(i => (<div key={i.k} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 8, background: "#fafbfc" }}>
                 <div style={{ width: 10, height: 10, borderRadius: 3, background: i.c, flexShrink: 0 }} />
                 <span style={{ flex: 1, fontSize: 12, color: S.muted, fontWeight: 500 }}>{i.l}</span>
@@ -1446,7 +1446,7 @@ Donne 4-5 recommandations precises: quelles depenses reduire, quels postes optim
         </div>
       </Card>
 
-      <div className="expenses-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+      <div className="expenses-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 20 }}>
         {ColCard({ title: "Dépenses fixes", items: fixed, color: S.primary, catKey: "fixed" })}
         {ColCard({ title: "Dépenses variables", items: variable, color: S.warning, catKey: "variable" })}
       </div>
@@ -1523,7 +1523,7 @@ function ProjectionTab({ forecast: f, prevCumul = 0, goalMonthly = 0, allMonths 
       </div>
 
       {/* Taux d’effort + Score santé */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: 12 }}>
         <Card>
           <SLabel>Taux d’effort par catégorie</SLabel>
           {(() => { const rollingKeys = rolling.map(m => m.month_key); const projMonths = rollingKeys.map(mk => allMonths.find(m => m.month_key === mk)).filter(Boolean) as Month[]; const src = projMonths.length >= 6 ? projMonths : allMonths; const fixedT = src.reduce((s, m) => s + m.expenses.filter(e => e.category === 'fixed').reduce((s2, e) => s2 + e.amount, 0), 0); const varT = src.reduce((s, m) => s + m.expenses.filter(e => e.category === 'variable').reduce((s2, e) => s2 + e.amount, 0), 0); const savT = src.reduce((s, m) => s + m.expenses.filter(e => e.category === 'investment').reduce((s2, e) => s2 + e.amount, 0), 0); const allocKeys = [...new Set(src.flatMap(m => Object.keys(m.budget_allocation || {})))]; const mergeKeys = ['revolut','amex','cera']; const otherKeys = allocKeys.filter(k => !mergeKeys.includes(k.toLowerCase())); const otherCats = otherKeys.map(k => ({ n: k.charAt(0).toUpperCase() + k.slice(1), v: src.reduce((s, m) => s + (((m.budget_allocation as any) || {})[k] || 0), 0), c: S.muted })); const mergedVal = allocKeys.filter(k => mergeKeys.includes(k.toLowerCase())).reduce((s, k) => s + src.reduce((s2, m) => s2 + (((m.budget_allocation as any) || {})[k] || 0), 0), 0); const allocCats = [...otherCats, ...(mergedVal > 0 ? [{ n: 'Autres (Revolut, Amex, CERA)', v: mergedVal, c: S.muted }] : [])]; const cats: {n:string;v:number;c:string}[] = [{n:'Fixes',v:fixedT,c:S.primary},{n:'Variables',v:varT,c:'#8b5cf6'},{n:'Épargne',v:savT,c:S.accent}, ...allocCats]; const objectives: Record<string,number> = {'Fixes':25,'Variables':15,'Épargne':20,'Courses':7,'Restaurants':10,'Services':3,'Autres (Revolut, Amex, CERA)':20}; const inObj = cats.filter(cat => { const pct = ti > 0 ? Math.round(cat.v / ti * 100) : 0; const obj = objectives[cat.n]; if (!obj) return true; return cat.n === 'Épargne' ? pct >= obj : pct <= obj; }).length; return (<>{cats.map(cat => { const pct = ti > 0 ? Math.round(cat.v / ti * 100) : 0; const obj = objectives[cat.n] || 0; const isEp = cat.n === 'Épargne'; const ok = obj > 0 ? (isEp ? pct >= obj : pct <= obj) : true; const sc = ok ? S.success : S.danger; return (<div key={cat.n} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}><span style={{ fontSize: 10, fontWeight: 600, color: S.muted, width: 80 }}>{cat.n}</span><div style={{ flex: 1, height: 10, background: S.surface2, borderRadius: 5, position: "relative" as const }}><div style={{ height: "100%", width: `${Math.min(100, pct)}%`, background: cat.c, borderRadius: 5 }} />{obj > 0 && <div style={{ position: "absolute" as const, top: -3, bottom: -3, left: `${obj}%`, width: 2, background: S.text, borderRadius: 1, opacity: 0.5 }}><div style={{ position: "absolute" as const, top: -5, left: "50%", transform: "translateX(-50%)", width: 0, height: 0, borderLeft: "3px solid transparent", borderRight: "3px solid transparent", borderTop: `4px solid ${S.text}`, opacity: 0.5 }} /></div>}</div><span style={{ fontSize: 10, fontWeight: 700, color: sc, width: 70, textAlign: "right" as const, whiteSpace: "nowrap" as const }}>{pct}% <span style={{ fontSize: 8, fontWeight: 500, opacity: 0.5, color: S.muted }}>/ {obj}%</span></span><div style={{ width: 6, height: 6, borderRadius: 3, background: sc, flexShrink: 0 }} /></div>); })}<div style={{ textAlign: "center" as const, marginTop: 8 }}><span style={{ fontSize: 9, fontWeight: 600, color: inObj >= 5 ? S.success : S.warning, background: `${inObj >= 5 ? S.success : S.warning}15`, padding: "2px 10px", borderRadius: 6 }}>{inObj}/{cats.length} dans l&apos;objectif</span></div></>); })()}
@@ -1851,7 +1851,7 @@ function TaxSimulator({ latestSalary }: { latestSalary: number }) {
   return (
     <Card>
       <SLabel>Simulateur fiscal 2026</SLabel>
-      <div className="expenses-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
+      <div className="expenses-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16, marginBottom: 20 }}>
         <div>
           <label style={{ fontSize: 11, fontWeight: 700, color: S.muted, display: "block", marginBottom: 4, textTransform: "uppercase" as const }}>Salaire brut annuel</label>
           <input type="number" value={brutAnnuel} onChange={e => setBrutAnnuel(e.target.value)} style={{ width: "100%", padding: "10px 12px", fontSize: 16, fontFamily: S.heading, fontWeight: 700, border: `1px solid ${S.border}`, borderRadius: 8, background: S.bg, color: S.accent, outline: "none" }} />
@@ -1893,7 +1893,7 @@ function TaxSimulator({ latestSalary }: { latestSalary: number }) {
       </div>
 
       {/* Results grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12, marginBottom: 16 }}>
         <div style={{ background: S.bg, borderRadius: 10, padding: 14, textAlign: "center" }}>
           <div style={{ fontSize: 10, color: S.muted, textTransform: "uppercase" as const, marginBottom: 4 }}>Net mensuel</div>
           <div style={{ fontFamily: S.heading, fontSize: 24, fontWeight: 800, color: S.accent }}>{netMensuel.toLocaleString("fr-FR")} EUR</div>
@@ -1988,7 +1988,7 @@ function EconomiesTab({ months, currentIdx, onSavingsChange, onPortfolioValuesCh
 
       {/* Totaux portefeuille */}
       {totalInvested > 0 && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
           {[{ l: "Total investi", v: totalInvested, c: S.primary }, { l: "Valeur actuelle", v: totalValue, c: totalValue > 0 ? S.success : S.muted }, { l: "Plus-value totale", v: totalPlusValue, c: totalPlusValue >= 0 ? S.success : S.danger }].map(({ l, v, c }) => (
             <Card key={l} className="card-h" style={{ textAlign: "center" }}>
               <SLabel>{l}</SLabel>
