@@ -121,9 +121,9 @@ function EditableAmt({ value, onChange, color, size = "md" }: { value: number; o
   const ref = useRef<HTMLInputElement>(null);
   const fs = size === "lg" ? 30 : size === "sm" ? 14 : 20;
   const col = color || S.text;
-  function start(e: React.MouseEvent) { e.stopPropagation(); setDraft(value.toFixed(2)); setEditing(true); setTimeout(() => { ref.current?.focus(); ref.current?.select(); }, 30); }
+  function start(e: React.MouseEvent) { e.stopPropagation(); const spans = Array.from(document.querySelectorAll(".editable-amt")); (window as any).__editIdx = spans.indexOf(e.currentTarget as Element); setDraft(value.toFixed(2)); setEditing(true); setTimeout(() => { ref.current?.focus(); ref.current?.select(); }, 30); }
   function commit() { const n = parseFloat(draft); if (!isNaN(n) && n >= 0) onChange(n); setEditing(false); }
-  if (editing) return <input ref={ref} value={draft} onChange={e => setDraft(e.target.value)} onBlur={commit} onKeyDown={e => { if (e.key === "Enter") commit(); if (e.key === "Escape") setEditing(false); }} style={{ width: size === "lg" ? 130 : 80, background: S.surface2, border: `1.5px solid ${col}`, borderRadius: 8, padding: "2px 8px", color: S.text, fontFamily: S.heading, fontSize: fs, fontWeight: 700, outline: "none" }} />;
+  if (editing) return <input ref={ref} value={draft} onChange={e => setDraft(e.target.value)} onBlur={commit} onKeyDown={e => { if (e.key === "Enter") commit(); if (e.key === "Escape") setEditing(false); if (e.key === "Tab" || e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); const back = e.key === "ArrowUp" || (e.key === "Tab" && e.shiftKey); commit(); setTimeout(() => { const spans = Array.from(document.querySelectorAll(".editable-amt")) as HTMLElement[]; const idx = (window as any).__editIdx ?? 0; const next = back ? idx - 1 : idx + 1; if (next >= 0 && next < spans.length) { (window as any).__editIdx = next; spans[next].click(); } }, 80); } }} style={{ width: size === "lg" ? 130 : 80, background: S.surface2, border: `1.5px solid ${col}`, borderRadius: 8, padding: "2px 8px", color: S.text, fontFamily: S.heading, fontSize: fs, fontWeight: 700, outline: "none" }} />;
   return (
     <span onClick={start} title="Cliquer pour modifier" className="editable-amt" style={{ cursor: "pointer", fontFamily: S.heading, fontSize: fs, fontWeight: 700, color: col, lineHeight: 1.1, display: "inline-flex", alignItems: "center", gap: 4 }}>
       {fmt(value)}<Pencil className="edit-pencil" size={Math.max(10, fs * 0.42)} style={{ marginBottom: 1 }} />
@@ -135,11 +135,29 @@ function EditableAmt({ value, onChange, color, size = "md" }: { value: number; o
 export default function BudgetApp() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth <= 768);
     check();
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
+  }, []);
+
+  useEffect(() => {
+    const TABS: Array<"dashboard" | "depenses" | "projection" | "historique" | "economies" | "salaires"> = ["dashboard", "depenses", "projection", "historique", "economies", "salaires"];
+    function handleShortcut(e: KeyboardEvent) {
+      const tag = (e.target as HTMLElement).tagName;
+      const isInput = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
+      if (e.key === "?" && !isInput) { setShowShortcuts(p => !p); e.preventDefault(); return; }
+      if (e.key === "Escape") { setShowShortcuts(false); return; }
+      if (isInput) return;
+      if (e.key === "ArrowLeft") { setIdx(i => Math.max(0, i - 1)); e.preventDefault(); return; }
+      if (e.key === "ArrowRight") { setIdx(i => Math.min(11, i + 1)); e.preventDefault(); return; }
+      const num = parseInt(e.key);
+      if (num >= 1 && num <= 6) { setTab(TABS[num - 1]); e.preventDefault(); }
+    }
+    window.addEventListener("keydown", handleShortcut);
+    return () => window.removeEventListener("keydown", handleShortcut);
   }, []);
   const [darkMode, setDarkMode] = useState(false);
   const [hints, setHints] = useState<Record<string, boolean>>({});
@@ -839,6 +857,20 @@ export default function BudgetApp() {
         </>)}
       </main>
       {/* Mobile bottom tab bar */}
+      {showShortcuts && <div onClick={() => setShowShortcuts(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div onClick={e => e.stopPropagation()} style={{ background: S.surface, border: `1px solid ${S.border}`, borderRadius: 16, padding: "28px 32px", maxWidth: 420, width: "90%", boxShadow: "0 20px 60px rgba(0,0,0,0.3)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+            <span style={{ fontFamily: S.heading, fontSize: 18, fontWeight: 800, color: S.text }}>Raccourcis clavier</span>
+            <button onClick={() => setShowShortcuts(false)} style={{ background: "none", border: "none", color: S.muted, fontSize: 20, cursor: "pointer" }}>&times;</button>
+          </div>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.06em", color: S.accent, marginBottom: 8 }}>Navigation</div>
+          {[["← / →", "Mois précédent / suivant"], ["1 – 6", "Changer d’onglet"], ["?", "Afficher cette aide"]].map(([k, d]) => (<div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: `1px solid ${S.border}` }}><span style={{ fontSize: 12, color: S.muted }}>{d}</span><kbd style={{ fontFamily: "monospace", fontSize: 11, fontWeight: 700, background: S.surface2, border: `1px solid ${S.border}`, borderRadius: 4, padding: "2px 8px", color: S.text }}>{k}</kbd></div>))}
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.06em", color: S.accent, marginBottom: 8, marginTop: 16 }}>Saisie des montants</div>
+          {[["Clic", "Entrer en mode édition"], ["Entrée", "Valider le montant"], ["Tab / ↓", "Champ suivant"], ["Shift+Tab / ↑", "Champ précédent"], ["Echap", "Annuler la saisie"]].map(([k, d]) => (<div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: `1px solid ${S.border}` }}><span style={{ fontSize: 12, color: S.muted }}>{d}</span><kbd style={{ fontFamily: "monospace", fontSize: 11, fontWeight: 700, background: S.surface2, border: `1px solid ${S.border}`, borderRadius: 4, padding: "2px 8px", color: S.text }}>{k}</kbd></div>))}
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.06em", color: S.accent, marginBottom: 8, marginTop: 16 }}>Onglets</div>
+          {[["1", "Dashboard"], ["2", "Dépenses"], ["3", "Projection"], ["4", "Historique"], ["5", "Épargne"], ["6", "Salaires"]].map(([k, d]) => (<div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: `1px solid ${S.border}` }}><span style={{ fontSize: 12, color: S.muted }}>{d}</span><kbd style={{ fontFamily: "monospace", fontSize: 11, fontWeight: 700, background: S.surface2, border: `1px solid ${S.border}`, borderRadius: 4, padding: "2px 8px", color: S.text }}>{k}</kbd></div>))}
+        </div>
+      </div>}
       <nav className="mobile-tabbar">
         {TABS.map(t => { const Icon = t.icon; return (
           <button key={t.id} className={`mob-tab${tab === t.id ? " active" : ""}`} onClick={() => setTab(t.id)}>
