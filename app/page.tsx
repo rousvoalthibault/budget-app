@@ -831,7 +831,7 @@ export default function BudgetApp() {
         {tab === "dashboard" && m && (
           <DashboardTab month={m} months={months} idx={idx} isMobile={isMobile} hints={hints} dismissHint={dismissHint} netBalance={netBal} totalExpenses={totalExp} validatedBudget={validatedBudget} validatedCount={validatedCnt} totalCount={totalItems} 
             onIncomeChange={(f, v) => patchIncome(m.month_key, f, v)}
-            onValidate={(l, v) => patchExpense(m.month_key, l, { validated: v })} saving={saving} />
+            onValidate={(l, v) => patchExpense(m.month_key, l, { validated: v })} onAmountChange={(l, a) => patchExpense(m.month_key, l, { amount: a })} saving={saving} />
         )}
         {tab === "depenses" && m && (<>
           {!hints.depenses && <div className="hint-bubble" style={{ margin: "0 0 8px" }}><span>Cliquez sur un montant pour le modifier. Ajoutez des dépenses avec +</span><button className="hint-close" onClick={() => dismissHint("depenses")}>x</button></div>}
@@ -884,10 +884,10 @@ export default function BudgetApp() {
 }
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
-function DashboardTab({ month: m, months, idx, netBalance, totalExpenses, validatedBudget, validatedCount, totalCount, onIncomeChange, onValidate, saving, isMobile, hints, dismissHint }: {
+function DashboardTab({ month: m, months, idx, netBalance, totalExpenses, validatedBudget, validatedCount, totalCount, onIncomeChange, onValidate, onAmountChange, saving, isMobile, hints, dismissHint }: {
   month: Month; months: Month[]; idx: number; netBalance: number; totalExpenses: number; validatedBudget: number; validatedCount: number; totalCount: number; isMobile: boolean; hints: Record<string, boolean>; dismissHint: (k: string) => void;
   onIncomeChange: (f: "income_salary" | "income_other", v: number) => void;
-  onValidate: (label: string, v: boolean) => void; saving: string | null;
+  onValidate: (label: string, v: boolean) => void; onAmountChange: (label: string, amount: number) => void; saving: string | null;
 }) {
   const [showSwipeTutorial, setShowSwipeTutorial] = useState(false);
   const income = m.income_salary + m.income_other + ((m as unknown as Record<string,number>).income_rente ?? 0) + ((m as unknown as Record<string,number>).income_epargne ?? 0) + ((m as unknown as Record<string,number>).income_actions ?? 0) + ((m as unknown as Record<string,number>).income_virements ?? 0) + ((m as unknown as Record<string,number>).income_solde_ajuste ?? 0);
@@ -960,7 +960,7 @@ function DashboardTab({ month: m, months, idx, netBalance, totalExpenses, valida
 
       {!hints.swipe && <div className="hint-bubble" style={{ marginBottom: 4 }}><span>Swipez pour valider vos depenses !</span><button className="hint-close" onClick={() => dismissHint("swipe")}>x</button></div>}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}><span style={{ fontFamily: S.heading, fontSize: 14, fontWeight: 700 }}>Valider ses dépenses</span><button onClick={() => setShowSwipeTutorial(true)} style={{ width: 24, height: 24, borderRadius: 6, border: `1px solid ${S.border}`, background: "transparent", color: S.muted, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>?</button></div>
-      <SwipeValidator expenses={m.expenses} onValidate={onValidate} saving={saving} />
+      <SwipeValidator expenses={m.expenses} onValidate={onValidate} onAmountChange={onAmountChange} saving={saving} />
     </div>
   );
 }
